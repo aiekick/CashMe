@@ -196,8 +196,8 @@ target_link_libraries(${PROJECT}
 
 # define for let CashMe detext what is the config of a plugin 
 target_compile_definitions(${PROJECT} PRIVATE -DPLUGIN_RUNTIME_CONFIG=$<$<CONFIG:Debug>:"_Debug">$<$<CONFIG:Release>:"_Release">$<$<CONFIG:MinSizeRel>:"_MinSizeRel">$<$<CONFIG:RelWithDebInfo>:"_RelWithDebInfo">)
-target_compile_definitions(${PROJECT} PRIVATE -DPROJECT_EXT=".stro")
-target_compile_definitions(${PROJECT} PRIVATE -DPROJECT_EXT_DOT_LESS="stro")
+target_compile_definitions(${PROJECT} PRIVATE -DPROJECT_EXT=".cash")
+target_compile_definitions(${PROJECT} PRIVATE -DPROJECT_EXT_DOT_LESS="cash")
 
 set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${FINAL_BIN_DIR}")
 set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_BIN_DIR}")

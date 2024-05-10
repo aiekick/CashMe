@@ -34,9 +34,6 @@ BANK ACCOUNT
 
 */
 
-
-
-
 // will check database header magic number
 // https://www.sqlite.org/fileformat.html : section 1.3
 // Offset	Size	Description
@@ -106,107 +103,110 @@ void DataBase::RollbackTransaction() {
     m_TransactionStarted = false;
 }
 
-void DataBase::AddMarket(const Market& vMarket) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO markets (market) VALUES("%s");)", vMarket.c_str());
+void DataBase::AddUser(const UserName& vUserName) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO users (name) VALUES("%s");)", vUserName.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a market in database : %s", m_LastErrorMsg);
+        LogVarError("Fail to insert a user in database : %s", m_LastErrorMsg);
     }
 }
 
-void DataBase::AddSymbol(const Symbol& vSymbol) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO symbols (symbol) VALUES("%s");)", vSymbol.c_str());
+bool DataBase::GetUser(const UserName& vUserName, uint32_t& vOutRowID) {
+    bool ret = false;
+    auto select_query = ct::toStr(u8R"(SELECT user_id FROM users WHERE name = "%s";)", vUserName.c_str());
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get user with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    vOutRowID = sqlite3_column_int(stmt, 0);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+    return ret;
+}
+
+void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO banks (name, url) VALUES("%s", "%s");)", vBankName.c_str(), vUrl.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a symbol in database : %s", m_LastErrorMsg);
+        LogVarError("Fail to insert a bank in database : %s", m_LastErrorMsg);
     }
 }
 
-void DataBase::AddTimeFrame(const TimeFrame& vTimeFrame) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO timeframes (timeframe) VALUES("%u");)", vTimeFrame);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a timeframe in database : %s", m_LastErrorMsg);
+bool DataBase::GetBank(const BankName& vBankName, uint32_t& vOutRowID) {
+    bool ret = false;
+    auto select_query = ct::toStr(u8R"(SELECT bank_id FROM banks WHERE name = "%s";)", vBankName.c_str());
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get bank with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    vOutRowID = sqlite3_column_int(stmt, 0);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::AddMarketSymbolTimeFrame(const Market& vMarket, const Symbol& vSymbol, const TimeFrame& vTimeFrame) {
-    AddMarket(vMarket);
-    AddSymbol(vSymbol);
-    AddTimeFrame(vTimeFrame);
+void DataBase::AddAccount(const UserName& vUserName,
+                          const BankName& vBankName,
+                          const AccountType& vAccountType,
+                          const AccountName& vAccountName,
+                          const AccountNumber& vAccountNumber) {
+    AddUser(vUserName);
+    AddBank(vBankName);
     auto insert_query = ct::toStr(
         u8R"(
-INSERT OR IGNORE INTO market_symbol_timeframe 
-    (id_market, id_symbol, id_timeframe) VALUES(
-        (SELECT rowid FROM markets WHERE markets.market = "%s"),
-        (SELECT rowid FROM symbols WHERE symbols.symbol = "%s"),
-        (SELECT rowid FROM timeframes WHERE timeframes.timeframe = "%u"));)",
-        vMarket.c_str(),
-        vSymbol.c_str(),
-        vTimeFrame);
+INSERT OR IGNORE INTO accounts 
+    (user_id, bank_id, type, name, number) VALUES(
+        (SELECT user_id FROM users WHERE users.name = "%s"), -- user id
+        (SELECT bank_id FROM banks WHERE banks.name = "%s"), -- bank id
+        "%s", -- account type
+        "%s", -- account name
+        "%s"  -- account number
+        );)",
+        vUserName.c_str(),
+        vBankName.c_str(),
+        vAccountType.c_str(),
+        vAccountName.c_str(),
+        vAccountNumber.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a tick in database : %s", m_LastErrorMsg);
+        LogVarError("Fail to insert a Bank Account in database : %s", m_LastErrorMsg);
     }
 }
 
-void DataBase::AddDate(const Date& vDate) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO dates (date) VALUES("%f");)", vDate);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a date in database : %s", m_LastErrorMsg);
-    }
-}
-
-void DataBase::AddPrice(const Market& vMarket,
-                        const Symbol& vSymbol,
-                        const TimeFrame& vTimeFrame,
-                        const Date& vDate,
-                        const OpenPrice& vOpen,
-                        const HighPrice& vHigh,
-                        const LowPrice& vLow,
-                        const ClosePrice& vClose,
-                        const VolumePrice& vVolume) {
-    AddMarketSymbolTimeFrame(vMarket, vSymbol, vTimeFrame);
-    AddDate(vDate);
-    auto insert_query = ct::toStr(
-        u8R"(
-INSERT OR IGNORE INTO prices 
-    (id_market_symbol_timeframe, id_date, open, high, low, close, volume) VALUES(
-        (SELECT rowid FROM market_symbol_timeframe WHERE 
-            market_symbol_timeframe.id_market = (SELECT rowid FROM markets WHERE markets.market = "%s") AND 
-            market_symbol_timeframe.id_symbol = (SELECT rowid FROM symbols WHERE symbols.symbol = "%s") AND 
-            market_symbol_timeframe.id_timeframe = (SELECT rowid FROM timeframes WHERE timeframes.timeframe = "%u")),
-        (SELECT rowid FROM dates WHERE dates.date = "%f"),
-        %f,%f,%f,%f,%f);)",
-        vMarket.c_str(),
-        vSymbol.c_str(),
-        vTimeFrame,
-        vDate,
-        vOpen,
-        vHigh,
-        vLow,
-        vClose,
-        vVolume);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a tick in database : %s", m_LastErrorMsg);
-    }
-}
-
-void DataBase::GetSymbols(std::function<void(const Market&, const Symbol&, const TimeFrame&, const BarsCount&)> vCallback) {
+void DataBase::GetAccounts(std::function<void(const UserName&, const BankName&, const AccountType&, const AccountName&, const AccountNumber&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
 
     std::string select_query =
         u8R"(
 SELECT
-  markets.market AS market,
-  symbols.symbol AS symbol,
-  timeframes.timeframe AS timeframe,
-  COUNT(prices.id_market_symbol_timeframe) AS count
+  users.name AS user_name,
+  banks.name AS bank_name,
+  accounts.type AS account_type,
+  accounts.name AS account_name,
+  accounts.number AS account_number
 FROM 
-  market_symbol_timeframe
-  LEFT JOIN markets ON market_symbol_timeframe.id_market = markets.rowid
-  LEFT JOIN symbols ON market_symbol_timeframe.id_symbol = symbols.rowid
-  LEFT JOIN timeframes ON market_symbol_timeframe.id_timeframe = timeframes.rowid
-  LEFT JOIN prices ON market_symbol_timeframe.rowid = prices.id_market_symbol_timeframe
-GROUP BY market, symbol, timeframe
-ORDER BY market, symbol, timeframe;
+  accounts
+  LEFT JOIN users ON users.user_id = accounts.user_id
+  LEFT JOIN banks ON banks.bank_id = accounts.bank_id
+GROUP BY user_name, bank_name, account_name;
 )";
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
@@ -217,13 +217,19 @@ ORDER BY market, symbol, timeframe;
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    const char* market = (const char*)sqlite3_column_text(stmt, 0);
-                    const char* symbol = (const char*)sqlite3_column_text(stmt, 1);
-                    int timeframe = sqlite3_column_int(stmt, 2);
-                    int count = sqlite3_column_int(stmt, 3);
+                    const char* user_name = (const char*)sqlite3_column_text(stmt, 0);
+                    const char* bank_name = (const char*)sqlite3_column_text(stmt, 1);
+                    const char* account_type = (const char*)sqlite3_column_text(stmt, 2);
+                    const char* account_name = (const char*)sqlite3_column_text(stmt, 3);
+                    const char* account_number = (const char*)sqlite3_column_text(stmt, 4);
 
                     // call callback with datas passed in args
-                    vCallback(market != nullptr ? market : "", symbol != nullptr ? symbol : "", timeframe, count);
+                    vCallback(                                        //
+                        user_name != nullptr ? user_name : "",        //
+                        bank_name != nullptr ? bank_name : "",        //
+                        account_type != nullptr ? account_type : "",  //
+                        account_name != nullptr ? account_name : "",  //
+                        account_number != nullptr ? account_number : "");
                 }
             }
         }
@@ -232,64 +238,58 @@ ORDER BY market, symbol, timeframe;
     }
 }
 
-void DataBase::GetPrices(const Market& vMarket,
-                         const Symbol& vSymbol,
-                         const TimeFrame& vTimeFrame,
-                         std::function<void(const Date&, const OpenPrice&, const HighPrice&, const LowPrice&, const ClosePrice&, const VolumePrice&)> vCallback) {
-    // no interest to call that without a claaback for retrieve datas
-    assert(vCallback);
+void DataBase::AddCategory(const std::string& vCategoryName) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO categories (name) VALUES("%s");)", vCategoryName.c_str());
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a category in database : %s", m_LastErrorMsg);
+    }
+}
 
-    std::string select_query = ct::toStr(
+void DataBase::AddOperation(const std::string& vOperationName) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO operations (name) VALUES("%s");)", vOperationName.c_str());
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a operation in database : %s", m_LastErrorMsg);
+    }
+}
+
+void DataBase::AddTransaction(const uint32_t& vAccountID,
+                              const std::string& vCategoryName,
+                              const std::string& vOperationName,
+                              const double& vAmmount,
+                              const std::string& vDate,
+                              const std::string& vDescription) {
+    AddCategory(vCategoryName);
+    AddOperation(vOperationName);
+    auto insert_query = ct::toStr(
         u8R"(
-SELECT
-  dates.date as date,
-  prices.open as open,
-  prices.high as high,
-  prices.low as low,
-  prices.close as close,
-  prices.volume as volume
-FROM 
-  prices
-  JOIN market_symbol_timeframe ON prices.id_market_symbol_timeframe = market_symbol_timeframe.rowid
-  JOIN timeframes ON market_symbol_timeframe.id_timeframe = timeframes.rowid
-  LEFT JOIN dates ON prices.id_date = dates.rowid
-WHERE
-  market_symbol_timeframe.id_market = (SELECT rowid FROM markets WHERE market = "%s")
-  AND market_symbol_timeframe.id_symbol = (SELECT rowid FROM symbols WHERE symbol = "%s")
-  AND timeframes.timeframe = "%u";
-)",
-        vMarket.c_str(),
-        vSymbol.c_str(),
-        vTimeFrame);
-    if (m_OpenDB()) {
-        sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
-        if (res != SQLITE_OK) {
-            LogVarError("%s %s", "Fail get price with reason", sqlite3_errmsg(m_SqliteDB));
-        } else {
-            while (res == SQLITE_OK || res == SQLITE_ROW) {
-                // on r�cup�re une ligne dans la table
-                res = sqlite3_step(stmt);
-                if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    auto date = sqlite3_column_double(stmt, 0);
-                    auto open = sqlite3_column_double(stmt, 1);
-                    auto high = sqlite3_column_double(stmt, 2);
-                    auto low = sqlite3_column_double(stmt, 3);
-                    auto close = sqlite3_column_double(stmt, 4);
-                    auto volume = sqlite3_column_double(stmt, 5);
-
-                    // call callback with datas passed in args
-                    vCallback(date, open, high, low, close, volume);
-                }
-            }
-        }
-        sqlite3_finalize(stmt);
-        m_CloseDB();
+INSERT OR IGNORE INTO transactions 
+    (account_id, category_id, operation_id, amount, date, description) VALUES(
+        %u, -- account id
+        (SELECT category_id FROM categories WHERE categories.name = "%s"), -- category id
+        (SELECT operation_id FROM operations WHERE operations.name = "%s"), -- operation id
+        %.f, 
+        "%s", 
+        "%s"
+        );)",
+        vAccountID,
+        vCategoryName.c_str(),
+        vOperationName.c_str(),
+        vAmmount,
+        vDate.c_str(),
+        vDescription.c_str());
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
     }
 }
 
-void DataBase::m_EnableForeignKey() {
-    // todo : "PRAGMA foreign_keys = ON;"
+bool DataBase::m_EnableForeignKey() {
+    if (!m_SqliteDB) {
+        int res = sqlite3_exec(m_SqliteDB, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("Erreur lors de l'activation des clés étrangères : %s", sqlite3_errmsg(m_SqliteDB));
+        }
+    }
+    return (m_SqliteDB != nullptr);
 }
 
 std::string DataBase::GetLastErrorMesg() {
@@ -362,6 +362,8 @@ bool DataBase::m_OpenDB() {
     if (!m_SqliteDB) {
         if (sqlite3_open_v2(m_DataBaseFilePathName.c_str(), &m_SqliteDB, SQLITE_OPEN_READWRITE, nullptr) != SQLITE_OK) {  // db possibily not exist
             m_CreateDBTables(false);
+        } else {
+            m_EnableForeignKey();
         }
     }
     return (m_SqliteDB != nullptr);
@@ -388,14 +390,21 @@ CREATE TABLE users (
     name TEXT NOT NULL
 );
 
+CREATE TABLE banks (
+    bank_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    url TEXT
+);
+
 CREATE TABLE accounts (
     account_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    account_type TEXT NOT NULL,
-    account_name TEXT NOT NULL,
-    bank_name TEXT NOT NULL,
-    account_number TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    bank_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    number TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (bank_id) REFERENCES banks(bank_id)
 );
 
 CREATE TABLE categories (
@@ -403,15 +412,22 @@ CREATE TABLE categories (
     name TEXT NOT NULL
 );
 
+-- type of bank transaction, like CB, SEPA, etc... 
+CREATE TABLE operations (
+    operation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
 CREATE TABLE transactions (
     transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_id INTEGER NOT NULL,
+    operation_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
     amount REAL NOT NULL,
-    transaction_type TEXT NOT NULL,
-    transaction_date DATE NOT NULL,
+    date DATE NOT NULL,
     description TEXT,
-    category_id INTEGER,
     FOREIGN KEY (account_id) REFERENCES accounts(account_id),
+    FOREIGN KEY (operation_id) REFERENCES operations(operation_id),
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
 
@@ -419,7 +435,6 @@ CREATE TABLE settings (
 	xml TEXT
 );
 )";
-        // signal_tags.tag_color is like this format 128;250,100;255
         if (sqlite3_exec(m_SqliteDB, create_tables, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             if (m_LastErrorMsg) {
                 LogVarError("Fail to create database : %s", m_LastErrorMsg);

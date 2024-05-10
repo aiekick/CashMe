@@ -19,22 +19,6 @@
 
 bool DataBrokers::init() {
     m_GetAvailableDataBrokers();
-
-    // current date
-    std::time_t curr_date_t = std::time(nullptr);
-    std::tm* tm_curr_date = std::localtime(&curr_date_t);
-    std::chrono::system_clock::time_point curr_date = std::chrono::system_clock::from_time_t(curr_date_t);
-    strftime(m_EndDate.data(), m_EndDate.size(), "%Y-%m-%d", tm_curr_date);
-
-    // last date, offset of - one week
-    std::chrono::hours offset_hours(-OFFSET_IN_DAYS_FROM_NOW * 24);
-    std::chrono::system_clock::time_point last_date = curr_date + offset_hours;
-    std::time_t last_date_t = std::chrono::system_clock::to_time_t(last_date);
-    std::tm* tm_last_date = std::localtime(&last_date_t);
-    strftime(m_StartDate.data(), m_StartDate.size(), "%Y-%m-%d", tm_curr_date);
-
-    m_Symmbol = {"NVDA"};
-
     return true;
 }
 
@@ -82,7 +66,7 @@ bool DataBrokers::draw() {
 }
 
 void DataBrokers::drawDialogs() {
-    if (ImGuiFileDialog::Instance()->Display("ImportPrices")) {
+    /* if (ImGuiFileDialog::Instance()->Display("ImportPrices")) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
             auto files = ImGuiFileDialog::Instance()->GetSelection();
             ImportTypeEnum pType = (ImportTypeEnum)(uintptr_t)ImGuiFileDialog::Instance()->GetUserDatas();
@@ -92,7 +76,15 @@ void DataBrokers::drawDialogs() {
             m_RefreshSymbols();
         }
         ImGuiFileDialog::Instance()->Close();
-    }
+    }*/
+}
+
+bool DataBrokers::drawImportMenu() {
+    return false;
+}
+
+bool DataBrokers::drawCreationMenu() {
+    return false;
 }
 
 std::string DataBrokers::getXml(const std::string& vOffset, const std::string& vUserDatas) {
@@ -310,15 +302,15 @@ void DataBrokers::m_GetAvailableDataBrokers() {
     m_Clear();
     m_DataBrokerNames.push_back("None");
     auto modules = PluginManager::Instance()->GetPluginModulesInfos();
-    /*for (const auto& mod : modules) {
+    for (const auto& mod : modules) {
         if (mod.type == Cash::PluginModuleType::DATA_BROKER) {
-            auto ptr = std::dynamic_pointer_cast<Cash::DataBrockerModule>(PluginManager::Instance()->CreatePluginModule(mod.label));
+            auto ptr = std::dynamic_pointer_cast<Cash::BankStatementImportModule>(PluginManager::Instance()->CreatePluginModule(mod.label));
             if (ptr != nullptr) {
                 m_DataBrokerModules[mod.label] = ptr;
                 m_DataBrokerNames.push_back(mod.label);
             }
         }
-    }*/
+    }
 }
 
 /*void DataBrokers::m_SavePrices(const Cash::SymbolPrices& vPrices) {
@@ -347,7 +339,7 @@ void DataBrokers::m_GetAvailableDataBrokers() {
 }*/
 
 void DataBrokers::m_SelectBrocker(const DataBrokerName& vName) {
-    if (m_DataBrokerModules.find(vName) != m_DataBrokerModules.end()) {
+    /*if (m_DataBrokerModules.find(vName) != m_DataBrokerModules.end()) {
         m_SelectedBroker = m_DataBrokerModules.at(vName);
         m_BrokerComboIdx = 0;
         for (const auto& name : m_DataBrokerNames) {
@@ -355,16 +347,16 @@ void DataBrokers::m_SelectBrocker(const DataBrokerName& vName) {
                 ++m_BrokerComboIdx;
             }
         }
-    }
+    }*/
 }
 
 void DataBrokers::m_RefreshSymbols() {
-    m_DBSymbols.clear();
+    /* m_DBSymbols.clear();
     DataBase::Instance()->GetSymbols([this](const Market& vMarket, const Symbol& vSymbol, const TimeFrame& vTimeFrame, const BarsCount& vBarsCount) {
         if (!vMarket.empty() && !vSymbol.empty()) {
             m_DBSymbols[vMarket][vSymbol][vTimeFrame] = vBarsCount;
         }
-    });
+    });*/
 }
 
 /*Cash::SymbolPrices DataBrokers::m_ExtractPricesFromDB(const Market& vMarket, const Symbol& vSymbol, const TimeFrame& vTimeFrame) {
@@ -388,78 +380,6 @@ void DataBrokers::m_RefreshSymbols() {
     return res;
 }*/
 
-void DataBrokers::m_ImportFromFiles(const std::string& vFilePathName, const ImportTypeEnum& vType) {
-    auto ps = FileHelper::Instance()->ParsePathFileName(vFilePathName);
-    if (ps.isOk) {
-        if (ps.ext == "csv") {
-            m_ImportCSV(vFilePathName, vType);
-        }
-    }
-}
+void DataBrokers::m_DrawAccountCreation() {
 
-void DataBrokers::m_ImportCSV(const std::string& vFilePathName, const ImportTypeEnum& vType) {
-    if (!vFilePathName.empty()) {
-        if (vType == ImportTypeEnum::IMPORT_FROM_METATREADER_FILE) {
-            // csv saved from MT4 or MT5
-            // this csv have no header
-            // ex filename :EURUSD5.csv so SYMBOL + TIMEFRAME .csv
-            // ex filename :EURUSD1440.csv so SYMBOL + TIMEFRAME .csv
-            // ex line : 2016.04.20,19:05,1.13583,1.13880,1.12903,1.12969,108271
-            // so ehader is : date, time, open,high,low,close,volume
-            /*
-            std::time_t epoch = m_convertMetaTraderDateTimeToEpoch("2016.04.20", "19:05");
-            auto* timeinfo = std::gmtime(&epoch);
-            std::ostringstream oss;
-            oss << std::put_time(timeinfo, "%Y-%m-%dT%H:%M:%S");
-            auto time_stamp_string = oss.str();
-            */
-
-            auto ps = FileHelper::Instance()->ParsePathFileName(vFilePathName);
-            if (ps.isOk) {
-                if (ps.name.size() > 6) {
-                    if (DataBase::Instance()->BeginTransaction()) {
-                        const auto& market = std::string("FOREX");
-                        const auto& symbol = ps.name.substr(0, 6);
-                        const auto& timeframe = ct::ivariant(ps.name.substr(6)).GetU();
-                        DataBase::Instance()->AddMarket(market);
-                        DataBase::Instance()->AddSymbol(symbol);
-                        DataBase::Instance()->AddTimeFrame(timeframe);
-                        io::CSVReader<7> in(vFilePathName);
-                        std::string date;
-                        std::string time;
-                        double open;
-                        double high;
-                        double low;
-                        double close;
-                        double volume;
-                        while (in.read_row(date, time, open, high, low, close, volume)) {
-                            double epoch = m_convertMetaTraderDateTimeToEpoch(date, time);
-                            DataBase::Instance()->AddPrice(market, symbol, timeframe, epoch, open, high, low, close, volume);
-                        }
-                        DataBase::Instance()->CommitTransaction();
-                        ProjectFile::Instance()->SetProjectChange();
-                    }
-                }
-            }
-        }
-    }
-}
-
-std::time_t DataBrokers::m_convertMetaTraderDateTimeToEpoch(const std::string& vDate, const std::string& vTime) {
-    // date formet is 2016.04.20
-    // time format is 19:05
-    std::string date_time = vDate + ":" + vTime;
-
-    struct std::tm time = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-    std::istringstream ss(date_time);
-    ss >> std::get_time(&time, "%Y.%m.%d:%H:%M");
-    if (ss.fail()) {
-        std::cerr << "ERROR: Cannot parse date string (" << date_time << "); required format %Y-%m-%d:%H:%M" << std::endl;
-        return -1.0;
-    }
-#ifdef _WIN32
-    return _mkgmtime(&time);
-#else
-    return timegm(&time);
-#endif
 }

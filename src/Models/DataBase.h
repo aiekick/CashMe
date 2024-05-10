@@ -21,16 +21,12 @@ limitations under the License.
 #include <functional>
 
 typedef std::string DBFile;
-typedef std::string Market;
-typedef std::string Symbol;
-typedef double Date; // epoch with millisecond part epoch.millisecond
-typedef uint32_t TimeFrame;
-typedef uint32_t BarsCount;
-typedef double OpenPrice;
-typedef double HighPrice;
-typedef double LowPrice;
-typedef double ClosePrice;
-typedef double VolumePrice;
+typedef std::string UserName;
+typedef std::string BankName;
+typedef std::string AccountType;
+typedef std::string AccountName;
+typedef std::string AccountNumber;
+
 
 struct sqlite3;
 class DataBase {
@@ -48,27 +44,31 @@ public:
     bool BeginTransaction();
     void CommitTransaction();
     void RollbackTransaction();
-    void AddMarket(const Market& vMarket);
-    void AddSymbol(const Symbol& vSymbol);
-    void AddTimeFrame(const TimeFrame& vTimeFrame);
-    void AddMarketSymbolTimeFrame(const Market& vMarket, const Symbol& vSymbol, const TimeFrame& vTimeFrame);
-    void AddDate(const Date& vDate);
-    void AddPrice(const Market& vMarket,
-                  const Symbol& vSymbol,
-                  const TimeFrame& vTimeFrame,
-                  const Date& vDate,
-                  const OpenPrice& vOpen,
-                  const HighPrice& vHigh,
-                  const LowPrice& vLow,
-                  const ClosePrice& vClose,
-                  const VolumePrice& vVolume);
-    void GetSymbols(std::function<void(const Market&, const Symbol&, const TimeFrame&, const BarsCount&)> vCallback);
-    void GetPrices(
-        const Market& vMarket,
-        const Symbol& vSymbol,
-        const TimeFrame& vTimeFrame,
-        std::function<void(const Date&, const OpenPrice&, const HighPrice&, const LowPrice&, const ClosePrice&, const VolumePrice&)>
-            vCallback);
+
+    void AddUser(const UserName& vUserName);
+    bool GetUser(const UserName& vUserName, uint32_t& vOutRowID);
+
+    void AddBank(const BankName& vBankName, const std::string& vUrl = {});
+    bool GetBank(const BankName& vBankName, uint32_t& vOutRowID);
+
+    void AddAccount(const UserName& vUserName,
+                    const BankName& vBankName,
+                    const AccountType& vAccountType,
+                    const AccountName& vAccountName,
+                    const AccountNumber& vAccountNumber);
+    void GetAccounts(std::function<void(const UserName&, const BankName&, const AccountType&, const AccountName&, const AccountNumber&)> vCallback);
+
+    void AddCategory(const std::string& vCategoryName);
+    void AddOperation(const std::string& vOperationName);
+
+    // for gain some time we must extract ID's before calling
+    void AddTransaction(const uint32_t& vAccountID,
+                        const std::string& vCategoryName,
+                        const std::string& vOperationName,
+                        const double& vAmmount,
+                        const std::string& vDate,
+                        const std::string& vDescription);
+
     void ClearDataTables();
     std::string GetLastErrorMesg();
     bool SetSettingsXMLDatas(const std::string& vXMLDatas);
@@ -79,11 +79,7 @@ private:
     void m_CloseDB();
     bool m_CreateDB();
     void m_CreateDBTables(const bool& vPrintLogs = true);
-
-    /// <summary>
-    /// enable foreign key (must be done at each connections)
-    /// </summary>
-    void m_EnableForeignKey();
+    bool m_EnableForeignKey();
 
 public:  // singleton
     static std::shared_ptr<DataBase> Instance() {
