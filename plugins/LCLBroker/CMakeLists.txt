@@ -102,11 +102,13 @@ target_include_directories(${PROJECT} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${IMGUIPACK_INCLUDE_DIRS}
+	${CTOOLS_INCLUDE_DIR}
 	${CMAKE_SOURCE_DIR}
 )
 
 target_link_libraries(${PROJECT}
 	${IMGUIPACK_LIBRARIES}
+	${CTOOLS_LIBRARIES}
 )
 
 # add plugin name in parent LOADED_STROCKER_PLUGINS list

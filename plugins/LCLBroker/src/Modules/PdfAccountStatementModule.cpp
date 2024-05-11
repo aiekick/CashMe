@@ -9,6 +9,6 @@ Cash::BankStatementModulePtr PdfAccountStatementModule::create() {
     return res;
 }
 
-Cash::BankStatement PdfAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
+Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
     return {};
 }

@@ -153,6 +153,13 @@ void DataBase::GetUsers(std::function<void(const UserName&)> vCallback) {
     }
 }
 
+void DataBase::UpdateUser(const RowID& vRowID, const UserName& vUserName) {
+    auto insert_query = ct::toStr(u8R"(UPDATE users SET name = "%s" WHERE user_id = %u;)", vUserName.c_str(), vRowID);
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to update a user in database : %s", m_LastErrorMsg);
+    }
+}
+
 void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO banks (name, url) VALUES("%s", "%s");)", vBankName.c_str(), vUrl.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -209,6 +216,13 @@ void DataBase::GetBanks(std::function<void(const BankName&, const std::string&)>
     }
 }
 
+void DataBase::UpdateBank(const RowID& vRowID, const BankName& vBankName, const std::string& vUrl) {
+    auto insert_query = ct::toStr(u8R"(UPDATE banks SET name = "%s", url = "%s" WHERE bank_id = %u;)", vBankName.c_str(), vUrl.c_str(), vRowID);
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to update a bank in database : %s", m_LastErrorMsg);
+    }
+}
+
 void DataBase::AddCategory(const CategoryName& vCategoryName) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO categories (name) VALUES("%s");)", vCategoryName.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -262,6 +276,13 @@ void DataBase::GetCategories(std::function<void(const CategoryName&)> vCallback)
     }
 }
 
+void DataBase::UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName) {
+    auto insert_query = ct::toStr(u8R"(UPDATE categories SET name = "%s" WHERE category_id = %u;)", vCategoryName.c_str(), vRowID);
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to update a category in database : %s", m_LastErrorMsg);
+    }
+}
+
 void DataBase::AddOperation(const OperationName& vOperationName) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO operations (name) VALUES("%s");)", vOperationName.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -312,6 +333,13 @@ void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback
         }
         sqlite3_finalize(stmt);
         m_CloseDB();
+    }
+}
+
+void DataBase::UpdateOperation(const RowID& vRowID, const OperationName& vOperationName) {
+    auto insert_query = ct::toStr(u8R"(UPDATE operations SET name = "%s" WHERE operation_id = %u;)", vOperationName.c_str(), vRowID);
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to update a operation in database : %s", m_LastErrorMsg);
     }
 }
 
@@ -470,31 +498,63 @@ GROUP BY user_name, bank_name, account_name;
     }
 }
 
+void DataBase::UpdateAccount(const RowID& vRowID,
+                             const UserName& vUserName,
+                             const BankName& vBankName,
+                             const AccountType& vAccountType,
+                             const AccountName& vAccountName,
+                             const AccountNumber& vAccountNumber) {
+    auto insert_query = ct::toStr(u8R"(
+UPDATE 
+  accounts
+SET 
+  user_id = (SELECT user_id FROM users WHERE name = "%s"),
+  bank_id = (SELECT bank_id FROM banks WHERE name = "%s"),
+  type = "%s",
+  name = "%s",
+  number = "%s"
+WHERE
+  accounts.account_id = %u;
+)",
+        vUserName.c_str(),
+        vBankName.c_str(),
+        vAccountType.c_str(),
+        vAccountName.c_str(),
+        vAccountNumber.c_str(),
+        vRowID);
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to update a account in database : %s", m_LastErrorMsg);
+    }
+}
+
 void DataBase::AddTransaction(const RowID& vAccountID,
                               const CategoryName& vCategoryName,
                               const OperationName& vOperationName,
                               const std::string& vDate,
                               const std::string& vDescription,
-                              const double& vAmmount) {
+                              const double& vAmount,
+                              const std::string& vHash) {
     AddCategory(vCategoryName);
     AddOperation(vOperationName);
     auto insert_query = ct::toStr(
         u8R"(
 INSERT OR IGNORE INTO transactions 
-    (account_id, category_id, operation_id, amount, date, description) VALUES(
+    (account_id, category_id, operation_id, amount, date, description, hash) VALUES(
         %u, -- account id
         (SELECT category_id FROM categories WHERE categories.name = "%s"), -- category id
         (SELECT operation_id FROM operations WHERE operations.name = "%s"), -- operation id
         %.6f, 
         "%s", 
+        "%s",
         "%s"
         );)",
         vAccountID,
         vCategoryName.c_str(),
         vOperationName.c_str(),
-        vAmmount,
+        vAmount,
         vDate.c_str(),
-        vDescription.c_str());
+        vDescription.c_str(),
+        vHash.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
     }
@@ -518,13 +578,15 @@ SELECT
   operations.name AS operation,
   categories.name AS category,
   transactions.amount
-FROM 
+FROM
   transactions
   LEFT JOIN accounts ON transactions.account_id = accounts.account_id
   LEFT JOIN operations ON transactions.operation_id = operations.operation_id
   LEFT JOIN categories ON transactions.category_id = categories.category_id
-WHERE 
+WHERE
   transactions.account_id = %u
+ORDER BY
+  transactions.date;
 )", vAccountID);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
@@ -543,14 +605,45 @@ WHERE
                     vCallback(                                        //
                         transaction_date != nullptr ? transaction_date : "",  //
                         transaction_description != nullptr ? transaction_description : "",  //
-                        operation_name != nullptr ? operation_name : "",                    //
                         category_name != nullptr ? category_name : "",                      //
+                        operation_name != nullptr ? operation_name : "",                    //
                         transaction_amount);
                 }
             }
         }
         sqlite3_finalize(stmt);
         m_CloseDB();
+    }
+}
+
+void DataBase::UpdateTransaction(  //
+    const RowID& vRowID,
+    const CategoryName& vCategoryName,
+    const OperationName& vOperationName,
+    const std::string& vDate,
+    const std::string& vDescription,
+    const double& vAmount) {
+    auto insert_query = ct::toStr(
+        u8R"(
+UPDATE 
+  transactions
+SET 
+  category_id = (SELECT category_id FROM categories WHERE name = "%s"),
+  operation_id = (SELECT operation_id FROM operations WHERE name = "%s"),
+  date = "%s",
+  description = "%s",
+  amount = %.6f
+WHERE
+  transactions.transaction_id = %u;
+)",
+        vCategoryName.c_str(),
+        vOperationName.c_str(),
+        vDate.c_str(),
+        vDescription.c_str(),
+        vAmount,
+        vRowID);
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to update a transaction in database : %s", m_LastErrorMsg);
     }
 }
 
@@ -701,6 +794,7 @@ CREATE TABLE transactions (
     amount REAL NOT NULL,
     date DATE NOT NULL,
     description TEXT,
+    hash NOT NULL UNIQUE,
     FOREIGN KEY (account_id) REFERENCES accounts(account_id),
     FOREIGN KEY (operation_id) REFERENCES operations(operation_id),
     FOREIGN KEY (category_id) REFERENCES categories(category_id)

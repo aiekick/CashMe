@@ -80,28 +80,24 @@ struct IXmlSettings {
 struct Transaction {
     std::string date;
     std::string label;
+    std::string category;
+    std::string operation;
     std::string comment;
-    double debit = 0.0;
-    double credit = 0.0;
+    std::string hash;
+    double amount = 0.0;
 };
 
 struct BankAccount {
-    std::string name;
-    std::string category;
-    std::string bankid;
-    std::string indic;
-    std::string number;
-    std::string key;
-    std::string location;
+    std::string bank_number;
+    std::string account_number;
 };
 
-struct AccountStatement {
+struct AccountStatements {
     BankAccount account;
-    std::vector<Transaction> transactions;
-};
-
-struct BankStatement {
-    std::vector<AccountStatement> statements;
+    std::string start_date;
+    std::string end_date;
+    double ledger = 0.0;
+    std::vector<Transaction> statements;
 };
 
 struct PluginBridge {
@@ -121,7 +117,7 @@ struct BankStatementImportModule : public PluginModule {
     // return file extention if any
     virtual std::string getFileExt() const = 0;
     // used for get account statement from file
-    virtual BankStatement importBankStatement(const std::string& vFilePathName) = 0;
+    virtual AccountStatements importBankStatement(const std::string& vFilePathName) = 0;
 };
 
 typedef std::shared_ptr<BankStatementImportModule> BankStatementModulePtr;
