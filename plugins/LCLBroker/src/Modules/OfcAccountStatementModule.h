@@ -9,4 +9,7 @@ public:
 public:
     virtual ~OfcAccountStatementModule() = default;
     Cash::BankStatement importBankStatement(const std::string& vFilePathName) final;
+    std::string getFileExt() const override {
+        return ".ofc";
+    }
 };

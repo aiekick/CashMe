@@ -136,8 +136,8 @@ public:
 
     void OpenAboutDialog();
 
-    FrameActionSystem* GetActionSystem() {
-        return &m_ActionSystem;
+    FrameActionSystem& GetActionSystemRef() {
+        return m_ActionSystem;
     }
 
 public:                         // save : on quit or project loading
@@ -146,7 +146,7 @@ public:                         // save : on quit or project loading
 public:  // drop
     void JustDropFiles(int count, const char** paths);
 
-private:                        // save : on quit or project loading
+private:                         // save : on quit or project loading
     void OpenUnSavedDialog();   // show a dialog because the project file is not saved
     void CloseUnSavedDialog();  // show a dialog because the project file is not saved
     bool ShowUnSavedDialog();   // show a dilaog because the project file is not saved
@@ -155,7 +155,7 @@ public:  // actions
     // via menu
     void Action_Menu_NewProject();
     void Action_Menu_OpenProject();
-    void Action_Menu_ImportPrices(const ImportTypeEnum& vType);
+    void Action_Menu_ImportDatas();
     void Action_Menu_ReOpenProject();
     void Action_Menu_SaveProject();
     void Action_Menu_SaveAsProject();

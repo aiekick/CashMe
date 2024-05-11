@@ -118,6 +118,8 @@ typedef std::weak_ptr<PluginModule> PluginModuleWeak;
 
 struct BankStatementImportModule : public PluginModule {
     virtual ~BankStatementImportModule() = default;
+    // return file extention if any
+    virtual std::string getFileExt() const = 0;
     // used for get account statement from file
     virtual BankStatement importBankStatement(const std::string& vFilePathName) = 0;
 };

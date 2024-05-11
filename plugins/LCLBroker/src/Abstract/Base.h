@@ -9,4 +9,7 @@ public:
         return true;
     };
     void unit() final{};
+    std::string getFileExt() const override {
+        return "";
+    }
 };

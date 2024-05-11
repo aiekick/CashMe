@@ -39,6 +39,7 @@ private:
 public:
     bool IsFileASqlite3DB(const DBFile& vDBFilePathName);
     bool CreateDBFile(const DBFile& vDBFilePathName);
+    bool OpenDBFile();
     bool OpenDBFile(const DBFile& vDBFilePathName);
     void CloseDBFile();
     bool BeginTransaction();
@@ -47,9 +48,11 @@ public:
 
     void AddUser(const UserName& vUserName);
     bool GetUser(const UserName& vUserName, uint32_t& vOutRowID);
+    void GetUsers(std::function<void(const UserName&)> vCallback);
 
     void AddBank(const BankName& vBankName, const std::string& vUrl = {});
     bool GetBank(const BankName& vBankName, uint32_t& vOutRowID);
+    void GetBanks(std::function<void(const BankName&, const std::string&)> vCallback);
 
     void AddAccount(const UserName& vUserName,
                     const BankName& vBankName,

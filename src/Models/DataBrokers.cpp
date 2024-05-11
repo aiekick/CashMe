@@ -11,6 +11,8 @@
 
 #include <Project/ProjectFile.h>
 
+#include <Models/DataBase.h>
+
 #include <chrono>
 #include <vector>
 #include <ctime>
@@ -65,26 +67,74 @@ bool DataBrokers::draw() {
     return change;
 }
 
-void DataBrokers::drawDialogs() {
-    /* if (ImGuiFileDialog::Instance()->Display("ImportPrices")) {
+void DataBrokers::drawDialogs(const ImVec2& vPos, const ImVec2& vSize) {
+    const ImVec2 center = vPos + vSize * 0.5f;
+    m_DrawUserCreationDialog(center);
+    m_DrawBankCreationDialog(center);
+    m_DrawAccountCreationDialog(center);
+    if (ImGuiFileDialog::Instance()->Display("Import Datas")) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
-            auto files = ImGuiFileDialog::Instance()->GetSelection();
+            /*auto files = ImGuiFileDialog::Instance()->GetSelection();
             ImportTypeEnum pType = (ImportTypeEnum)(uintptr_t)ImGuiFileDialog::Instance()->GetUserDatas();
             for (const auto& file : files) {
                 m_ImportFromFiles(file.second, pType);
             }
-            m_RefreshSymbols();
+            m_RefreshSymbols();*/
         }
         ImGuiFileDialog::Instance()->Close();
-    }*/
+    }
 }
 
-bool DataBrokers::drawImportMenu() {
-    return false;
+void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
+    if (ProjectFile::Instance()->IsProjectLoaded()) {
+        if (ImGui::BeginMenuBar()) {
+            m_drawCreationMenu(vFrameActionSystem);
+            m_drawImportMenu(vFrameActionSystem);
+            ImGui::EndMenuBar();
+        }
+    }
 }
 
-bool DataBrokers::drawCreationMenu() {
-    return false;
+void DataBrokers::m_drawImportMenu(FrameActionSystem& vFrameActionSystem) {
+    if (ImGui::BeginMenu("Import")) {
+        for (const auto& broker : m_DataBrokerModules) {
+            if (ImGui::BeginMenu(broker.first.c_str())) {
+                for (const auto& way : broker.second) {
+                    if (ImGui::MenuItem(way.first.c_str())) {
+                        if (way.second != nullptr) {
+                            m_SelectedBroker = way.second;
+                            vFrameActionSystem.Clear();
+                            vFrameActionSystem.Add([&way]() {
+                                const auto& ext = way.second->getFileExt();
+                                IGFD::FileDialogConfig config;
+                                config.countSelectionMax = 0;
+                                config.flags = ImGuiFileDialogFlags_Modal;
+                                ImGuiFileDialog::Instance()->OpenDialog("Import Datas", "Import Datas from File", ext.c_str(), config);
+                                return true;
+                            });
+                        }
+                    }
+                }
+                ImGui::EndMenu();
+            }
+        }
+        ImGui::EndMenu();
+    }
+}
+
+void DataBrokers::m_drawCreationMenu(FrameActionSystem& vFrameActionSystem) {
+    if (ImGui::BeginMenu("Add")) {
+        if (ImGui::MenuItem("User")) {
+            m_ShowUserCreationDialog();
+        }
+        if (ImGui::MenuItem("Bank")) {
+            m_ShowBankCreationDialog();
+        }
+        if (ImGui::MenuItem("Account")) {
+            m_ShowAccountCreationDialog();
+        }
+        ImGui::EndMenu();
+    }
 }
 
 std::string DataBrokers::getXml(const std::string& vOffset, const std::string& vUserDatas) {
@@ -92,7 +142,7 @@ std::string DataBrokers::getXml(const std::string& vOffset, const std::string& v
     std::string res;
     res += vOffset + "<data_brokers>\n";
     // we save all modules not just the one is selected
-    for (const auto& mod : m_DataBrokerModules) {
+    /*for (const auto& mod : m_DataBrokerModules) {
         auto ptr = dynamic_cast<Cash::IXmlSettings*>(mod.second.get());
         if (ptr != nullptr) {
             if (vUserDatas == "app") {
@@ -103,8 +153,7 @@ std::string DataBrokers::getXml(const std::string& vOffset, const std::string& v
                 CTOOL_DEBUG_BREAK;  // ERROR
             }
         }
-    }
-    res += vOffset + "\t<selected_brocker>" + m_DataBrokerNames[m_BrokerComboIdx] + "</selected_brocker>\n";
+    }*/
     res += vOffset + "</data_brokers>\n";
     return res;
 }
@@ -124,7 +173,7 @@ bool DataBrokers::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* 
         strParentName = vParent->Value();
 
     // we load all modules not just the one is selected
-    for (const auto& mod : m_DataBrokerModules) {
+    /*for (const auto& mod : m_DataBrokerModules) {
         auto ptr = dynamic_cast<Cash::IXmlSettings*>(mod.second.get());
         if (ptr != nullptr) {
             if (vUserDatas == "app") {
@@ -137,13 +186,7 @@ bool DataBrokers::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* 
                 CTOOL_DEBUG_BREAK;  // ERROR
             }
         }
-    }
-
-    if (strParentName == "data_brokers") {
-        if (strName == "selected_brocker") {
-            m_SelectBrocker(strValue);
-        }
-    }
+    }*/
 
     return true;
 }
@@ -285,7 +328,6 @@ bool DataBrokers::m_DrawDBSymbols() {
 }
 
 void DataBrokers::m_Clear() {
-    m_DataBrokerNames.clear();
     // msut be cleared even if they are some smart pointers
     // since the pointers come from a plugin loaded memory
     // when the plugin is destoryed, an automatic reset of weak pointer will cause a crash
@@ -300,14 +342,12 @@ void DataBrokers::m_Clear() {
 
 void DataBrokers::m_GetAvailableDataBrokers() {
     m_Clear();
-    m_DataBrokerNames.push_back("None");
     auto modules = PluginManager::Instance()->GetPluginModulesInfos();
     for (const auto& mod : modules) {
         if (mod.type == Cash::PluginModuleType::DATA_BROKER) {
             auto ptr = std::dynamic_pointer_cast<Cash::BankStatementImportModule>(PluginManager::Instance()->CreatePluginModule(mod.label));
             if (ptr != nullptr) {
-                m_DataBrokerModules[mod.label] = ptr;
-                m_DataBrokerNames.push_back(mod.label);
+                m_DataBrokerModules[mod.path][mod.label] = ptr;
             }
         }
     }
@@ -337,18 +377,6 @@ void DataBrokers::m_GetAvailableDataBrokers() {
         ProjectFile::Instance()->SetProjectChange();
     }
 }*/
-
-void DataBrokers::m_SelectBrocker(const DataBrokerName& vName) {
-    /*if (m_DataBrokerModules.find(vName) != m_DataBrokerModules.end()) {
-        m_SelectedBroker = m_DataBrokerModules.at(vName);
-        m_BrokerComboIdx = 0;
-        for (const auto& name : m_DataBrokerNames) {
-            if (name != vName) {
-                ++m_BrokerComboIdx;
-            }
-        }
-    }*/
-}
 
 void DataBrokers::m_RefreshSymbols() {
     /* m_DBSymbols.clear();
@@ -380,6 +408,139 @@ void DataBrokers::m_RefreshSymbols() {
     return res;
 }*/
 
-void DataBrokers::m_DrawAccountCreation() {
+void DataBrokers::m_ShowUserCreationDialog() {
+    m_showUserCreation = true;
+}
 
+void DataBrokers::m_DrawUserCreationDialog(const ImVec2& vPos) {
+    if (m_showUserCreation) {
+        ImGui::OpenPopup("UserCreationModalPopup");
+        ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("UserCreationModalPopup",
+                                   (bool*)nullptr,
+                                   ImGuiWindowFlags_NoTitleBar |            //
+                                       ImGuiWindowFlags_NoResize |          //
+                                       ImGuiWindowFlags_AlwaysAutoResize |  //
+                                       ImGuiWindowFlags_NoDocking)) {
+            ImGui::Header("User Creation");
+            ImGui::Separator();
+            m_UserNameInputText.DisplayInputText(200.0f, "Name", "User");
+            ImGui::Separator();
+            if (!m_UserNameInputText.empty()) {
+                if (ImGui::ContrastedButton("Ok")) {
+                    if (DataBase::Instance()->OpenDBFile()) {
+                        DataBase::Instance()->AddUser(m_UserNameInputText.GetText());
+                        DataBase::Instance()->CloseDBFile();
+                    }
+                    m_showUserCreation = false;
+                }
+                ImGui::SameLine();
+            }
+            if (ImGui::ContrastedButton("Cancel")) {
+                m_showUserCreation = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
+}
+
+
+void DataBrokers::m_ShowBankCreationDialog() {
+    m_showBankCreation = true;
+}
+
+void DataBrokers::m_DrawBankCreationDialog(const ImVec2& vPos) {
+    if (m_showBankCreation) {
+        ImGui::OpenPopup("BankCreationModalPopup");
+        ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("BankCreationModalPopup",
+                                   (bool*)nullptr,
+                                   ImGuiWindowFlags_NoTitleBar |            //
+                                       ImGuiWindowFlags_NoResize |          //
+                                       ImGuiWindowFlags_AlwaysAutoResize |  //
+                                       ImGuiWindowFlags_NoDocking)) {
+            ImGui::Header("Bank Creation");
+            ImGui::Separator();
+            m_BankNameInputText.DisplayInputText(200.0f, "Name", "", false, 70.0f);
+            m_BankUrlInputText.DisplayInputText(200.0f, "Url", "", false, 70.0f);
+            ImGui::Separator();
+            if (!m_BankNameInputText.empty()) {
+                if (ImGui::ContrastedButton("Ok")) {
+                    if (DataBase::Instance()->OpenDBFile()) {
+                        DataBase::Instance()->AddBank(m_BankNameInputText.GetText(), m_BankUrlInputText.GetText());
+                        DataBase::Instance()->CloseDBFile();
+                    }
+                    m_showBankCreation = false;
+                }
+                ImGui::SameLine();
+            }
+            if (ImGui::ContrastedButton("Cancel")) {
+                m_showBankCreation = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
+}
+
+void DataBrokers::m_ShowAccountCreationDialog() {
+    m_showAccountCreation = true;
+
+    // get users
+    m_Datas.userNames.clear();
+    DataBase::Instance()->GetUsers(          //
+        [this](const UserName& vUserName) {  //
+            m_Datas.userNames.push_back(vUserName);
+        });
+    m_UsersCombo = ImWidgets::QuickStringCombo(0, m_Datas.userNames);
+
+    // get banks
+    m_Datas.bankNames.clear();
+    DataBase::Instance()->GetBanks(                                       //
+        [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
+            m_Datas.bankNames.push_back(vUserName);
+        });
+    m_BanksCombo = ImWidgets::QuickStringCombo(0, m_Datas.bankNames);
+}
+
+void DataBrokers::m_DrawAccountCreationDialog(const ImVec2& vPos) {
+    if (m_showAccountCreation) {
+        ImGui::OpenPopup("AccountCreationModalPopup");
+        ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("AccountCreationModalPopup",
+                                   (bool*)nullptr,
+                                   ImGuiWindowFlags_NoTitleBar |            //
+                                       ImGuiWindowFlags_NoResize |          //
+                                       ImGuiWindowFlags_AlwaysAutoResize |  //
+                                       ImGuiWindowFlags_NoDocking)) {
+            ImGui::Header("Account Creation");
+            ImGui::Separator();
+            const float& align = 125.0f;
+            const auto& width = 400.0f;
+            m_UsersCombo.DisplayCombo(width, "User Name", align);
+            m_BanksCombo.DisplayCombo(width, "Bank Name", align);
+            m_AccountNameInputText.DisplayInputText(width, "Account Name", "", false, align);
+            m_AccountTypeInputText.DisplayInputText(width, "Account Type", "", false, align);
+            m_AccountNumberInputText.DisplayInputText(width, "Account Number", "", false, align);
+            ImGui::Separator();
+            if (!m_AccountNameInputText.empty() && !m_AccountTypeInputText.empty() && !m_AccountNumberInputText.empty()) {
+                if (ImGui::ContrastedButton("Ok")) {
+                    if (DataBase::Instance()->OpenDBFile()) {
+                        DataBase::Instance()->AddAccount(      //
+                            m_UsersCombo.GetText(),            //
+                            m_BanksCombo.GetText(),            //
+                            m_AccountTypeInputText.GetText(),  //
+                            m_AccountNameInputText.GetText(),  //
+                            m_AccountNumberInputText.GetText());
+                        DataBase::Instance()->CloseDBFile();
+                    }
+                    m_showAccountCreation = false;
+                }
+                ImGui::SameLine();
+            }
+            if (ImGui::ContrastedButton("Cancel")) {
+                m_showAccountCreation = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
 }

@@ -4,6 +4,8 @@
 #include <Panes/AccountPane.h>
 #include <cinttypes>  // printf zu
 #include <Project/ProjectFile.h>
+#include <Models/DataBrokers.h>
+#include <Frontend/MainFrontend.h>
 
 AccountPane::AccountPane() = default;
 AccountPane::~AccountPane() {
@@ -26,18 +28,16 @@ bool AccountPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, Im
     ImGui::SetCurrentContext(vContextPtr);
     bool change = false;
     if (vOpened != nullptr && *vOpened) {
-        static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus /* | ImGuiWindowFlags_MenuBar*/;
+        static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus  | ImGuiWindowFlags_MenuBar;
         if (ImGui::Begin(GetName().c_str(), vOpened, flags)) {
 #ifdef USE_DECORATIONS_FOR_RESIZE_CHILD_WINDOWS
             auto win = ImGui::GetCurrentWindowRead();
             if (win->Viewport->Idx != 0)
                 flags |= ImGuiWindowFlags_NoResize;  // | ImGuiWindowFlags_NoTitleBar;
             else
-                flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus /* | ImGuiWindowFlags_MenuBar*/;
+                flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
-            if (ProjectFile::Instance()->IsProjectLoaded()) {
-
-            }
+            DataBrokers::Instance()->drawMenu(MainFrontend::Instance()->GetActionSystemRef());
         }
 
         ImGui::End();

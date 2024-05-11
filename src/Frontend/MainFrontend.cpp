@@ -31,6 +31,8 @@ limitations under the License.
 #include <Panes/AccountPane.h>
 #include <Panes/BudgetPane.h>
 
+#include <Models/DataBrokers.h>
+
 #include <Systems/SettingsDialog.h>
 
 #include <Helpers/TranslationHelper.h>
@@ -151,6 +153,7 @@ bool MainFrontend::DrawDialogsAndPopups(
     const uint32_t& vCurrentFrame, const ImVec2& vMaxSize, ImGuiContext* vContextPtr, void* vUserDatas) {
     m_ActionSystem.RunActions();
     LayoutManager::Instance()->DrawDialogsAndPopups(vCurrentFrame, vMaxSize, vContextPtr, vUserDatas);
+    DataBrokers::Instance()->drawDialogs(m_DisplayPos, m_DisplaySize);
     if (m_ShowImGui) {
         ImGui::ShowDemoWindow(&m_ShowImGui);
     }
@@ -201,15 +204,6 @@ void MainFrontend::m_drawMainMenuBar() {
                 if (ImGui::MenuItem(" Close")) {
                     Action_Menu_CloseProject();
                 }
-            }
-
-            ImGui::Separator();
-
-            if (ImGui::BeginMenu(" Import Prices")) {
-                if (ImGui::MenuItem("MetaTrader csv")) {
-                    Action_Menu_ImportPrices(ImportTypeEnum::IMPORT_FROM_METATREADER_FILE);
-                }
-                ImGui::EndMenu();
             }
 
             ImGui::Separator();
@@ -401,15 +395,14 @@ void MainFrontend::Action_Menu_OpenProject() {
     m_ActionSystem.Add([this]() { return Display_OpenProjectDialog(); });
 }
 
-void MainFrontend::Action_Menu_ImportPrices(const ImportTypeEnum& vType) {
+void MainFrontend::Action_Menu_ImportDatas() {
     m_ActionSystem.Clear();
-    m_ActionSystem.Add([this,vType]() {
+    m_ActionSystem.Add([this]() {
         CloseUnSavedDialog();
         IGFD::FileDialogConfig config;
         config.countSelectionMax = 0;
         config.flags = ImGuiFileDialogFlags_Modal;
-        config.userDatas = IGFD::UserDatas(vType);
-        ImGuiFileDialog::Instance()->OpenDialog("ImportPrices", "Import Prices from File", ".csv", config);
+        ImGuiFileDialog::Instance()->OpenDialog("Import Datas", "Import Datas from File", ".csv", config);
         return true;
     });
     m_ActionSystem.Add([this]() { return Display_OpenProjectDialog(); });

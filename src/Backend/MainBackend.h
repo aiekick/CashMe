@@ -16,6 +16,7 @@ class MainBackend : public conf::ConfigAbstract {
 private:
     GLFWwindow* m_MainWindowPtr = nullptr;
     const char* m_GlslVersion = "";
+    ct::ivec2 m_DisplayPos;
     ct::ivec2 m_DisplaySize;
 
     // mouse
@@ -38,6 +39,9 @@ private:
     std::set<std::string> m_PathsToTrack;
 
 public:  // getters
+    ImVec2 GetDisplayPos() {
+        return ImVec2((float)m_DisplayPos.x, (float)m_DisplayPos.y);
+    }
     ImVec2 GetDisplaySize() {
         return ImVec2((float)m_DisplaySize.x, (float)m_DisplaySize.y);
     }

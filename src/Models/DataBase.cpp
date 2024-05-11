@@ -28,12 +28,6 @@ limitations under the License.
 #include <sqlite3.hpp>
 #include <fstream>
 
-/*
-BANK ACCOUNT
-
-
-*/
-
 // will check database header magic number
 // https://www.sqlite.org/fileformat.html : section 1.3
 // Offset	Size	Description
@@ -56,10 +50,13 @@ bool DataBase::IsFileASqlite3DB(const DBFile& vDBFilePathName) {
 bool DataBase::CreateDBFile(const DBFile& vDBFilePathName) {
     if (!vDBFilePathName.empty()) {
         m_DataBaseFilePathName = vDBFilePathName;
-
         return m_CreateDB();
     }
     return false;
+}
+
+bool DataBase::OpenDBFile() {
+    return OpenDBFile(m_DataBaseFilePathName);
 }
 
 bool DataBase::OpenDBFile(const DBFile& vDBFilePathName) {
@@ -133,6 +130,29 @@ bool DataBase::GetUser(const UserName& vUserName, uint32_t& vOutRowID) {
     return ret;
 }
 
+void DataBase::GetUsers(std::function<void(const UserName&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    const auto& select_query = ct::toStr(u8R"(SELECT name FROM users GROUP BY name;)");
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get users with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    const char* user_name = (const char*)sqlite3_column_text(stmt, 0);
+                    vCallback(user_name != nullptr ? user_name : "");
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
 void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO banks (name, url) VALUES("%s", "%s");)", vBankName.c_str(), vUrl.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -161,6 +181,32 @@ bool DataBase::GetBank(const BankName& vBankName, uint32_t& vOutRowID) {
         m_CloseDB();
     }
     return ret;
+}
+
+void DataBase::GetBanks(std::function<void(const BankName&, const std::string&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    const auto& select_query = ct::toStr(u8R"(SELECT name, url FROM banks GROUP BY name;)");
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get banks with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    const char* bank_name = (const char*)sqlite3_column_text(stmt, 0);
+                    const char* bank_url = (const char*)sqlite3_column_text(stmt, 1);
+                    vCallback(                                  //
+                        bank_name != nullptr ? bank_name : "",  //
+                        bank_url != nullptr ? bank_url : "");
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
 }
 
 void DataBase::AddAccount(const UserName& vUserName,
@@ -222,8 +268,6 @@ GROUP BY user_name, bank_name, account_name;
                     const char* account_type = (const char*)sqlite3_column_text(stmt, 2);
                     const char* account_name = (const char*)sqlite3_column_text(stmt, 3);
                     const char* account_number = (const char*)sqlite3_column_text(stmt, 4);
-
-                    // call callback with datas passed in args
                     vCallback(                                        //
                         user_name != nullptr ? user_name : "",        //
                         bank_name != nullptr ? bank_name : "",        //

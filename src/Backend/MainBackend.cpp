@@ -184,13 +184,13 @@ void MainBackend::setAppTitle(const std::string& vFilePathName) {
 }
 
 ct::dvec2 MainBackend::GetMousePos() {
-        ct::dvec2 mp;
+    ct::dvec2 mp;
     glfwGetCursorPos(m_MainWindowPtr, &mp.x, &mp.y);
-        return mp;
+    return mp;
 }
 
 int MainBackend::GetMouseButton(int vButton) {
-        return glfwGetMouseButton(m_MainWindowPtr, vButton);
+    return glfwGetMouseButton(m_MainWindowPtr, vButton);
 }
 
 std::string MainBackend::getAppRelativeFilePathName(const std::string& vFilePathName) {
