@@ -431,12 +431,12 @@ void DataBase::m_CreateDBTables(const bool& vPrintLogs) {
             u8R"(
 CREATE TABLE users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE banks (
     bank_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     url TEXT
 );
 
@@ -445,21 +445,21 @@ CREATE TABLE accounts (
     user_id INTEGER NOT NULL,
     bank_id INTEGER NOT NULL,
     type TEXT NOT NULL,
-    name TEXT NOT NULL,
-    number TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
+    number TEXT NOT NULL UNIQUE,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (bank_id) REFERENCES banks(bank_id)
 );
 
 CREATE TABLE categories (
     category_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL UNIQUE
 );
 
 -- type of bank transaction, like CB, SEPA, etc... 
 CREATE TABLE operations (
     operation_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE transactions (
