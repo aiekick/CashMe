@@ -29,7 +29,7 @@ void DataBrokers::unit() {
 }
 
 void DataBrokers::load() {
-    m_RefreshSymbols();
+    m_refreshDatas();
 }
 
 std::time_t convertToEpochTime(const std::string& vIsoDateTime, const char* format) {
@@ -62,8 +62,6 @@ std::string convertToISO8601(const std::time_t& vEpochTime) {
 
 bool DataBrokers::draw() {
     bool change = false;
-    change |= m_DrawPluginBrockers();
-    change |= m_DrawDBSymbols();
     return change;
 }
 
@@ -71,7 +69,10 @@ void DataBrokers::drawDialogs(const ImVec2& vPos, const ImVec2& vSize) {
     const ImVec2 center = vPos + vSize * 0.5f;
     m_DrawUserCreationDialog(center);
     m_DrawBankCreationDialog(center);
+    m_DrawCategoryCreationDialog(center);
+    m_DrawOperationCreationDialog(center);
     m_DrawAccountCreationDialog(center);
+    m_DrawTransactionCreationDialog(center);
     if (ImGuiFileDialog::Instance()->Display("Import Datas")) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
             /*auto files = ImGuiFileDialog::Instance()->GetSelection();
@@ -88,10 +89,89 @@ void DataBrokers::drawDialogs(const ImVec2& vPos, const ImVec2& vSize) {
 void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
     if (ProjectFile::Instance()->IsProjectLoaded()) {
         if (ImGui::BeginMenuBar()) {
+            m_drawRefreshMenu(vFrameActionSystem);
             m_drawCreationMenu(vFrameActionSystem);
             m_drawImportMenu(vFrameActionSystem);
             ImGui::EndMenuBar();
         }
+    }
+}
+
+void DataBrokers::DisplayAccounts() {
+    ImGui::Header("Accounts");
+    static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+    if (ImGui::BeginTable("##Accounts", 6, flags)) {
+        ImGui::TableSetupColumn("Users");
+        ImGui::TableSetupColumn("Banks");
+        ImGui::TableSetupColumn("Type");
+        ImGui::TableSetupColumn("Name");
+        ImGui::TableSetupColumn("Number");
+        ImGui::TableSetupColumn("Load");
+        ImGui::TableHeadersRow();
+        for (const auto& a : m_Datas.accounts) {
+            ImGui::TableNextRow();
+
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text(a.user.c_str());
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text(a.bank.c_str());
+
+            ImGui::TableSetColumnIndex(2);
+            ImGui::Text(a.type.c_str());
+
+            ImGui::TableSetColumnIndex(3);
+            ImGui::Text(a.name.c_str());
+
+            ImGui::TableSetColumnIndex(4);
+            ImGui::Text(a.number.c_str());
+
+            ImGui::TableSetColumnIndex(5);
+            if (ImGui::SmallContrastedButton(">")) {
+                m_UpdateTransactions(a.id);
+            }
+        }
+        ImGui::EndTable();
+    }
+}
+
+void DataBrokers::DisplayTransactions() {
+    ImGui::Header("Transactions");
+    static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+    if (ImGui::BeginTable("##Transactions", 6, flags)) {
+        ImGui::TableSetupColumn("Dates");
+        ImGui::TableSetupColumn("Descriptions");
+        ImGui::TableSetupColumn("Category");
+        ImGui::TableSetupColumn("Operation");
+        ImGui::TableSetupColumn("Credit");
+        ImGui::TableSetupColumn("Debit");
+        ImGui::TableHeadersRow();
+        for (const auto& t : m_Datas.transactions) {
+            ImGui::TableNextRow();
+
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text(t.date.c_str());
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text(t.desc.c_str());
+
+            ImGui::TableSetColumnIndex(2);
+            ImGui::Text(t.category.c_str());
+
+            ImGui::TableSetColumnIndex(3);
+            ImGui::Text(t.operation.c_str());
+
+            ImGui::TableSetColumnIndex(4);
+            if (t.amount >= 0.0) {
+                ImGui::Text("%f", t.amount);
+            }
+
+            ImGui::TableSetColumnIndex(5);
+            if (t.amount < 0.0) {
+                ImGui::Text("%f", t.amount);
+            }
+        }
+        ImGui::EndTable();
     }
 }
 
@@ -122,6 +202,12 @@ void DataBrokers::m_drawImportMenu(FrameActionSystem& vFrameActionSystem) {
     }
 }
 
+void DataBrokers::m_drawRefreshMenu(FrameActionSystem& vFrameActionSystem) {
+    if (ImGui::MenuItem("Refresh")) {
+        m_refreshDatas();
+    }
+}
+
 void DataBrokers::m_drawCreationMenu(FrameActionSystem& vFrameActionSystem) {
     if (ImGui::BeginMenu("Add")) {
         if (ImGui::MenuItem("User")) {
@@ -132,6 +218,15 @@ void DataBrokers::m_drawCreationMenu(FrameActionSystem& vFrameActionSystem) {
         }
         if (ImGui::MenuItem("Account")) {
             m_ShowAccountCreationDialog();
+        }
+        if (ImGui::MenuItem("Category")) {
+            m_ShowCategoryCreationDialog();
+        }
+        if (ImGui::MenuItem("Operation")) {
+            m_ShowOperationCreationDialog();
+        }
+        if (ImGui::MenuItem("Transaction")) {
+            m_ShowTransactionCreationDialog();
         }
         ImGui::EndMenu();
     }
@@ -191,140 +286,12 @@ bool DataBrokers::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* 
     return true;
 }
 
-bool DataBrokers::m_DrawPluginBrockers() {
-    bool change = false;
-    /*ImGui::Header("Brokers :");
-    ImGui::SetNextItemWidth(-1.0f);
-    if (ImGui::BeginContrastedCombo("##Data brokers", m_DataBrokerNames[m_BrokerComboIdx].c_str())) {
-        for (int32_t idx = 0; idx < m_DataBrokerNames.size(); ++idx) {
-            const bool is_selected = (m_BrokerComboIdx == idx);
-            if (ImGui::Selectable(m_DataBrokerNames[idx].c_str(), is_selected)) {
-                m_BrokerComboIdx = idx;
-                change = true;
-                m_SelectedBroker.reset();
-                auto selectedName = m_DataBrokerNames.at(m_BrokerComboIdx);
-                if (m_DataBrokerModules.find(selectedName) != m_DataBrokerModules.end()) {
-                    m_SelectedBroker = m_DataBrokerModules.at(selectedName);
-                }
-            }
-            if (is_selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-        ImGui::Separator();
-    }
-    if (!m_SelectedBroker.expired()) {
-        auto ptr = m_SelectedBroker.lock();
-        if (ptr != nullptr) {
-            auto drawer_ptr = std::dynamic_pointer_cast<Cash::IGuiDrawer>(ptr);
-            if (drawer_ptr != nullptr) {
-                change |= drawer_ptr->DrawWidgets(0, nullptr, nullptr);
-            }
-            float column_offest = 100.0f;
-            ImGui::Separator();
-            ImGui::Text("Symbol");
-            ImGui::SameLine(column_offest);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::InputText("##Symmbol", m_Symmbol.data(), m_Symmbol.size());
-            ImGui::PopItemWidth();
-            ImGui::Text("Start Date");
-            ImGui::SameLine(column_offest);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::InputText("##StartDate", m_StartDate.data(), m_StartDate.size());
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-            if (ImGui::ContrastedButton("E##startDate")) {
-                m_StartDatePickerLevel = 0;  // day level
-                m_StartDatePicker = ImPlotTime(convertToEpochTime(m_StartDate.data(), "%Y-%m-%d"));
-                m_ShowStartDatePicker = !m_ShowStartDatePicker;
-            }
-            if (m_ShowStartDatePicker) {
-                if (ImPlot::ShowDatePicker("##startDatePicekr", &m_StartDatePickerLevel, &m_StartDatePicker)) {
-                    std::tm* tm_date = std::localtime(&m_StartDatePicker.S);
-                    strftime(m_StartDate.data(), m_StartDate.size(), "%Y-%m-%d", tm_date);
-                    m_ShowStartDatePicker = false;
-                }
-            }
-            ImGui::Text("End Date");
-            ImGui::SameLine(column_offest);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::InputText("##EndDate", m_EndDate.data(), m_EndDate.size());
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-            if (ImGui::ContrastedButton("E##endDate")) {
-                m_EndDatePickerLevel = 0;  // day level
-                m_EndDatePicker = ImPlotTime(convertToEpochTime(m_EndDate.data(), "%Y-%m-%d"));
-                m_ShowEndDatePicker = !m_ShowEndDatePicker;
-            }
-            if (m_ShowEndDatePicker) {
-                if (ImPlot::ShowDatePicker("##endDatePicekr", &m_EndDatePickerLevel, &m_EndDatePicker)) {
-                    std::tm* tm_date = std::localtime(&m_EndDatePicker.S);
-                    strftime(m_EndDate.data(), m_EndDate.size(), "%Y-%m-%d", tm_date);
-                    m_ShowEndDatePicker = false;
-                }
-            }
-            ImGui::Separator();
-            static bool downloadDatas = false;
-            ImGui::SameLine();
-            ImGui::Text(downloadDatas ? "Download from Internet" : "Read from File");
-            ImGui::SameLine();
-            ImGui::Checkbox("##downloadDatas", &downloadDatas);
-            ImGui::Separator();
-            if (ImGui::ContrastedButton("Request")) {
-                if (ptr->RequestSymbolPrices(m_Symmbol.data(), m_StartDate.data(), m_EndDate.data(), downloadDatas ? "net" : "file")) {
-                    auto symbolPrices = ptr->getLastRequestedSymbolPrices();
-                    m_SavePrices(symbolPrices.prices);
-                    m_VizualizePrices(symbolPrices.prices);
-                }
-            }
-        }
-    }*/
-    return change;
-}
-
-bool DataBrokers::m_DrawDBSymbols() {
-    bool change = false;
-    /*ImGui::Header("Symbols :");
-    if (ImGui::ContrastedButton("Refresh", nullptr, nullptr, -1.0f)) {
-        m_RefreshSymbols();
-    }
-    ImGui::SetNextItemWidth(-1.0f);
-    if (ImGui::BeginTable("##Symbols", 6)) {
-        ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableSetupColumn("Up", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Market", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Symbol", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("TimeFrame", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Load", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableHeadersRow();
-        bool selected = false;
-        for (const auto& market : m_DBSymbols) {
-            for (const auto& symbol : market.second) {
-                for (const auto& timeframe : symbol.second) {
-                    ImGui::TableNextColumn();  // update, fill fill input with symbol name
-                    if (ImGui::SmallContrastedButton("U")) {
-                        strncpy(m_Symmbol.data(), symbol.first.c_str(), 32);
-                    }
-                    ImGui::TableNextColumn();  // market name
-                    ImGui::Selectable(market.first.c_str(), &selected, ImGuiSelectableFlags_SpanAvailWidth);
-                    ImGui::TableNextColumn();  // symbol name
-                    ImGui::Text("%s", symbol.first.c_str());
-                    ImGui::TableNextColumn();  // timeframe
-                    ImGui::Text("%u", timeframe.first);
-                    ImGui::TableNextColumn();  // bars count
-                    ImGui::Text("%u", timeframe.second);
-                    ImGui::TableNextColumn();  // load graph
-                    if (ImGui::SmallContrastedButton(">")) {
-                        m_VizualizePrices(m_ExtractPricesFromDB(market.first, symbol.first, timeframe.first));
-                    }
-                }
-            }
-        }
-        ImGui::EndTable();
-    }*/
-    return change;
+void DataBrokers::m_refreshDatas() {
+    m_UpdateUsers();
+    m_UpdateBanks();
+    m_UpdateCategories();
+    m_UpdateOperations();
+    m_UpdateAccounts();
 }
 
 void DataBrokers::m_Clear() {
@@ -353,60 +320,14 @@ void DataBrokers::m_GetAvailableDataBrokers() {
     }
 }
 
-/*void DataBrokers::m_SavePrices(const Cash::SymbolPrices& vPrices) {
-    if (vPrices.market.empty() || vPrices.symbol.empty() || vPrices.prices.period == 0 || vPrices.prices.times.empty()) {
-        LogVarError("Cant save Prices since empty");
-        return;
-    }
-    if (DataBase::Instance()->BeginTransaction()) {
-        DataBase::Instance()->AddMarket(vPrices.market);
-        DataBase::Instance()->AddSymbol(vPrices.symbol);
-        DataBase::Instance()->AddTimeFrame(vPrices.prices.period);
-        for (size_t idx = 0; idx < vPrices.prices.times.size(); ++idx) {
-            DataBase::Instance()->AddPrice(vPrices.market,
-                                           vPrices.symbol,
-                                           vPrices.prices.period,
-                                           vPrices.prices.times[idx],
-                                           vPrices.prices.opens[idx],
-                                           vPrices.prices.highs[idx],
-                                           vPrices.prices.lows[idx],
-                                           vPrices.prices.closes[idx],
-                                           vPrices.prices.volumes[idx]);
-        }
-        DataBase::Instance()->CommitTransaction();
-        ProjectFile::Instance()->SetProjectChange();
-    }
-}*/
-
-void DataBrokers::m_RefreshSymbols() {
-    /* m_DBSymbols.clear();
-    DataBase::Instance()->GetSymbols([this](const Market& vMarket, const Symbol& vSymbol, const TimeFrame& vTimeFrame, const BarsCount& vBarsCount) {
-        if (!vMarket.empty() && !vSymbol.empty()) {
-            m_DBSymbols[vMarket][vSymbol][vTimeFrame] = vBarsCount;
-        }
-    });*/
+void DataBrokers::m_UpdateUsers() {
+    m_Datas.userNames.clear();
+    DataBase::Instance()->GetUsers(          //
+        [this](const UserName& vUserName) {  //
+            m_Datas.userNames.push_back(vUserName);
+        });
+    m_UsersCombo = ImWidgets::QuickStringCombo(0, m_Datas.userNames);
 }
-
-/*Cash::SymbolPrices DataBrokers::m_ExtractPricesFromDB(const Market& vMarket, const Symbol& vSymbol, const TimeFrame& vTimeFrame) {
-    Cash::SymbolPrices res;
-    res.market = vMarket;
-    res.symbol = vSymbol;
-    res.prices.period = vTimeFrame;
-    // todo : faudrait optmiser en recuperant le nombre de ligne pour accelere les push_back
-    DataBase::Instance()->GetPrices(
-        vMarket,
-        vSymbol,
-        vTimeFrame,
-        [&res](const Date& vDate, const OpenPrice& vOpen, const HighPrice& vHigh, const LowPrice& vLow, const ClosePrice& vClose, const VolumePrice& vVolume) {
-            res.prices.times.push_back(vDate);
-            res.prices.opens.push_back(vOpen);
-            res.prices.highs.push_back(vHigh);
-            res.prices.lows.push_back(vLow);
-            res.prices.closes.push_back(vClose);
-            res.prices.volumes.push_back(vVolume);
-        });    
-    return res;
-}*/
 
 void DataBrokers::m_ShowUserCreationDialog() {
     m_showUserCreation = true;
@@ -444,6 +365,14 @@ void DataBrokers::m_DrawUserCreationDialog(const ImVec2& vPos) {
     }
 }
 
+void DataBrokers::m_UpdateBanks() {
+    m_Datas.bankNames.clear();
+    DataBase::Instance()->GetBanks(                                       //
+        [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
+            m_Datas.bankNames.push_back(vUserName);
+        });
+    m_BanksCombo = ImWidgets::QuickStringCombo(0, m_Datas.bankNames);
+}
 
 void DataBrokers::m_ShowBankCreationDialog() {
     m_showBankCreation = true;
@@ -482,24 +411,125 @@ void DataBrokers::m_DrawBankCreationDialog(const ImVec2& vPos) {
     }
 }
 
+void DataBrokers::m_UpdateCategories() {
+    m_Datas.categoryNames.clear();
+    DataBase::Instance()->GetCategories(             //
+        [this](const CategoryName& vCategoryName) {  //
+            m_Datas.categoryNames.push_back(vCategoryName);
+        });
+    m_CategoriesCombo = ImWidgets::QuickStringCombo(0, m_Datas.categoryNames);
+}
+
+void DataBrokers::m_ShowCategoryCreationDialog() {
+    m_showCategoryCreation = true;
+    m_UpdateCategories();
+}
+
+void DataBrokers::m_DrawCategoryCreationDialog(const ImVec2& vPos) {
+    if (m_showCategoryCreation) {
+        ImGui::OpenPopup("CategoryCreationModalPopup");
+        ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("CategoryCreationModalPopup",
+                                   (bool*)nullptr,
+                                   ImGuiWindowFlags_NoTitleBar |            //
+                                       ImGuiWindowFlags_NoResize |          //
+                                       ImGuiWindowFlags_AlwaysAutoResize |  //
+                                       ImGuiWindowFlags_NoDocking)) {
+            ImGui::Header("Category Creation");
+            ImGui::Separator();
+            m_CategoryNameInputText.DisplayInputText(200.0f, "Name", "", false, 70.0f);
+            ImGui::Separator();
+            if (!m_CategoryNameInputText.empty()) {
+                if (ImGui::ContrastedButton("Ok")) {
+                    if (DataBase::Instance()->OpenDBFile()) {
+                        DataBase::Instance()->AddCategory(m_CategoryNameInputText.GetText());
+                        DataBase::Instance()->CloseDBFile();
+                    }
+                    m_showCategoryCreation = false;
+                }
+                ImGui::SameLine();
+            }
+            if (ImGui::ContrastedButton("Cancel")) {
+                m_showCategoryCreation = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
+}
+
+void DataBrokers::m_UpdateOperations() {
+    m_Datas.operationNames.clear();
+    DataBase::Instance()->GetOperations(               //
+        [this](const OperationName& vOperationName) {  //
+            m_Datas.operationNames.push_back(vOperationName);
+        });
+    m_OperationsCombo = ImWidgets::QuickStringCombo(0, m_Datas.operationNames);
+}
+
+void DataBrokers::m_ShowOperationCreationDialog() {
+    m_showOperationCreation = true;
+    m_UpdateOperations();
+}
+
+void DataBrokers::m_DrawOperationCreationDialog(const ImVec2& vPos) {
+    if (m_showOperationCreation) {
+        ImGui::OpenPopup("OperationCreationModalPopup");
+        ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("OperationCreationModalPopup",
+                                   (bool*)nullptr,
+                                   ImGuiWindowFlags_NoTitleBar |            //
+                                       ImGuiWindowFlags_NoResize |          //
+                                       ImGuiWindowFlags_AlwaysAutoResize |  //
+                                       ImGuiWindowFlags_NoDocking)) {
+            ImGui::Header("Operation Creation");
+            ImGui::Separator();
+            m_OperationNameInputText.DisplayInputText(200.0f, "Name", "", false, 70.0f);
+            ImGui::Separator();
+            if (!m_OperationNameInputText.empty()) {
+                if (ImGui::ContrastedButton("Ok")) {
+                    if (DataBase::Instance()->OpenDBFile()) {
+                        DataBase::Instance()->AddOperation(m_OperationNameInputText.GetText());
+                        DataBase::Instance()->CloseDBFile();
+                    }
+                    m_showOperationCreation = false;
+                }
+                ImGui::SameLine();
+            }
+            if (ImGui::ContrastedButton("Cancel")) {
+                m_showOperationCreation = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
+}
+
+void DataBrokers::m_UpdateAccounts() {
+    m_Datas.accounts.clear();
+    m_Datas.accountNumbers.clear();
+    DataBase::Instance()->GetAccounts(  //
+        [this](const RowID& vRowID,
+               const UserName& vUserName,
+               const BankName& vBankName,
+               const AccountType& vAccountType,
+               const AccountName& vAccountName,
+               const AccountNumber& vAccountNumber) {  //
+            Account a;
+            a.id = vRowID;
+            a.user = vUserName;
+            a.bank = vBankName;
+            a.type = vAccountType;
+            a.name = vAccountName;
+            a.number = vAccountNumber;
+            m_Datas.accounts.push_back(a);
+            m_Datas.accountNumbers.push_back(vAccountNumber);
+        });
+    m_AccountsCombo = ImWidgets::QuickStringCombo(0, m_Datas.accountNumbers);
+}
+
 void DataBrokers::m_ShowAccountCreationDialog() {
     m_showAccountCreation = true;
-
-    // get users
-    m_Datas.userNames.clear();
-    DataBase::Instance()->GetUsers(          //
-        [this](const UserName& vUserName) {  //
-            m_Datas.userNames.push_back(vUserName);
-        });
-    m_UsersCombo = ImWidgets::QuickStringCombo(0, m_Datas.userNames);
-
-    // get banks
-    m_Datas.bankNames.clear();
-    DataBase::Instance()->GetBanks(                                       //
-        [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
-            m_Datas.bankNames.push_back(vUserName);
-        });
-    m_BanksCombo = ImWidgets::QuickStringCombo(0, m_Datas.bankNames);
+    m_UpdateUsers();
+    m_UpdateBanks();
 }
 
 void DataBrokers::m_DrawAccountCreationDialog(const ImVec2& vPos) {
@@ -539,6 +569,89 @@ void DataBrokers::m_DrawAccountCreationDialog(const ImVec2& vPos) {
             }
             if (ImGui::ContrastedButton("Cancel")) {
                 m_showAccountCreation = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
+}
+
+void DataBrokers::m_UpdateTransactions(const uint32_t& vAccountID) {
+    m_Datas.transactions.clear();
+    DataBase::Instance()->GetTransactions(  //
+        [this](const TransactionDate& vTransactionDate,
+               const TransactionDescription& vTransactionDescription,
+               const CategoryName& vCategoryName,
+               const OperationName& vOperationName,
+               const TransactionAmount& vTransactionAmount) {  //
+            Transaction t;
+            t.date = vTransactionDate;
+            t.desc = vTransactionDescription;
+            t.category = vCategoryName;
+            t.operation = vOperationName;
+            t.amount = vTransactionAmount;
+            m_Datas.transactions.push_back(t);
+        });
+}
+
+void DataBrokers::m_ShowTransactionCreationDialog() {
+    m_showTransactionCreation = true;
+    m_UpdateAccounts();
+    m_UpdateCategories();
+    m_UpdateOperations();
+}
+
+void DataBrokers::m_DrawTransactionCreationDialog(const ImVec2& vPos) {
+    if (m_showTransactionCreation) {
+        ImGui::OpenPopup("AccountTransactionModalPopup");
+        ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("AccountTransactionModalPopup",
+                                   (bool*)nullptr,
+                                   ImGuiWindowFlags_NoTitleBar |            //
+                                       ImGuiWindowFlags_NoResize |          //
+                                       ImGuiWindowFlags_AlwaysAutoResize |  //
+                                       ImGuiWindowFlags_NoDocking)) {
+            ImGui::Header("Transaction Creation");
+            ImGui::Separator();
+            const float& align = 125.0f;
+            const auto& width = 400.0f;
+            m_AccountsCombo.DisplayCombo(width, "Account Number", align);
+            m_CategoriesCombo.DisplayCombo(width, "Category", align);
+            m_OperationsCombo.DisplayCombo(width, "Operation", align);
+            m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
+            m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
+
+            float px = ImGui::GetCursorPosX();
+            ImGui::Text("Amount");
+            ImGui::SameLine(align);
+            const float w = width - (ImGui::GetCursorPosX() - px);
+            ImGui::PushID(++ImGui::CustomStyle::pushId);
+            ImGui::PushItemWidth(w);
+            ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble);
+            ImGui::PopItemWidth();
+            ImGui::PopID();
+
+            ImGui::Separator();
+            if (!m_TransactionDateInputText.empty() && !m_TransactionDescriptionInputText.empty() && m_TransactionAmountInputDouble != 0.0) {
+                if (ImGui::ContrastedButton("Ok")) {
+                    RowID account_id = 0U;
+                    if (DataBase::Instance()->GetAccount(m_AccountsCombo.GetText(), account_id)) {
+                        if (DataBase::Instance()->OpenDBFile()) {
+                            DataBase::Instance()->AddTransaction(             //
+                                account_id,                                   //
+                                m_CategoriesCombo.GetText(),                  //
+                                m_OperationsCombo.GetText(),                  //
+                                m_TransactionDateInputText.GetText(),         //
+                                m_TransactionDescriptionInputText.GetText(),  //
+                                m_TransactionAmountInputDouble);
+                            DataBase::Instance()->CloseDBFile();
+                        }
+                    }
+                    m_showTransactionCreation = false;
+                }
+                ImGui::SameLine();
+            }
+            if (ImGui::ContrastedButton("Cancel")) {
+                m_showTransactionCreation = false;
             }
             ImGui::EndPopup();
         }

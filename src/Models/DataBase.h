@@ -21,12 +21,21 @@ limitations under the License.
 #include <functional>
 
 typedef std::string DBFile;
+typedef uint32_t RowID;
 typedef std::string UserName;
 typedef std::string BankName;
 typedef std::string AccountType;
 typedef std::string AccountName;
+typedef std::string CategoryName;
+typedef std::string OperationName;
 typedef std::string AccountNumber;
+typedef std::string TransactionDate;
+typedef std::string TransactionDescription;
+typedef double TransactionAmount;
 
+class DataBaseTable {
+public:
+};
 
 struct sqlite3;
 class DataBase {
@@ -47,30 +56,60 @@ public:
     void RollbackTransaction();
 
     void AddUser(const UserName& vUserName);
-    bool GetUser(const UserName& vUserName, uint32_t& vOutRowID);
+    bool GetUser(const UserName& vUserName, RowID& vOutRowID);
     void GetUsers(std::function<void(const UserName&)> vCallback);
 
     void AddBank(const BankName& vBankName, const std::string& vUrl = {});
-    bool GetBank(const BankName& vBankName, uint32_t& vOutRowID);
+    bool GetBank(const BankName& vBankName, RowID& vOutRowID);
     void GetBanks(std::function<void(const BankName&, const std::string&)> vCallback);
 
-    void AddAccount(const UserName& vUserName,
-                    const BankName& vBankName,
-                    const AccountType& vAccountType,
-                    const AccountName& vAccountName,
-                    const AccountNumber& vAccountNumber);
-    void GetAccounts(std::function<void(const UserName&, const BankName&, const AccountType&, const AccountName&, const AccountNumber&)> vCallback);
+    void AddCategory(const CategoryName& vCategoryName);
+    bool GetCategory(const CategoryName& vUserName, RowID& vOutRowID);
+    void GetCategories(std::function<void(const CategoryName&)> vCallback);
 
-    void AddCategory(const std::string& vCategoryName);
-    void AddOperation(const std::string& vOperationName);
+    void AddOperation(const OperationName& vOperationName);
+    bool GetOperation(const OperationName& vUserName, RowID& vOutRowID);
+    void GetOperations(std::function<void(const OperationName&)> vCallback);
 
-    // for gain some time we must extract ID's before calling
-    void AddTransaction(const uint32_t& vAccountID,
-                        const std::string& vCategoryName,
-                        const std::string& vOperationName,
-                        const double& vAmmount,
-                        const std::string& vDate,
-                        const std::string& vDescription);
+    void AddAccount(  //
+        const UserName& vUserName,
+        const BankName& vBankName,
+        const AccountType& vAccountType,
+        const AccountName& vAccountName,
+        const AccountNumber& vAccountNumber);
+    bool GetAccount(  //
+        const AccountNumber& vAccountNumber,
+        RowID& vOutRowID);
+    bool GetAccount(  //
+        const UserName& vUserName,
+        const BankName& vBankName,
+        const AccountType& vAccountType,
+        const AccountName& vAccountName,
+        const AccountNumber& vAccountNumber,
+        RowID& vOutRowID);
+    void GetAccounts(        //
+        std::function<void(  //
+            const RowID&, 
+            const UserName&,
+            const BankName&,
+            const AccountType&,
+            const AccountName&,
+            const AccountNumber&)> vCallback);
+
+    void AddTransaction(  //
+        const RowID& vAccountID,
+        const CategoryName& vCategoryName,
+        const OperationName& vOperationName,
+        const std::string& vDate,
+        const std::string& vDescription,
+        const double& vAmmount);
+    void GetTransactions(     //
+        std::function<void(   //
+            const TransactionDate&,  
+            const TransactionDescription&,
+            const CategoryName&,
+            const OperationName&,
+            const TransactionAmount&)> vCallback);
 
     void ClearDataTables();
     std::string GetLastErrorMesg();

@@ -40,7 +40,7 @@ const char* TranslationHelper::mainframe_menubar_settings = nullptr;
 ///////////////////////////////////////////////////////
 
 TranslationHelper::TranslationHelper() {
-    DefineLanguage(LanguageEnum::FR, true);
+    DefineLanguage(LanguageEnum::EN, true); // Default
 }
 
 ///////////////////////////////////////////////////////

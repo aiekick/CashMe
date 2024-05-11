@@ -107,14 +107,14 @@ void DataBase::AddUser(const UserName& vUserName) {
     }
 }
 
-bool DataBase::GetUser(const UserName& vUserName, uint32_t& vOutRowID) {
+bool DataBase::GetUser(const UserName& vUserName, RowID& vOutRowID) {
     bool ret = false;
     auto select_query = ct::toStr(u8R"(SELECT user_id FROM users WHERE name = "%s";)", vUserName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
-            LogVarError("%s %s", "Fail get user with reason", sqlite3_errmsg(m_SqliteDB));
+            LogVarError("%s %s", "Fail get user id with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
@@ -160,14 +160,14 @@ void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
     }
 }
 
-bool DataBase::GetBank(const BankName& vBankName, uint32_t& vOutRowID) {
+bool DataBase::GetBank(const BankName& vBankName, RowID& vOutRowID) {
     bool ret = false;
     auto select_query = ct::toStr(u8R"(SELECT bank_id FROM banks WHERE name = "%s";)", vBankName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
-            LogVarError("%s %s", "Fail get bank with reason", sqlite3_errmsg(m_SqliteDB));
+            LogVarError("%s %s", "Fail get bank id with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
@@ -209,6 +209,112 @@ void DataBase::GetBanks(std::function<void(const BankName&, const std::string&)>
     }
 }
 
+void DataBase::AddCategory(const CategoryName& vCategoryName) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO categories (name) VALUES("%s");)", vCategoryName.c_str());
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a category in database : %s", m_LastErrorMsg);
+    }
+}
+
+bool DataBase::GetCategory(const CategoryName& vUserName, RowID& vOutRowID) {
+    bool ret = false;
+    auto select_query = ct::toStr(u8R"(SELECT category_id FROM categories WHERE name = "%s";)", vUserName.c_str());
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get category id with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    vOutRowID = sqlite3_column_int(stmt, 0);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+    return ret;
+}
+
+void DataBase::GetCategories(std::function<void(const CategoryName&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    const auto& select_query = ct::toStr(u8R"(SELECT name FROM categories GROUP BY name;)");
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get categories with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    const char* category_name = (const char*)sqlite3_column_text(stmt, 0);
+                    vCallback(category_name != nullptr ? category_name : "");
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
+void DataBase::AddOperation(const OperationName& vOperationName) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO operations (name) VALUES("%s");)", vOperationName.c_str());
+    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a operation in database : %s", m_LastErrorMsg);
+    }
+}
+
+bool DataBase::GetOperation(const OperationName& vOperationName, RowID& vOutRowID) {
+    bool ret = false;
+    auto select_query = ct::toStr(u8R"(SELECT operation_id FROM operations WHERE name = "%s";)", vOperationName.c_str());
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get operation id with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    vOutRowID = sqlite3_column_int(stmt, 0);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+    return ret;
+}
+
+void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    const auto& select_query = ct::toStr(u8R"(SELECT name FROM operations GROUP BY name;)");
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get operations with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    const char* operation_name = (const char*)sqlite3_column_text(stmt, 0);
+                    vCallback(operation_name != nullptr ? operation_name : "");
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
 void DataBase::AddAccount(const UserName& vUserName,
                           const BankName& vBankName,
                           const AccountType& vAccountType,
@@ -236,13 +342,93 @@ INSERT OR IGNORE INTO accounts
     }
 }
 
-void DataBase::GetAccounts(std::function<void(const UserName&, const BankName&, const AccountType&, const AccountName&, const AccountNumber&)> vCallback) {
+bool DataBase::GetAccount(const AccountNumber& vAccountNumber,
+                          RowID& vOutRowID) {
+    bool ret = false;
+    auto select_query = ct::toStr(
+        u8R"(
+SELECT 
+  account_id 
+FROM 
+  accounts 
+WHERE 
+  accounts.number = "%s"
+;)",
+        vAccountNumber.c_str());
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get account id with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    vOutRowID = sqlite3_column_int(stmt, 0);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+    return ret;
+}
+
+bool DataBase::GetAccount(const UserName& vUserName,
+                          const BankName& vBankName,
+                          const AccountType& vAccountType,
+                          const AccountName& vAccountName,
+                          const AccountNumber& vAccountNumber,
+                          RowID& vOutRowID) {
+    bool ret = false;
+    auto select_query = ct::toStr(
+        u8R"(
+SELECT 
+  account_id 
+FROM 
+  accounts 
+  LEFT JOIN users ON accounts.user_id = users.user_id
+  LEFT JOIN banks ON accounts.bank_id = banks.bank_id
+WHERE 
+  users.name = "%s"
+  AND banks.name = "%s"
+  AND accounts.type = "%s"
+  AND accounts.name = "%s"
+  AND accounts.number = "%s"
+;)",
+        vUserName.c_str(),     //
+        vBankName.c_str(),     //
+        vAccountType.c_str(),  //
+        vAccountName.c_str(),  //
+        vAccountNumber.c_str());
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get account id with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    vOutRowID = sqlite3_column_int(stmt, 0);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+    return ret;
+}
+
+void DataBase::GetAccounts(std::function<void(const RowID&, const UserName&, const BankName&, const AccountType&, const AccountName&, const AccountNumber&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-
     std::string select_query =
         u8R"(
 SELECT
+  accounts.account_id AS rowid,
   users.name AS user_name,
   banks.name AS bank_name,
   accounts.type AS account_type,
@@ -258,17 +444,19 @@ GROUP BY user_name, bank_name, account_name;
         sqlite3_stmt* stmt = nullptr;
         int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
-            LogVarError("%s %s", "Fail get symbols with reason", sqlite3_errmsg(m_SqliteDB));
+            LogVarError("%s %s", "Fail get accounts with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    const char* user_name = (const char*)sqlite3_column_text(stmt, 0);
-                    const char* bank_name = (const char*)sqlite3_column_text(stmt, 1);
-                    const char* account_type = (const char*)sqlite3_column_text(stmt, 2);
-                    const char* account_name = (const char*)sqlite3_column_text(stmt, 3);
-                    const char* account_number = (const char*)sqlite3_column_text(stmt, 4);
+                    RowID account_id = sqlite3_column_int(stmt, 0);
+                    const char* user_name = (const char*)sqlite3_column_text(stmt, 1);
+                    const char* bank_name = (const char*)sqlite3_column_text(stmt, 2);
+                    const char* account_type = (const char*)sqlite3_column_text(stmt, 3);
+                    const char* account_name = (const char*)sqlite3_column_text(stmt, 4);
+                    const char* account_number = (const char*)sqlite3_column_text(stmt, 5);
                     vCallback(                                        //
+                        account_id,                                   //
                         user_name != nullptr ? user_name : "",        //
                         bank_name != nullptr ? bank_name : "",        //
                         account_type != nullptr ? account_type : "",  //
@@ -282,26 +470,12 @@ GROUP BY user_name, bank_name, account_name;
     }
 }
 
-void DataBase::AddCategory(const std::string& vCategoryName) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO categories (name) VALUES("%s");)", vCategoryName.c_str());
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a category in database : %s", m_LastErrorMsg);
-    }
-}
-
-void DataBase::AddOperation(const std::string& vOperationName) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO operations (name) VALUES("%s");)", vOperationName.c_str());
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a operation in database : %s", m_LastErrorMsg);
-    }
-}
-
-void DataBase::AddTransaction(const uint32_t& vAccountID,
-                              const std::string& vCategoryName,
-                              const std::string& vOperationName,
-                              const double& vAmmount,
+void DataBase::AddTransaction(const RowID& vAccountID,
+                              const CategoryName& vCategoryName,
+                              const OperationName& vOperationName,
                               const std::string& vDate,
-                              const std::string& vDescription) {
+                              const std::string& vDescription,
+                              const double& vAmmount) {
     AddCategory(vCategoryName);
     AddOperation(vOperationName);
     auto insert_query = ct::toStr(
@@ -311,7 +485,7 @@ INSERT OR IGNORE INTO transactions
         %u, -- account id
         (SELECT category_id FROM categories WHERE categories.name = "%s"), -- category id
         (SELECT operation_id FROM operations WHERE operations.name = "%s"), -- operation id
-        %.f, 
+        %.6f, 
         "%s", 
         "%s"
         );)",
@@ -323,6 +497,57 @@ INSERT OR IGNORE INTO transactions
         vDescription.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
+    }
+}
+
+void DataBase::GetTransactions(  //
+    std::function<void(          //
+        const TransactionDate&,
+        const TransactionDescription&,
+        const CategoryName&,
+        const OperationName&,
+        const TransactionAmount&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    std::string select_query =
+        u8R"(
+SELECT
+  transactions.date,
+  transactions.description,
+  operations.name AS operation,
+  categories.name AS category,
+  transactions.amount
+FROM 
+  transactions
+  LEFT JOIN accounts ON transactions.account_id = accounts.account_id
+  LEFT JOIN operations ON transactions.operation_id = operations.operation_id
+  LEFT JOIN categories ON transactions.category_id = categories.category_id
+)";
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    const char* transaction_date = (const char*)sqlite3_column_text(stmt, 0);
+                    const char* transaction_description = (const char*)sqlite3_column_text(stmt, 1);
+                    const char* operation_name = (const char*)sqlite3_column_text(stmt, 2);
+                    const char* category_name = (const char*)sqlite3_column_text(stmt, 3);
+                    double transaction_amount = sqlite3_column_double(stmt, 4);
+                    vCallback(                                        //
+                        transaction_date != nullptr ? transaction_date : "",  //
+                        transaction_description != nullptr ? transaction_description : "",  //
+                        operation_name != nullptr ? operation_name : "",                    //
+                        category_name != nullptr ? category_name : "",                      //
+                        transaction_amount);
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
     }
 }
 
@@ -388,7 +613,10 @@ void DataBase::ClearDataTables() {
         u8R"(
 BEGIN TRANSACTION;
 DELETE FROM users;
+DELETE FROM banks;
 DELETE FROM accounts;
+DELETE FROM categories;
+DELETE FROM operations;
 DELETE FROM trajectories;
 DELETE FROM transactions;
 COMMIT;
@@ -442,11 +670,11 @@ CREATE TABLE banks (
 
 CREATE TABLE accounts (
     account_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    number TEXT NOT NULL UNIQUE,
     user_id INTEGER NOT NULL,
     bank_id INTEGER NOT NULL,
     type TEXT NOT NULL,
-    name TEXT NOT NULL UNIQUE,
-    number TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (bank_id) REFERENCES banks(bank_id)
 );
