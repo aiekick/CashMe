@@ -120,7 +120,7 @@ private:  // ImGui
     void m_ShowAccountCreationDialog();
     void m_DrawAccountCreationDialog(const ImVec2& vPos);
 
-    void m_UpdateTransactions(const uint32_t& vAccountID);
+    void m_UpdateTransactions(const RowID& vAccountID);
     void m_ShowTransactionCreationDialog();
     void m_DrawTransactionCreationDialog(const ImVec2& vPos);
 

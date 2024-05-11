@@ -575,9 +575,10 @@ void DataBrokers::m_DrawAccountCreationDialog(const ImVec2& vPos) {
     }
 }
 
-void DataBrokers::m_UpdateTransactions(const uint32_t& vAccountID) {
+void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
     m_Datas.transactions.clear();
     DataBase::Instance()->GetTransactions(  //
+        vAccountID,                         //
         [this](const TransactionDate& vTransactionDate,
                const TransactionDescription& vTransactionDescription,
                const CategoryName& vCategoryName,

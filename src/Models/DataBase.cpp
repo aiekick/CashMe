@@ -501,6 +501,7 @@ INSERT OR IGNORE INTO transactions
 }
 
 void DataBase::GetTransactions(  //
+    const RowID& vAccountID,
     std::function<void(          //
         const TransactionDate&,
         const TransactionDescription&,
@@ -509,8 +510,8 @@ void DataBase::GetTransactions(  //
         const TransactionAmount&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    std::string select_query =
-        u8R"(
+    auto select_query =
+        ct::toStr(u8R"(
 SELECT
   transactions.date,
   transactions.description,
@@ -522,7 +523,9 @@ FROM
   LEFT JOIN accounts ON transactions.account_id = accounts.account_id
   LEFT JOIN operations ON transactions.operation_id = operations.operation_id
   LEFT JOIN categories ON transactions.category_id = categories.category_id
-)";
+WHERE 
+  transactions.account_id = %u
+)", vAccountID);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);

@@ -104,6 +104,7 @@ public:
         const std::string& vDescription,
         const double& vAmmount);
     void GetTransactions(     //
+        const RowID& vAccountID,
         std::function<void(   //
             const TransactionDate&,  
             const TransactionDescription&,
