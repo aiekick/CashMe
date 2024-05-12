@@ -22,75 +22,75 @@
 /*
  * Use A4 paper size instead of Letter for PostScript output.
  */
-#cmakedefine A4_PAPER
+/* #undef A4_PAPER */
 
 /*
  * Do not allow text selection.
  */
-#cmakedefine NO_TEXT_SELECT
+/* #undef NO_TEXT_SELECT */
 
 /*
  * Include support for OPI comments.
  */
-#cmakedefine01 OPI_SUPPORT
+#define OPI_SUPPORT 0
 
 /*
  * Enable multithreading support.
  */
-#cmakedefine01 MULTITHREADED
+#define MULTITHREADED 1
 
 /*
  * Enable C++ exceptions.
  */
-#cmakedefine01 USE_EXCEPTIONS
+#define USE_EXCEPTIONS 1
 
 /*
  * Use fixed point (instead of floating point) arithmetic.
  */
-#cmakedefine01 USE_FIXEDPOINT
+#define USE_FIXEDPOINT 0
 
 /*
  * Enable support for CMYK output.
  */
-#cmakedefine01 SPLASH_CMYK
+#define SPLASH_CMYK 0
 
 /*
  * Enable support for DeviceN output.
  */
-#cmakedefine01 SPLASH_DEVICEN
+#define SPLASH_DEVICEN 0
 
 /*
  * Enable support for highlighted regions.
  */
-#cmakedefine HIGHLIGHTED_REGIONS
+/* #undef HIGHLIGHTED_REGIONS */
 
 /*
  * Full path for the system-wide xpdfrc file.
  */
-#cmakedefine SYSTEM_XPDFRC "@SYSTEM_XPDFRC@"
+/* #undef SYSTEM_XPDFRC */
 
 /*
- * Directory to use for the ${DATADIR} variable in the xpdfrc config
+ * Directory to use for the  variable in the xpdfrc config
  * file.
  */
-#cmakedefine XPDFRC_DATADIR "@XPDFRC_DATADIR@"
+/* #undef XPDFRC_DATADIR */
 
 /*
  * Directory where the Base14 fonts are installed -- URW Type 1 fonts
  * on Linux, system TrueType fonts on Windows
  */
-#cmakedefine BASE14_FONT_DIR "@BASE14_FONT_DIR@"
+/* #undef BASE14_FONT_DIR */
 
 /*
  * Various include files and functions.
  */
-#cmakedefine01 HAVE_MKSTEMP
-#cmakedefine01 HAVE_MKSTEMPS
-#cmakedefine HAVE_POPEN
-#cmakedefine01 HAVE_STD_SORT
-#cmakedefine01 HAVE_FSEEKO
-#cmakedefine01 HAVE_FSEEK64
-#cmakedefine01 HAVE_FSEEKI64
+#define HAVE_MKSTEMP 0
+#define HAVE_MKSTEMPS 0
+/* #undef HAVE_POPEN */
+#define HAVE_STD_SORT 1
+#define HAVE_FSEEKO 0
+#define HAVE_FSEEK64 0
+#define HAVE_FSEEKI64 1
 #define _FILE_OFFSET_BITS 64
 #define _LARGE_FILES 1
 #define _LARGEFILE_SOURCE 1
@@ -98,41 +98,41 @@
 /*
  * This is defined if using FreeType 2.
  */
-#cmakedefine01 HAVE_FREETYPE_H
+#define HAVE_FREETYPE_H 0
 
 /*
  * This is defined if using D-Type 4.
  */
-#cmakedefine01 HAVE_DTYPE4_H
+#define HAVE_DTYPE4_H 0
 
 /*
  * This is defined if using libpaper.
  */
-#cmakedefine01 HAVE_PAPER_H
+#define HAVE_PAPER_H 0
 
 /*
  * This is defined if using libfontconfig.
  */
-#cmakedefine01 HAVE_FONTCONFIG
+#define HAVE_FONTCONFIG 0
 
 /*
  * Defined if the Splash library is avaiable.
  */
-#cmakedefine01 HAVE_SPLASH
+#define HAVE_SPLASH 0
 
 /*
  * Defined if using lcms2.
  */
-#cmakedefine01 HAVE_LCMS
+#define HAVE_LCMS 0
 
 /*
  * Defined for evaluation mode.
  */
-#cmakedefine01 EVAL_MODE
+#define EVAL_MODE 0
 
 /*
  * Defined when building the closed source XpdfReader binary.
  */
-#cmakedefine01 BUILDING_XPDFREADER
+#define BUILDING_XPDFREADER 0
 
 #endif

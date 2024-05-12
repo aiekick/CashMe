@@ -8,11 +8,13 @@
 #
 #========================================================================
 
-include_directories("${PROJECT_SOURCE_DIR}")
-include_directories("${PROJECT_BINARY_DIR}")
-include_directories("${PROJECT_SOURCE_DIR}/goo")
+include_directories(
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/goo
+	${CMAKE_CURRENT_SOURCE_DIR}/xpdf
+)
 
-add_library(fofi_objs OBJECT
+add_library(fofi STATIC
   FoFiBase.cc
   FoFiEncodings.cc
   FoFiIdentifier.cc
@@ -20,9 +22,5 @@ add_library(fofi_objs OBJECT
   FoFiType1.cc
   FoFiType1C.cc
 )
-set_property(TARGET fofi_objs
-             PROPERTY POSITION_INDEPENDENT_CODE True)
 
-add_library(fofi
-  $<TARGET_OBJECTS:fofi_objs>
-)
+target_link_libraries(fofi PRIVATE goo)

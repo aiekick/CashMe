@@ -84,8 +84,13 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                 } else if (line.find("<FITID>") != std::string::npos) {
                     ct::replaceString(line, "<FITID>", "");
                     trans.hash = line;
+                } else if (line.find("<CHKNUM>") != std::string::npos) {
+                    ct::replaceString(line, "<CHKNUM>", "");
+                    trans.operation = "CHEQUE";
+                    trans.label = "CHEQUE " + line;
                 }
             }
+            
         }
     }
     return ret;

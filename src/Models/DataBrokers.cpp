@@ -141,7 +141,7 @@ void DataBrokers::DisplayAccounts() {
 
 void DataBrokers::DisplayTransactions() {
     ImGui::Header("Transactions");
-    static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+    static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
     if (ImGui::BeginTable("##Transactions", 6, flags)) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
@@ -151,31 +151,41 @@ void DataBrokers::DisplayTransactions() {
         ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
-        for (const auto& t : m_Datas.transactions) {
-            ImGui::TableNextRow();
+        m_TransactionsListClipper.Begin((int)m_Datas.transactions.size(), ImGui::GetTextLineHeightWithSpacing());
+        while (m_TransactionsListClipper.Step()) {
+            for (int i = m_TransactionsListClipper.DisplayStart; i < m_TransactionsListClipper.DisplayEnd; i++) {
+                if (i < 0) {
+                    continue;
+                }
 
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text(t.date.c_str());
+                const auto& t = m_Datas.transactions.at(i);
 
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text(t.desc.c_str());
+                ImGui::TableNextRow();
 
-            ImGui::TableSetColumnIndex(2);
-            ImGui::Text(t.category.c_str());
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text(t.date.c_str());
 
-            ImGui::TableSetColumnIndex(3);
-            ImGui::Text(t.operation.c_str());
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text(t.desc.c_str());
 
-            ImGui::TableSetColumnIndex(4);
-            if (t.amount >= 0.0) {
-                ImGui::Text("%f", t.amount);
-            }
+                ImGui::TableSetColumnIndex(2);
+                ImGui::Text(t.category.c_str());
 
-            ImGui::TableSetColumnIndex(5);
-            if (t.amount < 0.0) {
-                ImGui::Text("%f", t.amount);
+                ImGui::TableSetColumnIndex(3);
+                ImGui::Text(t.operation.c_str());
+
+                ImGui::TableSetColumnIndex(4);
+                if (t.amount >= 0.0) {
+                    ImGui::Text("%f", t.amount);
+                }
+
+                ImGui::TableSetColumnIndex(5);
+                if (t.amount < 0.0) {
+                    ImGui::Text("%f", t.amount);
+                }
             }
         }
+        m_TransactionsListClipper.End();
         ImGui::EndTable();
     }
 }

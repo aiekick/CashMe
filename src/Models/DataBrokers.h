@@ -49,6 +49,7 @@ private:
     typedef std::string DataBrokerWay;
     std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> m_DataBrokerModules;
     Cash::BankStatementModuleWeak m_SelectedBroker;
+    ImGuiListClipper m_TransactionsListClipper;
 
     DialogMode m_dialogMode = DialogMode::CREATION;
 

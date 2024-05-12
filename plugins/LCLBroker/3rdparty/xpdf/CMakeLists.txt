@@ -8,11 +8,17 @@
 #
 #========================================================================
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.1)
 
 project(xpdf)
 
-include(cmake-config.txt)
+include_directories(
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/goo
+	${CMAKE_CURRENT_SOURCE_DIR}/fofi
+	${CMAKE_CURRENT_SOURCE_DIR}/xpdf
+	${CMAKE_CURRENT_SOURCE_DIR}/splash
+)
 
 add_subdirectory(goo)
 add_subdirectory(fofi)
