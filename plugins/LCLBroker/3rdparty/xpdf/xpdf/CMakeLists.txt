@@ -54,9 +54,3 @@ add_library(xpdf STATIC
   Zoox.cc
 )
 
-#--- pdftotext
-## add_executable(pdftotext
-##   TextOutputDev.cc
-##   pdftotext.cc
-## )
-## target_link_libraries(pdftotext xpdf goo fofi)

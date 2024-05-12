@@ -14,6 +14,16 @@ if(NOT CMAKE_RELWITHDEBINFO_POSTFIX)
   set(CMAKE_RELWITHDEBINFO_POSTFIX _reldeb)
 endif()
 	
+set(XPDF_INCLUDE_DIRS 
+	${XPDF_INCLUDE_DIR} 
+	${XPDF_INCLUDE_DIR}/goo
+	${XPDF_INCLUDE_DIR}/fofi
+	${XPDF_INCLUDE_DIR}/xpdf
+	${XPDF_INCLUDE_DIR}/splash
+)
+
+include_directories(${XPDF_INCLUDE_DIRS})
+
 ##EXCLUDE_FROM_ALL reject install for this target
 add_subdirectory(${XPDF_INCLUDE_DIR} EXCLUDE_FROM_ALL)	
 
@@ -38,10 +48,15 @@ set_target_properties(fofi PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_
 set_target_properties(fofi PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${FINAL_BIN_DIR}")
 set_target_properties(fofi PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${FINAL_BIN_DIR}")
 
-set(XPDF_INCLUDE_DIRS 
-	${XPDF_INCLUDE_DIR} 
-	${XPDF_INCLUDE_DIR}/goo
-	${XPDF_INCLUDE_DIR}/fofi
-	${XPDF_INCLUDE_DIR}/xpdf
-	${XPDF_INCLUDE_DIR}/splash
+add_executable(pdftotext
+	${XPDF_INCLUDE_DIR}/xpdf/TextOutputDev.cc
+	${XPDF_INCLUDE_DIR}/xpdf/pdftotext.cc
 )
+target_link_libraries(pdftotext xpdf goo fofi)
+
+set_target_properties(pdftotext PROPERTIES FOLDER 3rdparty/Tools)
+set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${FINAL_BIN_DIR}")
+set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${FINAL_BIN_DIR}")
+set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_BIN_DIR}")
+set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${FINAL_BIN_DIR}")
+set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${FINAL_BIN_DIR}")

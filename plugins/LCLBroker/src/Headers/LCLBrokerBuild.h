@@ -1,7 +1,7 @@
 #pragma once
 
 #define LCLBroker_Prefix "LCLBroker"
-#define LCLBroker_BuildNumber 42
+#define LCLBroker_BuildNumber 83
 #define LCLBroker_MinorNumber 0
 #define LCLBroker_MajorNumber 0
-#define LCLBroker_BuildId "0.0.42"
+#define LCLBroker_BuildId "0.0.83"
