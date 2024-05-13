@@ -503,7 +503,7 @@ Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std
                 } else {
                     globalParams = new GlobalParams(nullptr);  // globalParams ios a extern and is used by pdf_doc_ptr...
 
-                    LogVarDebugInfo("LCl Table Extraction for %s", vFilePathName.c_str());
+                    //LogVarDebugInfo("LCl Table Extraction for %s", vFilePathName.c_str());
 
                     TableExtractor tbl;
                     pdf_doc_ptr->displayPages(&tbl, 1, pages_count, 72, 72, 0, gFalse, gTrue, gFalse);

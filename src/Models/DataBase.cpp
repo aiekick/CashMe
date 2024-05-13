@@ -530,21 +530,23 @@ WHERE
 void DataBase::AddTransaction(const RowID& vAccountID,
                               const CategoryName& vCategoryName,
                               const OperationName& vOperationName,
-                              const std::string& vDate,
-                              const std::string& vDescription,
-                              const double& vAmount,
+                              const TransactionDate& vDate,
+                              const TransactionDescription& vDescription,
+                              const TransactionComment& vComment,
+                              const TransactionAmount& vAmount,
                               const std::string& vHash) {
     AddCategory(vCategoryName);
     AddOperation(vOperationName);
     auto insert_query = ct::toStr(
         u8R"(
 INSERT OR IGNORE INTO transactions 
-    (account_id, category_id, operation_id, amount, date, description, hash) VALUES(
+    (account_id, category_id, operation_id, amount, date, description, comment, hash) VALUES(
         %u, -- account id
         (SELECT category_id FROM categories WHERE categories.name = "%s"), -- category id
         (SELECT operation_id FROM operations WHERE operations.name = "%s"), -- operation id
         %.6f, 
         "%s", 
+        "%s",
         "%s",
         "%s"
         );)",
@@ -554,6 +556,7 @@ INSERT OR IGNORE INTO transactions
         vAmount,
         vDate.c_str(),
         vDescription.c_str(),
+        vComment.c_str(),
         vHash.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
@@ -565,6 +568,7 @@ void DataBase::GetTransactions(  //
     std::function<void(          //
         const TransactionDate&,
         const TransactionDescription&,
+        const TransactionComment&,
         const CategoryName&,
         const OperationName&,
         const TransactionAmount&)> vCallback) {
@@ -575,6 +579,7 @@ void DataBase::GetTransactions(  //
 SELECT
   transactions.date,
   transactions.description,
+  transactions.comment,
   operations.name AS operation,
   categories.name AS category,
   transactions.amount
@@ -599,12 +604,14 @@ ORDER BY
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
                     const char* transaction_date = (const char*)sqlite3_column_text(stmt, 0);
                     const char* transaction_description = (const char*)sqlite3_column_text(stmt, 1);
-                    const char* operation_name = (const char*)sqlite3_column_text(stmt, 2);
-                    const char* category_name = (const char*)sqlite3_column_text(stmt, 3);
-                    double transaction_amount = sqlite3_column_double(stmt, 4);
+                    const char* transaction_comment = (const char*)sqlite3_column_text(stmt, 2);
+                    const char* operation_name = (const char*)sqlite3_column_text(stmt, 3);
+                    const char* category_name = (const char*)sqlite3_column_text(stmt, 4);
+                    double transaction_amount = sqlite3_column_double(stmt, 5);
                     vCallback(                                        //
                         transaction_date != nullptr ? transaction_date : "",  //
                         transaction_description != nullptr ? transaction_description : "",  //
+                        transaction_comment != nullptr ? transaction_comment : "",          //
                         category_name != nullptr ? category_name : "",                      //
                         operation_name != nullptr ? operation_name : "",                    //
                         transaction_amount);
@@ -620,8 +627,9 @@ void DataBase::UpdateTransaction(  //
     const RowID& vRowID,
     const CategoryName& vCategoryName,
     const OperationName& vOperationName,
-    const std::string& vDate,
-    const std::string& vDescription,
+    const TransactionDate& vDate,
+    const TransactionDescription& vDescription,
+    const TransactionComment& vComment,
     const double& vAmount) {
     auto insert_query = ct::toStr(
         u8R"(
@@ -632,6 +640,7 @@ SET
   operation_id = (SELECT operation_id FROM operations WHERE name = "%s"),
   date = "%s",
   description = "%s",
+  comment = "%s",
   amount = %.6f
 WHERE
   transactions.transaction_id = %u;
@@ -640,6 +649,7 @@ WHERE
         vOperationName.c_str(),
         vDate.c_str(),
         vDescription.c_str(),
+        vComment.c_str(),
         vAmount,
         vRowID);
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -794,6 +804,7 @@ CREATE TABLE transactions (
     amount REAL NOT NULL,
     date DATE NOT NULL,
     description TEXT,
+    comment TEXT,
     hash NOT NULL UNIQUE,
     FOREIGN KEY (account_id) REFERENCES accounts(account_id),
     FOREIGN KEY (operation_id) REFERENCES operations(operation_id),

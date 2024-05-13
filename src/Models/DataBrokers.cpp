@@ -370,7 +370,8 @@ void DataBrokers::m_ImportFromFiles(const std::vector<std::string> vFiles) {
                     if (DataBase::Instance()->GetAccount(stmt.account.number, account_id)) {
                         if (DataBase::Instance()->BeginTransaction()) {
                             for (const auto& s : stmt.statements) {
-                                DataBase::Instance()->AddTransaction(account_id, s.category, s.operation, s.date, s.label, s.amount, s.hash);
+                                DataBase::Instance()->AddTransaction(account_id, //
+                                    s.category, s.operation, s.date, s.label, s.comment, s.amount, s.hash);
                             }
                             DataBase::Instance()->CommitTransaction();
                         }
@@ -650,12 +651,14 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
         vAccountID,                         //
         [this](const TransactionDate& vTransactionDate,
                const TransactionDescription& vTransactionDescription,
+               const TransactionComment& vTransactionComment,
                const CategoryName& vCategoryName,
                const OperationName& vOperationName,
                const TransactionAmount& vTransactionAmount) {  //
             Transaction t;
             t.date = vTransactionDate;
             t.desc = vTransactionDescription;
+            t.comm = vTransactionComment;
             t.category = vCategoryName;
             t.operation = vOperationName;
             t.amount = vTransactionAmount;
@@ -690,7 +693,7 @@ void DataBrokers::m_DrawTransactionDialog(const ImVec2& vPos) {
             m_OperationsCombo.DisplayCombo(width, "Operation", align);
             m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
             m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
-
+            m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
             float px = ImGui::GetCursorPosX();
             ImGui::Text("Amount");
             ImGui::SameLine(align);
@@ -713,6 +716,7 @@ void DataBrokers::m_DrawTransactionDialog(const ImVec2& vPos) {
                                 m_OperationsCombo.GetText(),                  //
                                 m_TransactionDateInputText.GetText(),         //
                                 m_TransactionDescriptionInputText.GetText(),  //
+                                m_TransactionCommentInputText.GetText(),      //
                                 m_TransactionAmountInputDouble,
                                 "");
                             DataBase::Instance()->CloseDBFile();

@@ -31,6 +31,7 @@ typedef std::string OperationName;
 typedef std::string AccountNumber;
 typedef std::string TransactionDate;
 typedef std::string TransactionDescription;
+typedef std::string TransactionComment;
 typedef double TransactionAmount;
 
 class DataBaseTable {
@@ -111,15 +112,17 @@ public:
         const RowID& vAccountID,
         const CategoryName& vCategoryName,
         const OperationName& vOperationName,
-        const std::string& vDate,
-        const std::string& vDescription,
-        const double& vAmount,
+        const TransactionDate& vDate,
+        const TransactionDescription& vDescription,
+        const TransactionComment& vComment,
+        const TransactionAmount& vAmount,
         const std::string& vHash);
     void GetTransactions(  //
         const RowID& vAccountID,
         std::function<void(  //
             const TransactionDate&,
             const TransactionDescription&,
+            const TransactionComment& vComment,
             const CategoryName&,
             const OperationName&,
             const TransactionAmount&)> vCallback);
@@ -127,8 +130,9 @@ public:
         const RowID& vRowID,
         const CategoryName& vCategoryName,
         const OperationName& vOperationName,
-        const std::string& vDate,
-        const std::string& vDescription,
+        const TransactionDate& vDate,
+        const TransactionDescription& vDescription,
+        const TransactionComment& vComment,
         const double& vAmount);
 
     void ClearDataTables();

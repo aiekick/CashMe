@@ -26,6 +26,7 @@ private:
     struct Transaction {
         TransactionDate date;
         TransactionDescription desc;
+        TransactionComment comm;
         CategoryName category;
         OperationName operation;
         TransactionAmount amount = 0.0;
@@ -79,6 +80,7 @@ private:
     bool m_showTransactionDialog = false;
     ImWidgets::InputText m_TransactionDateInputText;
     ImWidgets::InputText m_TransactionDescriptionInputText;
+    ImWidgets::InputText m_TransactionCommentInputText;
     double m_TransactionAmountInputDouble = 0.0;
 
 public:
