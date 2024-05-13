@@ -367,7 +367,7 @@ void DataBrokers::m_ImportFromFiles(const std::vector<std::string> vFiles) {
                 const auto& stmt = ptr->importBankStatement(file);
                 if (!stmt.statements.empty()) {
                     RowID account_id = 0U;
-                    if (DataBase::Instance()->GetAccount(stmt.account.account_number, account_id)) {
+                    if (DataBase::Instance()->GetAccount(stmt.account.number, account_id)) {
                         if (DataBase::Instance()->BeginTransaction()) {
                             for (const auto& s : stmt.statements) {
                                 DataBase::Instance()->AddTransaction(account_id, s.category, s.operation, s.date, s.label, s.amount, s.hash);
@@ -376,7 +376,7 @@ void DataBrokers::m_ImportFromFiles(const std::vector<std::string> vFiles) {
                         }
                     }
                     else {
-                        LogVarError("Import interrupted, no account found for %s", stmt.account.account_number.c_str());
+                        LogVarError("Import interrupted, no account found for %s", stmt.account.number.c_str());
                     }
                 }
             }

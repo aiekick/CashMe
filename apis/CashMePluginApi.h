@@ -88,8 +88,7 @@ struct Transaction {
 };
 
 struct BankAccount {
-    std::string bank_number;
-    std::string account_number;
+    std::string number;
 };
 
 struct AccountStatements {
@@ -97,6 +96,7 @@ struct AccountStatements {
     std::string start_date;
     std::string end_date;
     double ledger = 0.0;
+    std::string source; // todo: the file name or id, to add in the db
     std::vector<Transaction> statements;
 };
 

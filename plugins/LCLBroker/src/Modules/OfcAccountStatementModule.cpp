@@ -33,12 +33,9 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
         // we start at 1, since 0 is the header
         for (size_t idx = 1; idx < lines.size(); ++idx) {
             auto line = lines.at(idx);
-            if (line.find("<BANKID>") != std::string::npos) {
-                ct::replaceString(line, "<BANKID>", "");
-                ret.account.bank_number = line;
-            } else if (line.find("<ACCTID>") != std::string::npos) {
+            if (line.find("<ACCTID>") != std::string::npos) {
                 ct::replaceString(line, "<ACCTID>", "");
-                ret.account.account_number = line;
+                ret.account.number = line;
             } else if (line.find("<DTSTART>") != std::string::npos) {
                 ct::replaceString(line, "<DTSTART>", "");
                 ret.start_date = line;

@@ -66,7 +66,7 @@ public:
     TableExtractor() = default;
     ~TableExtractor() = default;
 
-    const TokenContainer const &getTokenContainer() const {
+    const TokenContainer &getTokenContainer() const {
         return m_Tokens;
     }
 
@@ -143,18 +143,27 @@ private:
     typedef std::array<int32_t, 5> ColumnSizes;
     typedef std::vector<StatementFields> StatementRows;
     ColumnSizes m_ColSizes = {};
+    Fields m_RibHeader;
+    Fields m_RibDatas;
+    std::string m_StartDate;
+    std::string m_EndDate;
+    std::string m_Ledger;
+    std::string m_DocNumber;
 
 public:
-    void compute(const TokenContainer &vContainer) {
+    Cash::AccountStatements compute(const TokenContainer &vContainer) {
         const auto &tbl = fillTable(vContainer);
         const auto &stms = solveTableColumns(tbl);
-        printTable(stms);
+        //printTable(stms);
+        return extractStatements(stms);
     }
 
 private:
     Table fillTable(const TokenContainer &vContainer) {
         Table ret;
+        bool rib_started = false;
         Fields fields;
+        bool date_range_found = false;
         bool tabled_started = false;
         bool doc_end = false;
         bool can_save_row = false;
@@ -170,6 +179,25 @@ private:
                     fields.fields.push_back(col.second);
                 }
                 can_save_row = true;
+                if (rib_started) {
+                    // bug du fichier pdf de LCL
+                    // le numerod e compte est en deux fois.
+                    // le 3er token est 000 et le 4 le reste du numero
+                    if (fields.fields.size() == 5U && m_RibHeader.fields.size() == 4U) {
+                        m_RibDatas = {};
+                        m_RibDatas.fields.push_back(fields.fields.at(0));
+                        m_RibDatas.fields.push_back(fields.fields.at(1));
+                        auto tk0 = fields.fields.at(2);
+                        auto tk1 = fields.fields.at(3);
+                        tk0.token += tk1.token;
+                        tk0.sx += tk1.sx;
+                        m_RibDatas.fields.push_back(tk0);
+                        m_RibDatas.fields.push_back(fields.fields.at(4));
+                    } else {
+                        m_RibDatas = fields;
+                    }
+                    rib_started = false;
+                }
                 if (fields.fields.size() == 5U) {
                     if (fields.fields.at(0).token == "DATE" &&     //
                         fields.fields.at(1).token == "LIBELLE" &&  //
@@ -188,21 +216,54 @@ private:
                         if (fields.fields.at(0).token == page_footer) {
                             tabled_started = false;  // end of a table
                         }
+                    } else if (!date_range_found) {
+                        const auto &tmp = fields.fields.at(0).token;
+                        auto du_pos = tmp.find(" du ");
+                        auto au_pos = tmp.find(" au ");
+                        auto n_pos = tmp.find(" -  N° ");
+                        if (du_pos != std::string::npos &&  //
+                            au_pos != std::string::npos &&  //
+                            n_pos != std::string::npos) {
+                            // we have found the date range
+                            du_pos += 4;
+                            m_StartDate = tmp.substr(du_pos, au_pos - du_pos);
+                            au_pos += 4;
+                            m_EndDate = tmp.substr(au_pos, n_pos - au_pos);
+                            n_pos += 7;
+                            m_DocNumber = tmp.substr(n_pos);
+                            ct::replaceString(m_DocNumber, " ", "");
+                            date_range_found = true;
+                        }
                     }
                 } else if (fields.fields.size() == 2U) {
-                    if (tabled_started) {
-                        // SOLDE INTERMEDIAIRE ou SOLDE EN EUROS pour la fin
-                        // du doc en evitant les tables de fin de fichiers
-                        if (fields.fields.at(0).token.find("SOLDE INTERMEDIAIRE") != std::string::npos) {
-                            tabled_started = false;  // end of a table
-                            return ret;
+                    if (!tabled_started) {
+                        if (fields.fields.at(0).token == "Indicatif" &&  //
+                            fields.fields.at(1).token == "N° de compte") {
+                            m_RibHeader = fields;
+                            rib_started = true;
                         }
                     }
                 } else if (fields.fields.size() == 3U) {
                     if (tabled_started) {
-                        // ANCIEN SOLDE => on saute la ligne
-                        if (fields.fields.at(1).token.find("ANCIEN SOLDE") != std::string::npos) {
+                        if (fields.fields.at(1).token.find("ANCIEN SOLDE") != std::string::npos || //
+                            fields.fields.at(0).token.find("TOTAUX") != std::string::npos) {
+                            // ANCIEN SOLDE => on saute la ligne
                             can_save_row = false;  // end of a table
+                        } else if (fields.fields.at(1).token.find("SOLDE EN EUROS") != std::string::npos) {
+                            // fin du fichier
+                            m_Ledger = fields.fields.at(2).token;
+                            tabled_started = false;  // end of a table
+                            return ret;
+                        }
+                    }
+                } else if (fields.fields.size() == 4U) {
+                    if (!tabled_started) {
+                        if (fields.fields.at(0).token == "Banque" &&     //
+                            fields.fields.at(1).token == "Indicatif" &&  //
+                            fields.fields.at(2).token == "N° de compte" &&  //
+                            fields.fields.at(3).token == "Clé") {
+                            m_RibHeader = fields;
+                            rib_started = true;
                         }
                     }
                 }
@@ -226,7 +287,7 @@ private:
                 for (const auto &col : row.fields) {
                     // we need to find the column
                     // from end to styart, for find the last column
-                    int32_t c = currentHeader.hxs.size() - 1;
+                    int32_t c = static_cast<int32_t>(currentHeader.hxs.size()) - 1;
                     for (; c >= 0; --c) {
                         if (col.px > currentHeader.hxs.at(c)) {
                             break;
@@ -242,7 +303,7 @@ private:
                             if (col.token.size() > 100) {
                                 CTOOL_DEBUG_BREAK;
                             }
-                            m_ColSizes[c] = col.token.size();  // the sx is the new max width of the column
+                            m_ColSizes[c] = static_cast<int32_t>(col.token.size());  // the sx is the new max width of the column
                         }
                     }
                 }
@@ -259,6 +320,16 @@ private:
         return ret;
     }
     void printTable(const StatementRows &vStms) {
+        LogVarDebugInfo("%s", "=========== INFOS ===================");
+        LogVarDebugInfo("Start Date : %s", m_StartDate.c_str());
+        LogVarDebugInfo("End Date : %s", m_EndDate.c_str());
+        LogVarDebugInfo("Ledger : %s", m_Ledger.c_str());
+        LogVarDebugInfo("%s", "============ RIB ====================");
+        assert(m_RibHeader.fields.size() == m_RibDatas.fields.size());
+        for (size_t idx = 0; idx < m_RibHeader.fields.size(); ++idx) {
+            LogVarDebugInfo("%s : %s", m_RibHeader.fields.at(idx).token.c_str(), m_RibDatas.fields.at(idx).token.c_str());
+        }
+        LogVarDebugInfo("%s", "========= STATEMENT =================");
         bool isHeader = true;
         std::string h_line;
         std::string row_str;
@@ -298,6 +369,115 @@ private:
         }
         LogVarDebugInfo("%s", h_line.c_str());
     }
+    Cash::AccountStatements extractStatements(const StatementRows &vStms) {
+        Cash::AccountStatements ret;
+
+        {  // dates
+            ret.start_date = m_StartDate;
+            ret.end_date = m_EndDate;
+        }
+
+        {  // ledger
+            ret.ledger = ct::dvariant(m_Ledger).GetD();
+        }
+
+        {  // account infos
+            std::string guichet;
+            std::string number;
+            if (m_RibDatas.fields.size() == 4U) {
+                // RIB // Compte Depot
+                guichet = m_RibDatas.fields.at(1).token;
+                number = m_RibDatas.fields.at(2).token;
+            } else if (m_RibDatas.fields.size() == 2U) {
+                // NO RIB // Compte Epargne
+                guichet = m_RibDatas.fields.at(0).token;
+                number = m_RibDatas.fields.at(1).token;
+            } else {
+                LogVarError("Fail, No Bank Infos found");
+                return {};
+            }
+
+            // remove spaces, because some numbers can be XXXXXX X
+            ct::replaceString(guichet, " ", "");
+            ct::replaceString(number, " ", "");
+
+            // cut number like 000000XXXXXXX to XXXXXXX
+            if (number.size() > 7U) {
+                number = number.substr(number.size() - 7U);
+            }
+
+            ret.account.number = guichet + " " + number;
+        }
+
+        {  // statements
+            Cash::Transaction trans;
+            bool is_new_line = false;
+            double debit = 0.0;
+            double credit = 0.0;
+            // 0 is the header, sow e jump it
+            for (size_t row_idx = 1; row_idx < vStms.size(); ++row_idx) {
+                const auto &row = vStms.at(row_idx);
+                is_new_line = false;
+                for (size_t idx = 0; idx < 5; ++idx) {
+                    const auto &tk = row.at(idx);
+                    if (idx == 0) {
+                        if (!tk.token.empty()) {
+                            is_new_line = true;
+                        }
+                    } else if (idx == 1) {
+                        if (is_new_line) {
+                            trans.label = tk.token;
+                            const auto &first_not_space = trans.label.find_first_not_of(' ');
+                            if (first_not_space != std::string::npos) {
+                                const auto &space_pos = trans.label.find(' ', first_not_space);
+                                if (space_pos != std::string::npos) {
+                                    trans.operation = trans.label.substr(first_not_space, space_pos - first_not_space);
+                                }
+                            }
+                        } else {
+                            trans.comment += tk.token;
+                        }
+                    } else if (idx == 2) {
+                        if (is_new_line) {
+                            trans.date = tk.token;
+                            auto arr = ct::splitStringToVector(trans.date, ".");
+                            if (arr.size() == 3U) {
+                                trans.date = "20" + arr.at(2) + "-" + arr.at(1) + "-" + arr.at(0);
+                            } else {
+                                CTOOL_DEBUG_BREAK;
+                            }
+                        }
+                    } else if (idx == 3) {
+                        if (is_new_line) {
+                            debit = ct::dvariant(tk.token).GetD();
+                            if (debit > 0.0) {
+                                trans.amount = debit * -1.0;
+                            }
+                        }
+                    } else if (idx == 4) {
+                        if (is_new_line) {
+                            credit = ct::dvariant(tk.token).GetD();
+                            if (credit > 0.0) {
+                                trans.amount = credit;
+                            }
+                        }
+                    }
+                }
+                if (is_new_line) {
+                    trans.hash = ct::toStr("%s_%s_%s_%s_%f",  //
+                                           m_DocNumber.c_str(),
+                                           trans.date.c_str(),
+                                           trans.label.c_str(),
+                                           trans.comment.c_str(),
+                                           trans.amount); // must be unique per oepration
+                    ret.statements.push_back(trans);
+                    trans = {};
+                }
+            }
+        }
+
+        return ret;
+    }
 };
 
 Cash::BankStatementModulePtr PdfAccountStatementModule::create() {
@@ -317,7 +497,7 @@ Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std
             if (!pdf_doc_ptr->isOk()) {
                 LogVarError("Fail, cant read the pdf %s", vFilePathName.c_str());
             } else {
-                auto pages_count = (size_t)pdf_doc_ptr->getNumPages();
+                auto pages_count = pdf_doc_ptr->getNumPages();
                 if (pages_count == 0) {
                     LogVarError("Fail, no pages are available in the pdf %s", vFilePathName.c_str());
                 } else {
@@ -329,7 +509,7 @@ Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std
                     pdf_doc_ptr->displayPages(&tbl, 1, pages_count, 72, 72, 0, gFalse, gTrue, gFalse);
 
                     TableSolver ts;
-                    ts.compute(tbl.getTokenContainer());
+                    ret = ts.compute(tbl.getTokenContainer());
 
                     delete globalParams;
                 }
