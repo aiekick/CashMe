@@ -22,6 +22,7 @@ private:
         AccountType type;
         AccountName name;
         AccountNumber number;
+        AccounBaseSolde base_solde = 0.0;
     };
     struct Transaction {
         TransactionDate date;
@@ -39,6 +40,7 @@ private:
         std::vector<Account> accounts;
         std::vector<AccountNumber> accountNumbers;
         std::vector<Transaction> transactions;
+        std::vector<TransactionAmount> soldes;
     } m_Datas;
     enum class DialogMode {  //
         CREATION = 0,
@@ -51,6 +53,7 @@ private:
     std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> m_DataBrokerModules;
     Cash::BankStatementModuleWeak m_SelectedBroker;
     ImGuiListClipper m_TransactionsListClipper;
+    size_t m_SelectedAccountIdx = 0U;
 
     DialogMode m_dialogMode = DialogMode::CREATION;
 
@@ -76,6 +79,7 @@ private:
     ImWidgets::InputText m_AccountTypeInputText;
     ImWidgets::InputText m_AccountNumberInputText;
     ImWidgets::QuickStringCombo m_AccountsCombo;
+    double m_AccountBaseSoldeInputDouble = 0.0;
 
     bool m_showTransactionDialog = false;
     ImWidgets::InputText m_TransactionDateInputText;

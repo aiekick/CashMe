@@ -347,24 +347,27 @@ void DataBase::AddAccount(const UserName& vUserName,
                           const BankName& vBankName,
                           const AccountType& vAccountType,
                           const AccountName& vAccountName,
-                          const AccountNumber& vAccountNumber) {
+                          const AccountNumber& vAccountNumber,
+                          const AccounBaseSolde& vBaseSolde) {
     AddUser(vUserName);
     AddBank(vBankName);
     auto insert_query = ct::toStr(
         u8R"(
 INSERT OR IGNORE INTO accounts 
-    (user_id, bank_id, type, name, number) VALUES(
+    (user_id, bank_id, type, name, number, base_solde) VALUES(
         (SELECT user_id FROM users WHERE users.name = "%s"), -- user id
         (SELECT bank_id FROM banks WHERE banks.name = "%s"), -- bank id
         "%s", -- account type
         "%s", -- account name
-        "%s"  -- account number
+        "%s", -- account number
+        %f    -- account base solde
         );)",
         vUserName.c_str(),
         vBankName.c_str(),
         vAccountType.c_str(),
         vAccountName.c_str(),
-        vAccountNumber.c_str());
+        vAccountNumber.c_str(),
+        vBaseSolde);
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a Bank Account in database : %s", m_LastErrorMsg);
     }
@@ -450,7 +453,15 @@ WHERE
     return ret;
 }
 
-void DataBase::GetAccounts(std::function<void(const RowID&, const UserName&, const BankName&, const AccountType&, const AccountName&, const AccountNumber&)> vCallback) {
+void DataBase::GetAccounts(  //
+    std::function<void(      //
+        const RowID&,
+        const UserName&,
+        const BankName&,
+        const AccountType&,
+        const AccountName&,
+        const AccountNumber&,
+        const AccounBaseSolde&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     std::string select_query =
@@ -461,7 +472,8 @@ SELECT
   banks.name AS bank_name,
   accounts.type AS account_type,
   accounts.name AS account_name,
-  accounts.number AS account_number
+  accounts.number AS account_number,
+  accounts.base_solde AS account_base_solde
 FROM 
   accounts
   LEFT JOIN users ON users.user_id = accounts.user_id
@@ -483,13 +495,15 @@ GROUP BY user_name, bank_name, account_name;
                     const char* account_type = (const char*)sqlite3_column_text(stmt, 3);
                     const char* account_name = (const char*)sqlite3_column_text(stmt, 4);
                     const char* account_number = (const char*)sqlite3_column_text(stmt, 5);
+                    double account_base_solde = sqlite3_column_double(stmt, 6);
                     vCallback(                                        //
                         account_id,                                   //
                         user_name != nullptr ? user_name : "",        //
                         bank_name != nullptr ? bank_name : "",        //
                         account_type != nullptr ? account_type : "",  //
                         account_name != nullptr ? account_name : "",  //
-                        account_number != nullptr ? account_number : "");
+                        account_number != nullptr ? account_number : "",
+                        account_base_solde);
                 }
             }
         }
@@ -503,7 +517,8 @@ void DataBase::UpdateAccount(const RowID& vRowID,
                              const BankName& vBankName,
                              const AccountType& vAccountType,
                              const AccountName& vAccountName,
-                             const AccountNumber& vAccountNumber) {
+                             const AccountNumber& vAccountNumber,
+                             const AccounBaseSolde& vBaseSolde) {
     auto insert_query = ct::toStr(u8R"(
 UPDATE 
   accounts
@@ -512,7 +527,8 @@ SET
   bank_id = (SELECT bank_id FROM banks WHERE name = "%s"),
   type = "%s",
   name = "%s",
-  number = "%s"
+  number = "%s",
+  base_solde = %f
 WHERE
   accounts.account_id = %u;
 )",
@@ -521,6 +537,7 @@ WHERE
         vAccountType.c_str(),
         vAccountName.c_str(),
         vAccountNumber.c_str(),
+        vBaseSolde,
         vRowID);
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a account in database : %s", m_LastErrorMsg);
@@ -781,6 +798,7 @@ CREATE TABLE accounts (
     bank_id INTEGER NOT NULL,
     type TEXT NOT NULL,
     name TEXT NOT NULL,
+    base_solde REAL,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (bank_id) REFERENCES banks(bank_id)
 );

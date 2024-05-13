@@ -154,7 +154,7 @@ public:
     Cash::AccountStatements compute(const TokenContainer &vContainer) {
         const auto &tbl = fillTable(vContainer);
         const auto &stms = solveTableColumns(tbl);
-        //printTable(stms);
+        printTable(stms);
         return extractStatements(stms);
     }
 
@@ -449,14 +449,20 @@ private:
                         }
                     } else if (idx == 3) {
                         if (is_new_line) {
-                            debit = ct::dvariant(tk.token).GetD();
+                            auto tok = tk.token;
+                            ct::replaceString(tok, " ", "");
+                            ct::replaceString(tok, ",", ".");
+                            debit = ct::dvariant(tok).GetD();
                             if (debit > 0.0) {
                                 trans.amount = debit * -1.0;
                             }
                         }
                     } else if (idx == 4) {
                         if (is_new_line) {
-                            credit = ct::dvariant(tk.token).GetD();
+                            auto tok = tk.token;
+                            ct::replaceString(tok, " ", "");
+                            ct::replaceString(tok, ",", ".");
+                            credit = ct::dvariant(tok).GetD();
                             if (credit > 0.0) {
                                 trans.amount = credit;
                             }

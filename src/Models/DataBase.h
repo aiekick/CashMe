@@ -29,6 +29,7 @@ typedef std::string AccountName;
 typedef std::string CategoryName;
 typedef std::string OperationName;
 typedef std::string AccountNumber;
+typedef double AccounBaseSolde;
 typedef std::string TransactionDate;
 typedef std::string TransactionDescription;
 typedef std::string TransactionComment;
@@ -81,7 +82,8 @@ public:
         const BankName& vBankName,
         const AccountType& vAccountType,
         const AccountName& vAccountName,
-        const AccountNumber& vAccountNumber);
+        const AccountNumber& vAccountNumber,
+        const AccounBaseSolde& vBaseSolde);
     bool GetAccount(  //
         const AccountNumber& vAccountNumber,
         RowID& vOutRowID);
@@ -99,14 +101,16 @@ public:
             const BankName&,
             const AccountType&,
             const AccountName&,
-            const AccountNumber&)> vCallback);
+            const AccountNumber&,
+            const AccounBaseSolde&)> vCallback);
     void UpdateAccount(  //
         const RowID& vRowID,
         const UserName& vUserName,
         const BankName& vBankName,
         const AccountType& vAccountType,
         const AccountName& vAccountName,
-        const AccountNumber& vAccountNumber);
+        const AccountNumber& vAccountNumber,
+        const AccounBaseSolde& vBaseSolde);
 
     void AddTransaction(  //
         const RowID& vAccountID,

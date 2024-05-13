@@ -103,20 +103,23 @@ void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
 void DataBrokers::DisplayAccounts() {
     ImGui::Header("Accounts");
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-    if (ImGui::BeginTable("##Accounts", 6, flags)) {
+    if (ImGui::BeginTable("##Accounts", 5, flags)) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn("Users", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Banks", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Number", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Load", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
+        size_t idx = 0U;
         for (const auto& a : m_Datas.accounts) {
             ImGui::TableNextRow();
 
             ImGui::TableSetColumnIndex(0);
-            ImGui::Text(a.user.c_str());
+            if (ImGui::Selectable(a.name.c_str(), m_SelectedAccountIdx == idx, ImGuiSelectableFlags_SpanAllColumns)) {
+                m_UpdateTransactions(a.id);
+                m_SelectedAccountIdx = idx;
+            }
 
             ImGui::TableSetColumnIndex(1);
             ImGui::Text(a.bank.c_str());
@@ -130,10 +133,7 @@ void DataBrokers::DisplayAccounts() {
             ImGui::TableSetColumnIndex(4);
             ImGui::Text(a.number.c_str());
 
-            ImGui::TableSetColumnIndex(5);
-            if (ImGui::SmallContrastedButton(">")) {
-                m_UpdateTransactions(a.id);
-            }
+            ++idx;
         }
         ImGui::EndTable();
     }
@@ -142,7 +142,7 @@ void DataBrokers::DisplayAccounts() {
 void DataBrokers::DisplayTransactions() {
     ImGui::Header("Transactions");
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("##Transactions", 6, flags)) {
+    if (ImGui::BeginTable("##Transactions", 8, flags)) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
@@ -150,6 +150,8 @@ void DataBrokers::DisplayTransactions() {
         ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Solde", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Bars", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
         m_TransactionsListClipper.Begin((int)m_Datas.transactions.size(), ImGui::GetTextLineHeightWithSpacing());
         while (m_TransactionsListClipper.Step()) {
@@ -159,6 +161,7 @@ void DataBrokers::DisplayTransactions() {
                 }
 
                 const auto& t = m_Datas.transactions.at(i);
+                const auto& s = m_Datas.soldes.at(i);
 
                 ImGui::TableNextRow();
 
@@ -176,13 +179,18 @@ void DataBrokers::DisplayTransactions() {
 
                 ImGui::TableSetColumnIndex(4);
                 if (t.amount >= 0.0) {
-                    ImGui::Text("%f", t.amount);
+                    ImGui::Text("%.2f", t.amount);
                 }
 
                 ImGui::TableSetColumnIndex(5);
                 if (t.amount < 0.0) {
-                    ImGui::Text("%f", t.amount);
+                    ImGui::Text("%.2f", t.amount);
                 }
+
+                ImGui::TableSetColumnIndex(6);
+                ImGui::Text("%.2f", s);
+
+                ImGui::TableSetColumnIndex(7);
             }
         }
         m_TransactionsListClipper.End();
@@ -581,7 +589,8 @@ void DataBrokers::m_UpdateAccounts() {
                const BankName& vBankName,
                const AccountType& vAccountType,
                const AccountName& vAccountName,
-               const AccountNumber& vAccountNumber) {  //
+               const AccountNumber& vAccountNumber,
+               const AccounBaseSolde& vBaseSolde) {  //
             Account a;
             a.id = vRowID;
             a.user = vUserName;
@@ -589,10 +598,14 @@ void DataBrokers::m_UpdateAccounts() {
             a.type = vAccountType;
             a.name = vAccountName;
             a.number = vAccountNumber;
+            a.base_solde = vBaseSolde;
             m_Datas.accounts.push_back(a);
             m_Datas.accountNumbers.push_back(vAccountNumber);
         });
     m_AccountsCombo = ImWidgets::QuickStringCombo(0, m_Datas.accountNumbers);
+    if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
+        m_UpdateTransactions(m_Datas.accounts.at(m_SelectedAccountIdx).id);
+    }
 }
 
 void DataBrokers::m_ShowAccountDialog(const DialogMode& vDialogMode) {
@@ -621,6 +634,15 @@ void DataBrokers::m_DrawAccountDialog(const ImVec2& vPos) {
             m_AccountNameInputText.DisplayInputText(width, "Account Name", "", false, align);
             m_AccountTypeInputText.DisplayInputText(width, "Account Type", "", false, align);
             m_AccountNumberInputText.DisplayInputText(width, "Account Number", "", false, align);
+            float px = ImGui::GetCursorPosX();
+            ImGui::Text("Base Solde");
+            ImGui::SameLine(align);
+            const float w = width - (ImGui::GetCursorPosX() - px);
+            ImGui::PushID(++ImGui::CustomStyle::pushId);
+            ImGui::PushItemWidth(w);
+            ImGui::InputDouble("##BaseSolde", &m_AccountBaseSoldeInputDouble);
+            ImGui::PopItemWidth();
+            ImGui::PopID();
             ImGui::Separator();
             if (!m_AccountNameInputText.empty() && !m_AccountTypeInputText.empty() && !m_AccountNumberInputText.empty()) {
                 if (ImGui::ContrastedButton("Ok")) {
@@ -630,7 +652,8 @@ void DataBrokers::m_DrawAccountDialog(const ImVec2& vPos) {
                             m_BanksCombo.GetText(),            //
                             m_AccountTypeInputText.GetText(),  //
                             m_AccountNameInputText.GetText(),  //
-                            m_AccountNumberInputText.GetText());
+                            m_AccountNumberInputText.GetText(),
+                            m_AccountBaseSoldeInputDouble);
                         DataBase::Instance()->CloseDBFile();
                     }
                     m_showAccountDialog = false;
@@ -647,23 +670,30 @@ void DataBrokers::m_DrawAccountDialog(const ImVec2& vPos) {
 
 void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
     m_Datas.transactions.clear();
-    DataBase::Instance()->GetTransactions(  //
-        vAccountID,                         //
-        [this](const TransactionDate& vTransactionDate,
-               const TransactionDescription& vTransactionDescription,
-               const TransactionComment& vTransactionComment,
-               const CategoryName& vCategoryName,
-               const OperationName& vOperationName,
-               const TransactionAmount& vTransactionAmount) {  //
-            Transaction t;
-            t.date = vTransactionDate;
-            t.desc = vTransactionDescription;
-            t.comm = vTransactionComment;
-            t.category = vCategoryName;
-            t.operation = vOperationName;
-            t.amount = vTransactionAmount;
-            m_Datas.transactions.push_back(t);
-        });
+    m_Datas.soldes.clear();
+    const auto& zero_based_account_id = vAccountID - 1;
+    if (zero_based_account_id < m_Datas.accounts.size()) {
+        auto solde = m_Datas.accounts.at(zero_based_account_id).base_solde;
+        DataBase::Instance()->GetTransactions(  //
+            vAccountID,                         //
+            [this, &solde](const TransactionDate& vTransactionDate,
+                           const TransactionDescription& vTransactionDescription,
+                           const TransactionComment& vTransactionComment,
+                           const CategoryName& vCategoryName,
+                           const OperationName& vOperationName,
+                           const TransactionAmount& vTransactionAmount) {  //
+                Transaction t;
+                t.date = vTransactionDate;
+                t.desc = vTransactionDescription;
+                t.comm = vTransactionComment;
+                t.category = vCategoryName;
+                t.operation = vOperationName;
+                t.amount = vTransactionAmount;
+                m_Datas.transactions.push_back(t);
+                solde += t.amount;
+                m_Datas.soldes.push_back(solde);
+            });
+    }
 }
 
 void DataBrokers::m_ShowTransactionDialog(const DialogMode& vDialogMode) {
