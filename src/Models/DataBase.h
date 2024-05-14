@@ -127,6 +127,7 @@ public:
     void GetTransactions(  //
         const RowID& vAccountID,
         std::function<void(  //
+            const RowID&,
             const TransactionDate&,
             const TransactionDescription&,
             const TransactionComment& vComment,

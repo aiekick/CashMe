@@ -587,7 +587,8 @@ INSERT OR IGNORE INTO transactions
 
 void DataBase::GetTransactions(  //
     const RowID& vAccountID,
-    std::function<void(          //
+    std::function<void(  //
+        const RowID&,
         const TransactionDate&,
         const TransactionDescription&,
         const TransactionComment&,
@@ -596,9 +597,10 @@ void DataBase::GetTransactions(  //
         const TransactionAmount&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    auto select_query =
-        ct::toStr(u8R"(
+    auto select_query = ct::toStr(
+        u8R"(
 SELECT
+  transactions.transaction_id AS rowid,
   transactions.date,
   transactions.description,
   transactions.comment,
@@ -614,7 +616,8 @@ WHERE
   transactions.account_id = %u
 ORDER BY
   transactions.date;
-)", vAccountID);
+)",
+        vAccountID);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -624,14 +627,16 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    const char* transaction_date = (const char*)sqlite3_column_text(stmt, 0);
-                    const char* transaction_description = (const char*)sqlite3_column_text(stmt, 1);
-                    const char* transaction_comment = (const char*)sqlite3_column_text(stmt, 2);
-                    const char* operation_name = (const char*)sqlite3_column_text(stmt, 3);
-                    const char* category_name = (const char*)sqlite3_column_text(stmt, 4);
-                    double transaction_amount = sqlite3_column_double(stmt, 5);
-                    vCallback(                                        //
-                        transaction_date != nullptr ? transaction_date : "",  //
+                    RowID transaction_id = sqlite3_column_int(stmt, 0);
+                    const char* transaction_date = (const char*)sqlite3_column_text(stmt, 1);
+                    const char* transaction_description = (const char*)sqlite3_column_text(stmt, 2);
+                    const char* transaction_comment = (const char*)sqlite3_column_text(stmt, 3);
+                    const char* operation_name = (const char*)sqlite3_column_text(stmt, 4);
+                    const char* category_name = (const char*)sqlite3_column_text(stmt, 5);
+                    double transaction_amount = sqlite3_column_double(stmt, 6);
+                    vCallback(  //
+                        transaction_id,
+                        transaction_date != nullptr ? transaction_date : "",                //
                         transaction_description != nullptr ? transaction_description : "",  //
                         transaction_comment != nullptr ? transaction_comment : "",          //
                         category_name != nullptr ? category_name : "",                      //

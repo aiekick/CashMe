@@ -26,6 +26,7 @@ private:
         TransactionsCount count = 0U;
     };
     struct Transaction {
+        RowID id = 0;
         TransactionDate date;
         TransactionDescription desc;
         TransactionComment comm;
@@ -45,6 +46,16 @@ private:
         std::vector<AccountNumber> accountNumbers;
         std::vector<Transaction> transactions;
         std::vector<Transaction> transactions_filtered;
+        void clear() {
+            userNames.clear();
+            bankNames.clear();
+            categoryNames.clear();
+            operationNames.clear();
+            accounts.clear();
+            accountNumbers.clear();
+            transactions.clear();
+            transactions_filtered.clear();
+        }
     } m_Datas;
     enum class DialogMode {  //
         CREATION = 0,
@@ -145,10 +156,12 @@ private:  // ImGui
     void m_DrawOperationDialog(const ImVec2& vPos);
 
     void m_UpdateAccounts();
+    void m_drawAccountMenu(const RowID& vAccountID);
     void m_ShowAccountDialog(const DialogMode& vDialogMode);
     void m_DrawAccountDialog(const ImVec2& vPos);
 
     void m_UpdateTransactions(const RowID& vAccountID);
+    void m_drawTransactionMenu(const RowID& vTransactionID);
     void m_ShowTransactionDialog(const DialogMode& vDialogMode);
     void m_DrawTransactionDialog(const ImVec2& vPos);
 

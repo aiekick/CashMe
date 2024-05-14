@@ -13,6 +13,8 @@
 
 #include <Models/DataBase.h>
 
+#include <Res/fontIcons.h>
+
 #include <chrono>
 #include <vector>
 #include <ctime>
@@ -103,8 +105,9 @@ void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
 void DataBrokers::DisplayAccounts() {
     ImGui::Header("Accounts");
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-    if (ImGui::BeginTable("##Accounts", 6, flags)) {
+    if (ImGui::BeginTable("##Accounts", 7, flags)) {
         ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn("##Menu", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Users", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Banks", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
@@ -116,25 +119,28 @@ void DataBrokers::DisplayAccounts() {
         for (const auto& a : m_Datas.accounts) {
             ImGui::TableNextRow();
 
-            ImGui::TableSetColumnIndex(0);
-            if (ImGui::Selectable(a.name.c_str(), m_SelectedAccountIdx == idx, ImGuiSelectableFlags_SpanAllColumns)) {
+            ImGui::TableNextColumn();
+            m_drawAccountMenu(a.id);
+
+            ImGui::TableNextColumn();
+            if (ImGui::Selectable(a.user.c_str(), m_SelectedAccountIdx == idx, ImGuiSelectableFlags_SpanAllColumns)) {
                 m_UpdateTransactions(a.id);
                 m_SelectedAccountIdx = idx;
             }
 
-            ImGui::TableSetColumnIndex(1);
+            ImGui::TableNextColumn();
             ImGui::Text(a.bank.c_str());
 
-            ImGui::TableSetColumnIndex(2);
+            ImGui::TableNextColumn();
             ImGui::Text(a.type.c_str());
 
-            ImGui::TableSetColumnIndex(3);
+            ImGui::TableNextColumn();
             ImGui::Text(a.name.c_str());
 
-            ImGui::TableSetColumnIndex(4);
+            ImGui::TableNextColumn();
             ImGui::Text(a.number.c_str());
 
-            ImGui::TableSetColumnIndex(5);
+            ImGui::TableNextColumn();
             ImGui::Text("%u", a.count);
 
             ++idx;
@@ -146,8 +152,9 @@ void DataBrokers::DisplayAccounts() {
 void DataBrokers::DisplayTransactions() {
     ImGui::Header("Transactions");
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("##Transactions", 8, flags)) {
+    if (ImGui::BeginTable("##Transactions", 9, flags)) {
         ImGui::TableSetupScrollFreeze(0, 2);
+        ImGui::TableSetupColumn("##Menu", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
@@ -190,10 +197,13 @@ void DataBrokers::DisplayTransactions() {
                 ImGui::TableNextRow();
 
                 ImGui::TableNextColumn();
+                { m_drawTransactionMenu(t.id); }
+
+                ImGui::TableNextColumn();
                 { ImGui::Text(t.date.c_str()); }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text(t.desc.c_str()); }
+                { ImGui::Selectable(t.desc.c_str(), false, ImGuiSelectableFlags_SpanAllColumns); }
 
                 ImGui::TableNextColumn();
                 { ImGui::Text(t.category.c_str()); }
@@ -400,16 +410,9 @@ void DataBrokers::m_refreshDatas() {
 }
 
 void DataBrokers::m_Clear() {
-    // msut be cleared even if they are some smart pointers
-    // since the pointers come from a plugin loaded memory
-    // when the plugin is destoryed, an automatic reset of weak pointer will cause a crash
-    // the same for all pointers type who are coming from the plugin.
-    // so we must do this manually here
-    // pointer on a internal plugin data
-    // thoses contain weak ptrs
-    m_SelectedBroker.reset();
-    // this dico save plugin ptr, we clear it at end
+    m_SelectedBroker.reset(); // must be reset before quit since point on the memroy of a plugin
     m_DataBrokerModules.clear();
+    m_Datas.clear();
 }
 
 void DataBrokers::m_GetAvailableDataBrokers() {
@@ -703,6 +706,14 @@ void DataBrokers::m_UpdateAccounts() {
     }
 }
 
+void DataBrokers::m_drawAccountMenu(const RowID& vAccountID) {
+    ImGui::PushID(vAccountID);
+    if (ImGui::BeginMenu("##AccountMenu")) {
+        ImGui::EndMenu();
+    }
+    ImGui::PopID();
+}
+
 void DataBrokers::m_ShowAccountDialog(const DialogMode& vDialogMode) {
     m_showAccountDialog = true;
     m_dialogMode = vDialogMode;
@@ -770,7 +781,8 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
         double solde = m_CurrentBaseSolde = m_Datas.accounts.at(zero_based_account_id).base_solde;
         DataBase::Instance()->GetTransactions(  //
             vAccountID,                         //
-            [this, &solde](const TransactionDate& vTransactionDate,
+            [this, &solde](const RowID& vTransactionID,
+                           const TransactionDate& vTransactionDate,
                            const TransactionDescription& vTransactionDescription,
                            const TransactionComment& vTransactionComment,
                            const CategoryName& vCategoryName,
@@ -778,9 +790,10 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
                            const TransactionAmount& vTransactionAmount) {  //
                 solde += vTransactionAmount;
                 Transaction t;
+                t.id = vTransactionID;
                 t.date = vTransactionDate;
                 t.desc = vTransactionDescription;
-                t.optimized[0] =  ct::toLower(vTransactionDescription);
+                t.optimized[0] = ct::toLower(vTransactionDescription);
                 t.comm = vTransactionComment;
                 t.category = vCategoryName;
                 t.optimized[1] = ct::toLower(vCategoryName);
@@ -792,6 +805,14 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
             });
     }
     m_RefreshFiltering();
+}
+
+void DataBrokers::m_drawTransactionMenu(const RowID& vTransactionID) {
+    ImGui::PushID(vTransactionID);
+    if (ImGui::BeginMenu("##TransactionMenu")) {
+        ImGui::EndMenu();
+    }
+    ImGui::PopID();
 }
 
 void DataBrokers::m_ShowTransactionDialog(const DialogMode& vDialogMode) {
@@ -866,6 +887,7 @@ void DataBrokers::m_drawSearchRow() {
     bool change = false;
     bool reset = false;
     ImGui::TableNextRow();
+    ImGui::TableNextColumn();
     for (size_t idx = 0; idx < 8; ++idx) {
         ImGui::TableNextColumn();
         if (idx < 1) {
