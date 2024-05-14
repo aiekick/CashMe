@@ -461,7 +461,8 @@ void DataBase::GetAccounts(  //
         const AccountType&,
         const AccountName&,
         const AccountNumber&,
-        const AccounBaseSolde&)> vCallback) {
+        const AccounBaseSolde&,
+        const TransactionsCount&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     std::string select_query =
@@ -473,12 +474,14 @@ SELECT
   accounts.type AS account_type,
   accounts.name AS account_name,
   accounts.number AS account_number,
-  accounts.base_solde AS account_base_solde
-FROM 
-  accounts
-  LEFT JOIN users ON users.user_id = accounts.user_id
-  LEFT JOIN banks ON banks.bank_id = accounts.bank_id
-GROUP BY user_name, bank_name, account_name;
+  accounts.base_solde AS account_base_solde,
+  COUNT(t.account_id) AS nombre_transactions
+FROM accounts
+LEFT JOIN users ON users.user_id = accounts.user_id
+LEFT JOIN banks ON banks.bank_id = accounts.bank_id
+LEFT JOIN transactions t ON accounts.account_id = t.account_id
+GROUP BY user_name, bank_name, account_name
+ORDER BY accounts.account_id;
 )";
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
@@ -495,15 +498,17 @@ GROUP BY user_name, bank_name, account_name;
                     const char* account_type = (const char*)sqlite3_column_text(stmt, 3);
                     const char* account_name = (const char*)sqlite3_column_text(stmt, 4);
                     const char* account_number = (const char*)sqlite3_column_text(stmt, 5);
-                    double account_base_solde = sqlite3_column_double(stmt, 6);
-                    vCallback(                                        //
-                        account_id,                                   //
-                        user_name != nullptr ? user_name : "",        //
-                        bank_name != nullptr ? bank_name : "",        //
-                        account_type != nullptr ? account_type : "",  //
-                        account_name != nullptr ? account_name : "",  //
-                        account_number != nullptr ? account_number : "",
-                        account_base_solde);
+                    AccounBaseSolde account_base_solde = sqlite3_column_double(stmt, 6);
+                    TransactionsCount transactions_count = sqlite3_column_int(stmt, 7);
+                    vCallback(                                            //
+                        account_id,                                       //
+                        user_name != nullptr ? user_name : "",            //
+                        bank_name != nullptr ? bank_name : "",            //
+                        account_type != nullptr ? account_type : "",      //
+                        account_name != nullptr ? account_name : "",      //
+                        account_number != nullptr ? account_number : "",  //
+                        account_base_solde,                               //
+                        transactions_count);
                 }
             }
         }

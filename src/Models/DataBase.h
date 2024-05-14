@@ -34,6 +34,7 @@ typedef std::string TransactionDate;
 typedef std::string TransactionDescription;
 typedef std::string TransactionComment;
 typedef double TransactionAmount;
+typedef uint32_t TransactionsCount;
 
 class DataBaseTable {
 public:
@@ -102,7 +103,8 @@ public:
             const AccountType&,
             const AccountName&,
             const AccountNumber&,
-            const AccounBaseSolde&)> vCallback);
+            const AccounBaseSolde&,
+            const TransactionsCount&)> vCallback);
     void UpdateAccount(  //
         const RowID& vRowID,
         const UserName& vUserName,

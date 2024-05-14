@@ -103,13 +103,14 @@ void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
 void DataBrokers::DisplayAccounts() {
     ImGui::Header("Accounts");
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-    if (ImGui::BeginTable("##Accounts", 5, flags)) {
+    if (ImGui::BeginTable("##Accounts", 6, flags)) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn("Users", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Banks", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Number", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
         size_t idx = 0U;
         for (const auto& a : m_Datas.accounts) {
@@ -132,6 +133,9 @@ void DataBrokers::DisplayAccounts() {
 
             ImGui::TableSetColumnIndex(4);
             ImGui::Text(a.number.c_str());
+
+            ImGui::TableSetColumnIndex(5);
+            ImGui::Text("%u", a.count);
 
             ++idx;
         }
@@ -590,7 +594,8 @@ void DataBrokers::m_UpdateAccounts() {
                const AccountType& vAccountType,
                const AccountName& vAccountName,
                const AccountNumber& vAccountNumber,
-               const AccounBaseSolde& vBaseSolde) {  //
+               const AccounBaseSolde& vBaseSolde,
+               const TransactionsCount& vCount) {  //
             Account a;
             a.id = vRowID;
             a.user = vUserName;
@@ -599,6 +604,7 @@ void DataBrokers::m_UpdateAccounts() {
             a.name = vAccountName;
             a.number = vAccountNumber;
             a.base_solde = vBaseSolde;
+            a.count = vCount;
             m_Datas.accounts.push_back(a);
             m_Datas.accountNumbers.push_back(vAccountNumber);
         });

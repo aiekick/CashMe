@@ -149,6 +149,10 @@ private:
     std::string m_EndDate;
     std::string m_Ledger;
     std::string m_DocNumber;
+    Token m_StartSoldeToken;
+    Token m_EndSoldeToken;
+    double m_StartSolde = 0.0;
+    double m_EndSolde = 0.0;
 
 public:
     Cash::AccountStatements compute(const TokenContainer &vContainer) {
@@ -245,14 +249,19 @@ private:
                     }
                 } else if (fields.fields.size() == 3U) {
                     if (tabled_started) {
-                        if (fields.fields.at(1).token.find("ANCIEN SOLDE") != std::string::npos || //
-                            fields.fields.at(0).token.find("TOTAUX") != std::string::npos) {
+                        if (fields.fields.at(1).token.find("ANCIEN SOLDE") != std::string::npos) {
                             // ANCIEN SOLDE => on saute la ligne
+                            can_save_row = false;  // end of a table
+                            m_StartSoldeToken = fields.fields.at(2);
+                        } else if( 
+                            fields.fields.at(0).token.find("TOTAUX") != std::string::npos) {
+                            // TOTAUX => on saute la ligne
                             can_save_row = false;  // end of a table
                         } else if (fields.fields.at(1).token.find("SOLDE EN EUROS") != std::string::npos) {
                             // fin du fichier
                             m_Ledger = fields.fields.at(2).token;
                             tabled_started = false;  // end of a table
+                            m_EndSoldeToken = fields.fields.at(2);
                             return ret;
                         }
                     }
@@ -274,6 +283,20 @@ private:
         }
         return ret;
     }
+    int32_t getColumnOfField(const Token &vToken, const std::vector<double> vColumnPoses) {
+        // we need to find the column
+        // from end to start, for find the last column
+        int32_t c = static_cast<int32_t>(vColumnPoses.size()) - 1;
+        for (; c >= 0; --c) {
+            if (vToken.px > vColumnPoses.at(c)) {
+                break;
+            }
+        }
+        if (c < 0) {
+            CTOOL_DEBUG_BREAK;
+        }
+        return c;
+    }
     StatementRows solveTableColumns(const Table &vTable) {
         StatementRows ret;
         if (!vTable.empty()) {
@@ -285,17 +308,7 @@ private:
                 } 
                 StatementFields f;
                 for (const auto &col : row.fields) {
-                    // we need to find the column
-                    // from end to styart, for find the last column
-                    int32_t c = static_cast<int32_t>(currentHeader.hxs.size()) - 1;
-                    for (; c >= 0; --c) {
-                        if (col.px > currentHeader.hxs.at(c)) {
-                            break;
-                        }
-                    }
-                    if (c < 0) {
-                        CTOOL_DEBUG_BREAK;
-                    }
+                    const auto &c = getColumnOfField(col, currentHeader.hxs);
                     if (c < m_ColSizes.size()) {
                         f[c] = col;
                         // for table printing
@@ -314,6 +327,22 @@ private:
                     }
                 } else {
                     ret.push_back(f);
+                }
+            }
+            {  // start solde
+                const auto &c = getColumnOfField(m_StartSoldeToken, currentHeader.hxs);
+                ct::replaceString(m_StartSoldeToken.token, " ", "");
+                ct::replaceString(m_StartSoldeToken.token, ",", ".");
+                if (c == 3) {
+                    m_StartSoldeToken.token = "-" + m_StartSoldeToken.token;
+                } 
+            }
+            {  // end solde
+                const auto &c = getColumnOfField(m_EndSoldeToken, currentHeader.hxs);
+                ct::replaceString(m_EndSoldeToken.token, " ", "");
+                ct::replaceString(m_EndSoldeToken.token, ",", ".");
+                if (c == 3) {
+                    m_EndSoldeToken.token = "-" + m_EndSoldeToken.token;
                 }
             }
         }
@@ -412,8 +441,10 @@ private:
         {  // statements
             Cash::Transaction trans;
             bool is_new_line = false;
-            double debit = 0.0;
-            double credit = 0.0;
+            m_StartSolde = ct::dvariant(m_StartSoldeToken.token).GetD();
+            m_EndSolde = ct::dvariant(m_EndSoldeToken.token).GetD();
+            double solde = m_StartSolde;
+            double debit = 0.0, credit = 0.0;
             // 0 is the header, sow e jump it
             for (size_t row_idx = 1; row_idx < vStms.size(); ++row_idx) {
                 const auto &row = vStms.at(row_idx);
@@ -455,6 +486,7 @@ private:
                             debit = ct::dvariant(tok).GetD();
                             if (debit > 0.0) {
                                 trans.amount = debit * -1.0;
+                                solde += trans.amount;
                             }
                         }
                     } else if (idx == 4) {
@@ -465,6 +497,7 @@ private:
                             credit = ct::dvariant(tok).GetD();
                             if (credit > 0.0) {
                                 trans.amount = credit;
+                                solde += trans.amount;
                             }
                         }
                     }
@@ -479,6 +512,14 @@ private:
                     ret.statements.push_back(trans);
                     trans = {};
                 }
+            }
+
+            const auto &compute_solde_str = ct::round_n(solde, 2);
+            const auto &final_solde_str = ct::round_n(m_EndSolde, 2);
+            if (compute_solde_str != final_solde_str) {
+                LogVarDebugError("Fail, the computed solde of %s not match the end solde of the file.some lines are basdly parsed maybe",
+                                 compute_solde_str.c_str(),
+                                 final_solde_str.c_str());
             }
         }
 

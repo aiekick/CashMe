@@ -23,6 +23,7 @@ private:
         AccountName name;
         AccountNumber number;
         AccounBaseSolde base_solde = 0.0;
+        TransactionsCount count = 0U;
     };
     struct Transaction {
         TransactionDate date;
