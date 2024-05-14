@@ -152,13 +152,31 @@ void DataBrokers::DisplayTransactions() {
         ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Solde", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Bars", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
-        m_TransactionsListClipper.Begin((int)m_Datas.transactions.size(), ImGui::GetTextLineHeightWithSpacing());
+        const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
+        const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
+        const float& bar_column_width = 50.0f;
+        double max_price = DBL_MIN;
+        double min_price = DBL_MAX;
+        auto drawListPtr = ImGui::GetWindowDrawList();
+        const float text_h = ImGui::GetTextLineHeight();
+        const float item_h = ImGui::GetTextLineHeightWithSpacing();
+        m_TransactionsListClipper.Begin((int)m_Datas.transactions.size(), item_h);
         while (m_TransactionsListClipper.Step()) {
+            max_price = 0.0;
+            for (int i = m_TransactionsListClipper.DisplayStart; i < m_TransactionsListClipper.DisplayEnd; i++) {
+                if (i < 0) {
+                    continue;
+                }
+                const auto& s = std::abs(m_Datas.soldes.at(i));
+                if (s > max_price) {
+                    max_price = s;
+                }
+            }
             for (int i = m_TransactionsListClipper.DisplayStart; i < m_TransactionsListClipper.DisplayEnd; i++) {
                 if (i < 0) {
                     continue;
@@ -182,19 +200,48 @@ void DataBrokers::DisplayTransactions() {
                 ImGui::Text(t.operation.c_str());
 
                 ImGui::TableSetColumnIndex(4);
-                if (t.amount >= 0.0) {
+                if (t.amount < 0.0) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
                     ImGui::Text("%.2f", t.amount);
+                    ImGui::PopStyleColor();
                 }
 
                 ImGui::TableSetColumnIndex(5);
-                if (t.amount < 0.0) {
+                if (t.amount >= 0.0) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, good_color);
                     ImGui::Text("%.2f", t.amount);
+                    ImGui::PopStyleColor();
                 }
 
                 ImGui::TableSetColumnIndex(6);
-                ImGui::Text("%.2f", s);
+                if (s < 0.0) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
+                    ImGui::Text("%.2f", s);
+                    ImGui::PopStyleColor();
+                } else if (s > 0.0) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, good_color);
+                    ImGui::Text("%.2f", s);
+                    ImGui::PopStyleColor();
+                } else {
+                    ImGui::Text("%.2f", s);
+                }
 
                 ImGui::TableSetColumnIndex(7);
+                auto cursor = ImGui::GetCursorScreenPos();
+
+                ImVec2 pMin(cursor.x, cursor.y + text_h * 0.25f);
+                ImVec2 pMax(cursor.x + bar_column_width, cursor.y + text_h * 0.75f);
+                float pMidX = (pMin.x + pMax.x) * 0.5f;
+                ImU32 color = ImGui::ColorConvertFloat4ToU32((ImVec4)ImColor::HSV((i % 7) / 7.0f, 1.0f, 1.0f));
+
+                ImGui::SetCursorScreenPos(pMin);
+                float bw = bar_column_width * 0.5f * std::abs(s) / (float)max_price;
+                if (s < 0.0) {
+                    drawListPtr->AddRectFilled(ImVec2(pMidX - bw, pMin.y), ImVec2(pMidX, pMax.y), bad_color);
+                } else if (s > 0.0) {
+                    drawListPtr->AddRectFilled(ImVec2(pMidX, pMin.y), ImVec2(pMidX + bw, pMax.y), good_color);
+                }
+                ImGui::SetCursorScreenPos(pMax);
             }
         }
         m_TransactionsListClipper.End();
