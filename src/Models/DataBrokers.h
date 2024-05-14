@@ -32,6 +32,9 @@ private:
         CategoryName category;
         OperationName operation;
         TransactionAmount amount = 0.0;
+        TransactionSolde solde = 0.0;
+        // desc, cat, op
+        std::array<std::string, 3> optimized; // 
     };
     struct Datas {
         std::vector<UserName> userNames;
@@ -41,7 +44,7 @@ private:
         std::vector<Account> accounts;
         std::vector<AccountNumber> accountNumbers;
         std::vector<Transaction> transactions;
-        std::vector<TransactionAmount> soldes;
+        std::vector<Transaction> transactions_filtered;
     } m_Datas;
     enum class DialogMode {  //
         CREATION = 0,
@@ -88,6 +91,14 @@ private:
     ImWidgets::InputText m_TransactionCommentInputText;
     double m_TransactionAmountInputDouble = 0.0;
 
+    TransactionAmount m_CurrentBaseSolde = 0.0;
+    TransactionAmount m_TotalDebit = 0.0;
+    TransactionAmount m_TotalCredit = 0.0;
+
+    // search for desc, cat, ope
+    std::array<ImWidgets::InputText, 3> m_SearchInputTexts;
+    std::array<std::string, 3> m_SearchTokens;
+
 public:
     bool init();
     void unit();
@@ -113,6 +124,8 @@ private:
     void m_Clear();
     void m_GetAvailableDataBrokers();
     void m_ImportFromFiles(const std::vector<std::string> vFiles);
+    void m_ResetFiltering();
+    void m_RefreshFiltering();
 
 private:  // ImGui
     void m_UpdateUsers();
@@ -138,6 +151,9 @@ private:  // ImGui
     void m_UpdateTransactions(const RowID& vAccountID);
     void m_ShowTransactionDialog(const DialogMode& vDialogMode);
     void m_DrawTransactionDialog(const ImVec2& vPos);
+
+    void m_drawSearchRow();
+    void m_drawAmount(const double& vAmount);
 
 public:  // singleton
     static DataBrokers* Instance() {

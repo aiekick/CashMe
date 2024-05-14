@@ -34,6 +34,7 @@ typedef std::string TransactionDate;
 typedef std::string TransactionDescription;
 typedef std::string TransactionComment;
 typedef double TransactionAmount;
+typedef double TransactionSolde;
 typedef uint32_t TransactionsCount;
 
 class DataBaseTable {

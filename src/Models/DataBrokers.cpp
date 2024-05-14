@@ -147,7 +147,7 @@ void DataBrokers::DisplayTransactions() {
     ImGui::Header("Transactions");
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
     if (ImGui::BeginTable("##Transactions", 8, flags)) {
-        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupScrollFreeze(0, 2);
         ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
@@ -156,92 +156,99 @@ void DataBrokers::DisplayTransactions() {
         ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Solde", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Bars", ImGuiTableColumnFlags_WidthFixed);
+        m_drawSearchRow();
         ImGui::TableHeadersRow();
-        const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
-        const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
-        const float& bar_column_width = 50.0f;
+        int32_t idx = 0;
         double max_price = DBL_MIN;
-        double min_price = DBL_MAX;
+        const float& bar_column_width = 100.0f;
         auto drawListPtr = ImGui::GetWindowDrawList();
-        const float text_h = ImGui::GetTextLineHeight();
-        const float item_h = ImGui::GetTextLineHeightWithSpacing();
-        m_TransactionsListClipper.Begin((int)m_Datas.transactions.size(), item_h);
+        const float& text_h = ImGui::GetTextLineHeight();
+        const float& item_h = ImGui::GetTextLineHeightWithSpacing();
+        const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
+        const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
+        m_TransactionsListClipper.Begin((int)m_Datas.transactions_filtered.size(), item_h);
         while (m_TransactionsListClipper.Step()) {
             max_price = 0.0;
-            for (int i = m_TransactionsListClipper.DisplayStart; i < m_TransactionsListClipper.DisplayEnd; i++) {
-                if (i < 0) {
+            for (idx = m_TransactionsListClipper.DisplayStart; idx < m_TransactionsListClipper.DisplayEnd; ++idx) {
+                if (idx < 0) {
                     continue;
                 }
-                const auto& s = std::abs(m_Datas.soldes.at(i));
-                if (s > max_price) {
-                    max_price = s;
+                const auto& t = m_Datas.transactions_filtered.at(idx);
+                const auto& as = std::abs(t.solde);
+                if (as > max_price) {
+                    max_price = as;
                 }
             }
-            for (int i = m_TransactionsListClipper.DisplayStart; i < m_TransactionsListClipper.DisplayEnd; i++) {
-                if (i < 0) {
+
+            for (idx = m_TransactionsListClipper.DisplayStart; idx < m_TransactionsListClipper.DisplayEnd; ++idx) {
+                if (idx < 0) {
                     continue;
                 }
 
-                const auto& t = m_Datas.transactions.at(i);
-                const auto& s = m_Datas.soldes.at(i);
+                const auto& t = m_Datas.transactions_filtered.at(idx);
 
                 ImGui::TableNextRow();
 
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text(t.date.c_str());
+                ImGui::TableNextColumn();
+                { ImGui::Text(t.date.c_str()); }
 
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Text(t.desc.c_str());
+                ImGui::TableNextColumn();
+                { ImGui::Text(t.desc.c_str()); }
 
-                ImGui::TableSetColumnIndex(2);
-                ImGui::Text(t.category.c_str());
+                ImGui::TableNextColumn();
+                { ImGui::Text(t.category.c_str()); }
 
-                ImGui::TableSetColumnIndex(3);
-                ImGui::Text(t.operation.c_str());
+                ImGui::TableNextColumn();
+                { ImGui::Text(t.operation.c_str()); }
 
-                ImGui::TableSetColumnIndex(4);
-                if (t.amount < 0.0) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-                    ImGui::Text("%.2f", t.amount);
-                    ImGui::PopStyleColor();
+                ImGui::TableNextColumn();
+                {
+                    if (t.amount < 0.0) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
+                        ImGui::Text("%.2f", t.amount);
+                        ImGui::PopStyleColor();
+                    }
                 }
 
-                ImGui::TableSetColumnIndex(5);
-                if (t.amount >= 0.0) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-                    ImGui::Text("%.2f", t.amount);
-                    ImGui::PopStyleColor();
+                ImGui::TableNextColumn();
+                {
+                    if (t.amount >= 0.0) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, good_color);
+                        ImGui::Text("%.2f", t.amount);
+                        ImGui::PopStyleColor();
+                    }
                 }
 
-                ImGui::TableSetColumnIndex(6);
-                if (s < 0.0) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-                    ImGui::Text("%.2f", s);
-                    ImGui::PopStyleColor();
-                } else if (s > 0.0) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-                    ImGui::Text("%.2f", s);
-                    ImGui::PopStyleColor();
-                } else {
-                    ImGui::Text("%.2f", s);
+                ImGui::TableNextColumn();
+                {
+                    if (t.solde < 0.0) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
+                        ImGui::Text("%.2f", t.solde);
+                        ImGui::PopStyleColor();
+                    } else if (t.solde > 0.0) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, good_color);
+                        ImGui::Text("%.2f", t.solde);
+                        ImGui::PopStyleColor();
+                    } else {
+                        ImGui::Text("%.2f", t.solde);
+                    }
                 }
 
-                ImGui::TableSetColumnIndex(7);
-                auto cursor = ImGui::GetCursorScreenPos();
-
-                ImVec2 pMin(cursor.x, cursor.y + text_h * 0.25f);
-                ImVec2 pMax(cursor.x + bar_column_width, cursor.y + text_h * 0.75f);
-                float pMidX = (pMin.x + pMax.x) * 0.5f;
-                ImU32 color = ImGui::ColorConvertFloat4ToU32((ImVec4)ImColor::HSV((i % 7) / 7.0f, 1.0f, 1.0f));
-
-                ImGui::SetCursorScreenPos(pMin);
-                float bw = bar_column_width * 0.5f * std::abs(s) / (float)max_price;
-                if (s < 0.0) {
-                    drawListPtr->AddRectFilled(ImVec2(pMidX - bw, pMin.y), ImVec2(pMidX, pMax.y), bad_color);
-                } else if (s > 0.0) {
-                    drawListPtr->AddRectFilled(ImVec2(pMidX, pMin.y), ImVec2(pMidX + bw, pMax.y), good_color);
+                ImGui::TableNextColumn();
+                {
+                    const auto& cursor = ImGui::GetCursorScreenPos();
+                    const ImVec2 pMin(cursor.x, cursor.y + text_h * 0.1f);
+                    const ImVec2 pMax(cursor.x + bar_column_width, cursor.y + text_h * 0.9f);
+                    const float pMidX((pMin.x + pMax.x) * 0.5f);
+                    ImGui::SetCursorScreenPos(pMin);
+                    const float bw(bar_column_width * 0.5f * std::abs(t.solde) / (float)max_price);
+                    if (t.solde < 0.0) {
+                        drawListPtr->AddRectFilled(ImVec2(pMidX - bw, pMin.y), ImVec2(pMidX, pMax.y), bad_color);
+                    } else if (t.solde > 0.0) {
+                        drawListPtr->AddRectFilled(ImVec2(pMidX, pMin.y), ImVec2(pMidX + bw, pMax.y), good_color);
+                    }
+                    ImGui::SetCursorScreenPos(pMax);
                 }
-                ImGui::SetCursorScreenPos(pMax);
             }
         }
         m_TransactionsListClipper.End();
@@ -439,6 +446,41 @@ void DataBrokers::m_ImportFromFiles(const std::vector<std::string> vFiles) {
                         LogVarError("Import interrupted, no account found for %s", stmt.account.number.c_str());
                     }
                 }
+            }
+        }
+    }
+}
+
+void DataBrokers::m_ResetFiltering() {
+    m_Datas.transactions_filtered = m_Datas.transactions;
+    m_SearchInputTexts = {};
+    m_SearchTokens = {};
+    m_RefreshFiltering();
+}
+
+void DataBrokers::m_RefreshFiltering() {
+    m_Datas.transactions_filtered.clear();
+    bool use = false;
+    double solde = m_CurrentBaseSolde;
+    m_TotalDebit = 0.0;
+    m_TotalCredit = 0.0;
+    for (auto tr : m_Datas.transactions) {
+        use = true;
+        for (size_t idx = 0; idx < 3; ++idx) {
+            const auto& tk = m_SearchTokens.at(idx);
+            if (!tk.empty()) {
+                use &= (tr.optimized.at(idx).find(tk) != std::string::npos);
+            }
+        }
+        if (use) {
+            solde += tr.amount;
+            tr.solde = solde;
+            m_Datas.transactions_filtered.push_back(tr);
+            if (tr.amount < 0.0) {
+                m_TotalDebit += tr.amount;
+            }
+            if (tr.amount > 0.0) {
+                m_TotalCredit += tr.amount;
             }
         }
     }
@@ -723,10 +765,9 @@ void DataBrokers::m_DrawAccountDialog(const ImVec2& vPos) {
 
 void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
     m_Datas.transactions.clear();
-    m_Datas.soldes.clear();
     const auto& zero_based_account_id = vAccountID - 1;
     if (zero_based_account_id < m_Datas.accounts.size()) {
-        auto solde = m_Datas.accounts.at(zero_based_account_id).base_solde;
+        double solde = m_CurrentBaseSolde = m_Datas.accounts.at(zero_based_account_id).base_solde;
         DataBase::Instance()->GetTransactions(  //
             vAccountID,                         //
             [this, &solde](const TransactionDate& vTransactionDate,
@@ -735,18 +776,22 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
                            const CategoryName& vCategoryName,
                            const OperationName& vOperationName,
                            const TransactionAmount& vTransactionAmount) {  //
+                solde += vTransactionAmount;
                 Transaction t;
                 t.date = vTransactionDate;
                 t.desc = vTransactionDescription;
+                t.optimized[0] =  ct::toLower(vTransactionDescription);
                 t.comm = vTransactionComment;
                 t.category = vCategoryName;
+                t.optimized[1] = ct::toLower(vCategoryName);
                 t.operation = vOperationName;
+                t.optimized[2] = ct::toLower(vOperationName);
                 t.amount = vTransactionAmount;
+                t.solde = solde;
                 m_Datas.transactions.push_back(t);
-                solde += t.amount;
-                m_Datas.soldes.push_back(solde);
             });
     }
+    m_RefreshFiltering();
 }
 
 void DataBrokers::m_ShowTransactionDialog(const DialogMode& vDialogMode) {
@@ -814,5 +859,54 @@ void DataBrokers::m_DrawTransactionDialog(const ImVec2& vPos) {
             }
             ImGui::EndPopup();
         }
+    }
+}
+
+void DataBrokers::m_drawSearchRow() {
+    bool change = false;
+    bool reset = false;
+    ImGui::TableNextRow();
+    for (size_t idx = 0; idx < 8; ++idx) {
+        ImGui::TableNextColumn();
+        if (idx < 1) {
+            if (ImGui::ContrastedButton("Reset", nullptr, nullptr, ImGui::GetColumnWidth(idx))) {
+                reset = true;
+            }
+        } else if (idx < 4) {
+            if (m_SearchInputTexts.at(idx - 1).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
+                m_SearchTokens[idx - 1] = ct::toLower(m_SearchInputTexts.at(idx - 1).GetText());
+                change = true;
+            }
+        } else if (idx == 4) {
+            m_drawAmount(m_TotalDebit);
+        } else if (idx == 5) {
+            m_drawAmount(m_TotalCredit);
+        } else if (idx == 6) {
+            //m_drawAmount(m_CurrentBaseSolde);
+        } else if (idx == 7) {
+            ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size());
+        }
+    }
+    if (reset) {
+        m_ResetFiltering();
+    }
+    if (change) {
+        m_RefreshFiltering();
+    }
+}
+
+void DataBrokers::m_drawAmount(const double& vAmount) {
+    if (vAmount < 0.0) {
+        const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
+        ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
+        ImGui::Text("%.2f", vAmount);
+        ImGui::PopStyleColor();
+    } else if (vAmount > 0.0) {
+        const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
+        ImGui::PushStyleColor(ImGuiCol_Text, good_color);
+        ImGui::Text("%.2f", vAmount);
+        ImGui::PopStyleColor();
+    } else {
+        ImGui::Text("%.2f", vAmount);
     }
 }
