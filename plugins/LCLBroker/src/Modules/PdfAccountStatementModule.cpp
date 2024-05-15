@@ -43,6 +43,18 @@ struct Token {
     void print() {
         LogVarDebugInfo("p(%f,%f) s(%f,%f) => \"%s\"", px, py, sx, sy, token.c_str());
     }
+    void merge(const Token &vToken) {
+        #if 0
+        if ((!token.empty()) && (token.back() != ' ')) {
+            token += ' ';
+        }
+        token += vToken.token;
+        #else
+        if (token.empty()) {
+            token = vToken.token;
+        }
+        #endif
+    }
 };
 
 typedef int32_t PageIdx, PosX, PosY, SizeX, SizeY;
@@ -158,7 +170,7 @@ public:
     Cash::AccountStatements compute(const TokenContainer &vContainer) {
         const auto &tbl = fillTable(vContainer);
         const auto &stms = solveTableColumns(tbl);
-        printTable(stms);
+        //printTable(stms);
         return extractStatements(stms);
     }
 
@@ -303,6 +315,9 @@ private:
             bool headerAlreadyAdded = false;
             Fields currentHeader;
             for (const auto &row : vTable) {
+                /*if (row.fields.size() > 1 && row.fields.at(1).token == "CB RETRAIT DU 10/01") {
+                    CTOOL_DEBUG_BREAK;
+                }*/
                 if (row.isHeader) {
                     currentHeader = row;
                 } 
@@ -310,13 +325,13 @@ private:
                 for (const auto &col : row.fields) {
                     const auto &c = getColumnOfField(col, currentHeader.hxs);
                     if (c < m_ColSizes.size()) {
-                        f[c] = col;
+                        f.at(c).merge(col);
                         // for table printing
                         if (col.token.size() > m_ColSizes.at(c)) {
                             if (col.token.size() > 100) {
                                 CTOOL_DEBUG_BREAK;
                             }
-                            m_ColSizes[c] = static_cast<int32_t>(col.token.size());  // the sx is the new max width of the column
+                            m_ColSizes.at(c) = static_cast<int32_t>(col.token.size());  // the sx is the new max width of the column
                         }
                     }
                 }
@@ -400,6 +415,7 @@ private:
     }
     Cash::AccountStatements extractStatements(const StatementRows &vStms) {
         Cash::AccountStatements ret;
+        std::map<std::string, Cash::Transaction> transactions;
 
         {  // dates
             ret.start_date = m_StartDate;
@@ -453,7 +469,15 @@ private:
                     const auto &tk = row.at(idx);
                     if (idx == 0) {
                         if (!tk.token.empty()) {
+                            trans = {};
                             is_new_line = true;
+                            trans.date = tk.token;
+                            auto arr = ct::splitStringToVector(trans.date, ".");
+                            if (arr.size() == 2U) {
+                                trans.date = arr.at(1) + "-" + arr.at(0);
+                            } else {
+                                CTOOL_DEBUG_BREAK;
+                            }
                         }
                     } else if (idx == 1) {
                         if (is_new_line) {
@@ -465,15 +489,22 @@ private:
                                     trans.operation = trans.label.substr(first_not_space, space_pos - first_not_space);
                                 }
                             }
+                            while (ct::replaceString(trans.label, "  ", " ")) {
+                            }
+                            if (trans.label.front() == ' ') {
+                                trans.label = trans.label.substr(1);
+                            }
+                            if (trans.label.back() == ' ') {
+                                trans.label = trans.label.substr(0, trans.label.size() - 1U);
+                            }
                         } else {
                             trans.comment += tk.token;
                         }
                     } else if (idx == 2) {
                         if (is_new_line) {
-                            trans.date = tk.token;
-                            auto arr = ct::splitStringToVector(trans.date, ".");
+                            auto arr = ct::splitStringToVector(tk.token, ".");
                             if (arr.size() == 3U) {
-                                trans.date = "20" + arr.at(2) + "-" + arr.at(1) + "-" + arr.at(0);
+                                trans.date = "20" + arr.at(2) + "-" + trans.date;
                             } else {
                                 CTOOL_DEBUG_BREAK;
                             }
@@ -503,13 +534,21 @@ private:
                     }
                 }
                 if (is_new_line) {
-                    trans.hash = ct::toStr("%s_%s_%s_%s_%f",  //
-                                           m_DocNumber.c_str(),
+                    trans.hash = ct::toStr("%s_%s_%f",  //
                                            trans.date.c_str(),
-                                           trans.label.c_str(),
-                                           trans.comment.c_str(),
-                                           trans.amount); // must be unique per oepration
-                    ret.statements.push_back(trans);
+                                           // un fichier ofc ne peut pas avoir des label de longueur > a 30
+                                           // alors on limite le hash a utiliser un label de 30
+                                           // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                                           trans.label.substr(0, 30).c_str(),
+                                           trans.amount);  // must be unique per oepration
+                    if (transactions.find(trans.hash) != transactions.end()) {
+                        ++trans.count;
+                        // LogVarDebugInfo("The Operation %s is in double", trans.hash.c_str());
+                    }
+#ifdef _DEBUG
+                    trans.confirmed = true;
+#endif
+                    transactions[trans.hash] = trans;
                     trans = {};
                 }
             }
@@ -521,6 +560,10 @@ private:
                                  compute_solde_str.c_str(),
                                  final_solde_str.c_str());
             }
+        }
+
+        for (const auto &t : transactions) {
+            ret.statements.push_back(t.second);
         }
 
         return ret;
@@ -539,6 +582,7 @@ Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std
     Cash::AccountStatements ret{};
     auto ps = FileHelper::Instance()->ParsePathFileName(vFilePathName);
     if (ps.isOk) {
+        globalParams = new GlobalParams(nullptr);                                             // globalParams ios a extern and is used by pdf_doc_ptr...
         auto pdf_doc_ptr = new PDFDoc(new GString(vFilePathName.c_str()), nullptr, nullptr); // the GString is deleted by PDFDoc
         if (pdf_doc_ptr != nullptr) {
             if (!pdf_doc_ptr->isOk()) {
@@ -548,7 +592,6 @@ Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std
                 if (pages_count == 0) {
                     LogVarError("Fail, no pages are available in the pdf %s", vFilePathName.c_str());
                 } else {
-                    globalParams = new GlobalParams(nullptr);  // globalParams ios a extern and is used by pdf_doc_ptr...
 
                     //LogVarDebugInfo("LCl Table Extraction for %s", vFilePathName.c_str());
 
@@ -557,12 +600,11 @@ Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std
 
                     TableSolver ts;
                     ret = ts.compute(tbl.getTokenContainer());
-
-                    delete globalParams;
                 }
             }
         }
         delete pdf_doc_ptr;
+        delete globalParams;
     }
     return ret;
 }

@@ -85,6 +85,8 @@ struct Transaction {
     std::string comment;
     std::string hash;
     double amount = 0.0;
+    bool confirmed = false;
+    uint32_t count = 1; // le nombre de doublons mais pas un bug, juste deux transations identique le meme jour. donc avec le meme hash
 };
 
 struct BankAccount {

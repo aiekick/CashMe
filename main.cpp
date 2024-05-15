@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
     } catch (const std::exception& e) {
         LogVarLightInfo("Exception %s", e.what());
         res = EXIT_FAILURE;
+        CTOOL_DEBUG_BREAK;
     }
 
     Logger::Instance()->Close();

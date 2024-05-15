@@ -160,6 +160,16 @@ void DataBase::UpdateUser(const RowID& vRowID, const UserName& vUserName) {
     }
 }
 
+void DataBase::DeleteUsers() {
+    if (m_OpenDB()) {
+        auto insert_query = ct::toStr(u8R"(DELETE FROM users;)");
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete content of users table in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
+    }
+}
+
 void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO banks (name, url) VALUES("%s", "%s");)", vBankName.c_str(), vUrl.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -223,6 +233,16 @@ void DataBase::UpdateBank(const RowID& vRowID, const BankName& vBankName, const 
     }
 }
 
+void DataBase::DeleteBanks() {
+    if (m_OpenDB()) {
+        auto insert_query = ct::toStr(u8R"(DELETE FROM banks;)");
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete content of banks table in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
+    }
+}
+
 void DataBase::AddCategory(const CategoryName& vCategoryName) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO categories (name) VALUES("%s");)", vCategoryName.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -280,6 +300,16 @@ void DataBase::UpdateCategory(const RowID& vRowID, const CategoryName& vCategory
     auto insert_query = ct::toStr(u8R"(UPDATE categories SET name = "%s" WHERE category_id = %u;)", vCategoryName.c_str(), vRowID);
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a category in database : %s", m_LastErrorMsg);
+    }
+}
+
+void DataBase::DeleteCategories() {
+    if (m_OpenDB()) {
+        auto insert_query = ct::toStr(u8R"(DELETE FROM categories;)");
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete content of categories table in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
     }
 }
 
@@ -343,6 +373,16 @@ void DataBase::UpdateOperation(const RowID& vRowID, const OperationName& vOperat
     }
 }
 
+void DataBase::DeleteOperations() {
+    if (m_OpenDB()) {
+        auto insert_query = ct::toStr(u8R"(DELETE FROM operations;)");
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete content of operations table in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
+    }
+}
+
 void DataBase::AddAccount(const UserName& vUserName,
                           const BankName& vBankName,
                           const AccountType& vAccountType,
@@ -373,8 +413,7 @@ INSERT OR IGNORE INTO accounts
     }
 }
 
-bool DataBase::GetAccount(const AccountNumber& vAccountNumber,
-                          RowID& vOutRowID) {
+bool DataBase::GetAccount(const AccountNumber& vAccountNumber, RowID& vOutRowID) {
     bool ret = false;
     auto select_query = ct::toStr(
         u8R"(
@@ -475,7 +514,7 @@ SELECT
   accounts.name AS account_name,
   accounts.number AS account_number,
   accounts.base_solde AS account_base_solde,
-  COUNT(t.account_id) AS nombre_transactions
+  COUNT(t.transaction_id) AS nombre_transactions
 FROM accounts
 LEFT JOIN users ON users.user_id = accounts.user_id
 LEFT JOIN banks ON banks.bank_id = accounts.bank_id
@@ -524,7 +563,8 @@ void DataBase::UpdateAccount(const RowID& vRowID,
                              const AccountName& vAccountName,
                              const AccountNumber& vAccountNumber,
                              const AccounBaseSolde& vBaseSolde) {
-    auto insert_query = ct::toStr(u8R"(
+    auto insert_query = ct::toStr(
+        u8R"(
 UPDATE 
   accounts
 SET 
@@ -549,6 +589,33 @@ WHERE
     }
 }
 
+void DataBase::DeleteAccount(const RowID& vRowID) {
+    auto insert_query = ct::toStr(
+        u8R"(
+DELETE FROM 
+  accounts
+WHERE
+  accounts.account_id = %u;
+)",
+        vRowID);
+    if (m_OpenDB()) {
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete a account in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
+    }
+}
+
+void DataBase::DeleteAccounts() {
+    if (m_OpenDB()) {
+        auto insert_query = ct::toStr(u8R"(DELETE FROM accounts;)");
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete content of accounts table in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
+    }
+}
+
 void DataBase::AddTransaction(const RowID& vAccountID,
                               const CategoryName& vCategoryName,
                               const OperationName& vOperationName,
@@ -556,13 +623,16 @@ void DataBase::AddTransaction(const RowID& vAccountID,
                               const TransactionDescription& vDescription,
                               const TransactionComment& vComment,
                               const TransactionAmount& vAmount,
-                              const std::string& vHash) {
+                              const TransactionsDoublon& vDoublon,
+                              const TransactionsConfirmed& vConfirmed,
+                              const TransactionHash& vHash) {
     AddCategory(vCategoryName);
     AddOperation(vOperationName);
+    assert(vDoublon != 0);  // vDoublon mut be 1 at least
     auto insert_query = ct::toStr(
         u8R"(
 INSERT OR IGNORE INTO transactions 
-    (account_id, category_id, operation_id, amount, date, description, comment, hash) VALUES(
+    (account_id, category_id, operation_id, amount, date, description, comment, count, confirmed, hash) VALUES(
         %u, -- account id
         (SELECT category_id FROM categories WHERE categories.name = "%s"), -- category id
         (SELECT operation_id FROM operations WHERE operations.name = "%s"), -- operation id
@@ -570,6 +640,8 @@ INSERT OR IGNORE INTO transactions
         "%s", 
         "%s",
         "%s",
+        "%u",
+        "%u",
         "%s"
         );)",
         vAccountID,
@@ -579,6 +651,8 @@ INSERT OR IGNORE INTO transactions
         vDate.c_str(),
         vDescription.c_str(),
         vComment.c_str(),
+        vDoublon,
+        vConfirmed,
         vHash.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
@@ -594,7 +668,9 @@ void DataBase::GetTransactions(  //
         const TransactionComment&,
         const CategoryName&,
         const OperationName&,
-        const TransactionAmount&)> vCallback) {
+        const TransactionAmount&,
+        const TransactionsDoublon&,
+        const TransactionsConfirmed&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     auto select_query = ct::toStr(
@@ -606,7 +682,9 @@ SELECT
   transactions.comment,
   operations.name AS operation,
   categories.name AS category,
-  transactions.amount
+  transactions.amount,
+  transactions.count,
+  transactions.confirmed  
 FROM
   transactions
   LEFT JOIN accounts ON transactions.account_id = accounts.account_id
@@ -634,6 +712,8 @@ ORDER BY
                     const char* operation_name = (const char*)sqlite3_column_text(stmt, 4);
                     const char* category_name = (const char*)sqlite3_column_text(stmt, 5);
                     double transaction_amount = sqlite3_column_double(stmt, 6);
+                    TransactionsDoublon transaction_count = sqlite3_column_int(stmt, 7);
+                    TransactionsConfirmed transaction_confirmed = sqlite3_column_int(stmt, 8);
                     vCallback(  //
                         transaction_id,
                         transaction_date != nullptr ? transaction_date : "",                //
@@ -641,7 +721,9 @@ ORDER BY
                         transaction_comment != nullptr ? transaction_comment : "",          //
                         category_name != nullptr ? category_name : "",                      //
                         operation_name != nullptr ? operation_name : "",                    //
-                        transaction_amount);
+                        transaction_amount,
+                        transaction_count,
+                        transaction_confirmed);
                 }
             }
         }
@@ -657,7 +739,11 @@ void DataBase::UpdateTransaction(  //
     const TransactionDate& vDate,
     const TransactionDescription& vDescription,
     const TransactionComment& vComment,
-    const double& vAmount) {
+    const TransactionAmount& vAmount,
+    const TransactionsDoublon& vDoublon,
+    const TransactionsConfirmed& vConfirmed,
+    const TransactionHash& vHash) {
+    assert(vDoublon != 0);  // vDoublon mut be 1 at least
     auto insert_query = ct::toStr(
         u8R"(
 UPDATE 
@@ -668,7 +754,10 @@ SET
   date = "%s",
   description = "%s",
   comment = "%s",
-  amount = %.6f
+  amount = %.6f,
+  count = %u,
+  confirmed = %u,
+  hash = "%s"
 WHERE
   transactions.transaction_id = %u;
 )",
@@ -678,9 +767,59 @@ WHERE
         vDescription.c_str(),
         vComment.c_str(),
         vAmount,
+        vDoublon,
+        vConfirmed,
+        vHash.c_str(),
         vRowID);
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a transaction in database : %s", m_LastErrorMsg);
+    }
+}
+
+void DataBase::ConfirmTransaction(const RowID& vRowID, const TransactionsConfirmed& vConfirmed) {
+    auto insert_query = ct::toStr(
+        u8R"(
+UPDATE 
+  transactions
+SET 
+  confirmed = %u
+WHERE
+  transactions.transaction_id = %u;
+)",
+        vConfirmed,
+        vRowID);
+    if (m_OpenDB()) {
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to confirm a transaction in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
+    }
+}
+
+void DataBase::DeleteTransaction(const RowID& vRowID) {
+    auto insert_query = ct::toStr(
+        u8R"(
+DELETE FROM 
+  transactions
+WHERE
+  transactions.transaction_id = %u;
+)",
+        vRowID);
+    if (m_OpenDB()) {
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete a transaction in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
+    }
+}
+
+void DataBase::DeleteTransactions() {
+    if (m_OpenDB()) {
+        auto insert_query = ct::toStr(u8R"(DELETE FROM transactions;)");
+        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete content of transactions table in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
     }
 }
 
@@ -833,6 +972,8 @@ CREATE TABLE transactions (
     date DATE NOT NULL,
     description TEXT,
     comment TEXT,
+    count INTEGER NOT NULL, -- the count op in double but not a bug
+    confirmed INTEGER,
     hash NOT NULL UNIQUE,
     FOREIGN KEY (account_id) REFERENCES accounts(account_id),
     FOREIGN KEY (operation_id) REFERENCES operations(operation_id),

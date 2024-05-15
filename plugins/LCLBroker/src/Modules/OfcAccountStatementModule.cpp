@@ -15,6 +15,7 @@ Cash::BankStatementModulePtr OfcAccountStatementModule::create() {
 
 Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
     Cash::AccountStatements ret;
+    std::map<std::string, Cash::Transaction> transactions;
     auto ps = FileHelper::Instance()->ParsePathFileName(vFilePathName);
     if (ps.isOk) {
         auto lines = ct::splitStringToVector(FileHelper::Instance()->LoadFileToString(vFilePathName), '\n');
@@ -50,7 +51,18 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                 trans = {};
             } else if (line.find("</STMTTRN>") != std::string::npos) {
                 if (is_a_stmt) {
-                    ret.statements.push_back(trans);
+                    trans.hash = ct::toStr("%s_%s_%f",  //
+                                           trans.date.c_str(),
+                                           // un fichier ofc ne peut pas avoir des label de longueur > a 30
+                                           // alors on limite le hash a utiliser un label de 30
+                                           // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                                           trans.label.substr(0, 30).c_str(),
+                                           trans.amount);  // must be unique per oepration
+                    if (transactions.find(trans.hash) != transactions.end()) {
+                        ++trans.count;
+                        // LogVarDebugInfo("The Operation %s is in double", trans.hash.c_str());
+                    }
+                    transactions[trans.hash] = trans;
                     is_a_stmt = false;
                 }
             }
@@ -75,12 +87,20 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                             trans.operation = trans.label.substr(first_not_space, space_pos - first_not_space);
                         }
                     }
+                    while (ct::replaceString(trans.label, "  ", " ")) {
+                    }
+                    if (trans.label.front() == ' ') {
+                        trans.label = trans.label.substr(1);
+                    }
+                    if (trans.label.back() == ' ') {
+                        trans.label = trans.label.substr(0, trans.label.size() - 1U);
+                    }
                 } else if (line.find("<MEMO>") != std::string::npos) {
                     ct::replaceString(line, "<MEMO>", "");
                     trans.comment = line;
                 } else if (line.find("<FITID>") != std::string::npos) {
                     ct::replaceString(line, "<FITID>", "");
-                    trans.hash = line;
+                    //trans.hash = line;
                 } else if (line.find("<CHKNUM>") != std::string::npos) {
                     ct::replaceString(line, "<CHKNUM>", "");
                     trans.operation = "CHEQUE";
@@ -89,6 +109,9 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
             }
             
         }
+    }
+    for (const auto& t : transactions) {
+        ret.statements.push_back(t.second);
     }
     return ret;
 }

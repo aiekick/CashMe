@@ -27,6 +27,7 @@ private:
     };
     struct Transaction {
         RowID id = 0;
+        AccountNumber account;
         TransactionDate date;
         TransactionDescription desc;
         TransactionComment comm;
@@ -34,6 +35,8 @@ private:
         OperationName operation;
         TransactionAmount amount = 0.0;
         TransactionSolde solde = 0.0;
+        TransactionsDoublon doublons = 1;
+        TransactionsConfirmed confirmed = false;
         // desc, cat, op
         std::array<std::string, 3> optimized; // 
     };
@@ -58,8 +61,9 @@ private:
         }
     } m_Datas;
     enum class DialogMode {  //
-        CREATION = 0,
-        UPDATE
+        CREATION_MODE = 0,
+        UPDATE_MODE,
+        DELETE_MODE
     };
 
 private:
@@ -70,7 +74,7 @@ private:
     ImGuiListClipper m_TransactionsListClipper;
     size_t m_SelectedAccountIdx = 0U;
 
-    DialogMode m_dialogMode = DialogMode::CREATION;
+    DialogMode m_dialogMode = DialogMode::CREATION_MODE;
 
     bool m_showUserDialog = false;
     ImWidgets::InputText m_UserNameInputText;
@@ -95,12 +99,15 @@ private:
     ImWidgets::InputText m_AccountNumberInputText;
     ImWidgets::QuickStringCombo m_AccountsCombo;
     double m_AccountBaseSoldeInputDouble = 0.0;
+    Account m_AccountToUpdate;
 
     bool m_showTransactionDialog = false;
     ImWidgets::InputText m_TransactionDateInputText;
     ImWidgets::InputText m_TransactionDescriptionInputText;
     ImWidgets::InputText m_TransactionCommentInputText;
     double m_TransactionAmountInputDouble = 0.0;
+    int32_t m_TransactionsDoublonInputUint = 1;
+    Transaction m_TransactionToUpdate;
 
     TransactionAmount m_CurrentBaseSolde = 0.0;
     TransactionAmount m_TotalDebit = 0.0;
@@ -131,6 +138,7 @@ private:
     void m_drawCreationMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawUpdateMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawImportMenu(FrameActionSystem& vFrameActionSystem);
+    void m_drawDebugMenu(FrameActionSystem& vFrameActionSystem);
     void m_refreshDatas();
     void m_Clear();
     void m_GetAvailableDataBrokers();
@@ -156,13 +164,13 @@ private:  // ImGui
     void m_DrawOperationDialog(const ImVec2& vPos);
 
     void m_UpdateAccounts();
-    void m_drawAccountMenu(const RowID& vAccountID);
-    void m_ShowAccountDialog(const DialogMode& vDialogMode);
+    void m_drawAccountMenu(const Account& vAccount);
+    void m_ShowAccountDialog(const DialogMode& vDialogMode, const Account& vAccount = {});
     void m_DrawAccountDialog(const ImVec2& vPos);
 
     void m_UpdateTransactions(const RowID& vAccountID);
-    void m_drawTransactionMenu(const RowID& vTransactionID);
-    void m_ShowTransactionDialog(const DialogMode& vDialogMode);
+    void m_drawTransactionMenu(const Transaction& vTransaction);
+    void m_ShowTransactionDialog(const DialogMode& vDialogMode, const Transaction& vTransaction = {});
     void m_DrawTransactionDialog(const ImVec2& vPos);
 
     void m_drawSearchRow();

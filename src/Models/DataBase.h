@@ -35,7 +35,10 @@ typedef std::string TransactionDescription;
 typedef std::string TransactionComment;
 typedef double TransactionAmount;
 typedef double TransactionSolde;
+typedef uint32_t TransactionsDoublon;
+typedef bool TransactionsConfirmed;
 typedef uint32_t TransactionsCount;
+typedef std::string TransactionHash;
 
 class DataBaseTable {
 public:
@@ -63,21 +66,25 @@ public:
     bool GetUser(const UserName& vUserName, RowID& vOutRowID);
     void GetUsers(std::function<void(const UserName&)> vCallback);
     void UpdateUser(const RowID& vRowID, const UserName& vUserName);
+    void DeleteUsers();
 
     void AddBank(const BankName& vBankName, const std::string& vUrl = {});
     bool GetBank(const BankName& vBankName, RowID& vOutRowID);
     void GetBanks(std::function<void(const BankName&, const std::string&)> vCallback);
     void UpdateBank(const RowID& vRowID, const BankName& vBankName, const std::string& vUrl);
+    void DeleteBanks();
 
     void AddCategory(const CategoryName& vCategoryName);
     bool GetCategory(const CategoryName& vUserName, RowID& vOutRowID);
     void GetCategories(std::function<void(const CategoryName&)> vCallback);
     void UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName);
+    void DeleteCategories();
 
     void AddOperation(const OperationName& vOperationName);
     bool GetOperation(const OperationName& vUserName, RowID& vOutRowID);
     void GetOperations(std::function<void(const OperationName&)> vCallback);
     void UpdateOperation(const RowID& vRowID, const OperationName& vOperationName);
+    void DeleteOperations();
 
     void AddAccount(  //
         const UserName& vUserName,
@@ -114,6 +121,8 @@ public:
         const AccountName& vAccountName,
         const AccountNumber& vAccountNumber,
         const AccounBaseSolde& vBaseSolde);
+    void DeleteAccount(const RowID& vRowID);
+    void DeleteAccounts();
 
     void AddTransaction(  //
         const RowID& vAccountID,
@@ -123,7 +132,9 @@ public:
         const TransactionDescription& vDescription,
         const TransactionComment& vComment,
         const TransactionAmount& vAmount,
-        const std::string& vHash);
+        const TransactionsDoublon& vDoublon,
+        const TransactionsConfirmed& vConfirmed,
+        const TransactionHash& vHash);
     void GetTransactions(  //
         const RowID& vAccountID,
         std::function<void(  //
@@ -133,7 +144,9 @@ public:
             const TransactionComment& vComment,
             const CategoryName&,
             const OperationName&,
-            const TransactionAmount&)> vCallback);
+            const TransactionAmount&,
+            const TransactionsDoublon&,
+            const TransactionsConfirmed&)> vCallback);
     void UpdateTransaction(  //
         const RowID& vRowID,
         const CategoryName& vCategoryName,
@@ -141,7 +154,15 @@ public:
         const TransactionDate& vDate,
         const TransactionDescription& vDescription,
         const TransactionComment& vComment,
-        const double& vAmount);
+        const TransactionAmount& vAmount,
+        const TransactionsDoublon& vDoublons,
+        const TransactionsConfirmed& vConfirmed,
+        const TransactionHash& vHash);
+    void ConfirmTransaction(  //
+        const RowID& vRowID,
+        const TransactionsConfirmed& vConfirmed);
+    void DeleteTransaction(const RowID& vRowID);
+    void DeleteTransactions();
 
     void ClearDataTables();
     std::string GetLastErrorMesg();
