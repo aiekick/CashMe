@@ -165,12 +165,12 @@ private:  // ImGui
 
     void m_UpdateAccounts();
     void m_drawAccountMenu(const Account& vAccount);
-    void m_ShowAccountDialog(const DialogMode& vDialogMode, const Account& vAccount = {});
+    void m_ShowAccountDialog(const DialogMode& vDialogMode, const Account& vAccount);
     void m_DrawAccountDialog(const ImVec2& vPos);
 
     void m_UpdateTransactions(const RowID& vAccountID);
     void m_drawTransactionMenu(const Transaction& vTransaction);
-    void m_ShowTransactionDialog(const DialogMode& vDialogMode, const Transaction& vTransaction = {});
+    void m_ShowTransactionDialog(const DialogMode& vDialogMode, const Transaction& vTransaction);
     void m_DrawTransactionDialog(const ImVec2& vPos);
 
     void m_drawSearchRow();

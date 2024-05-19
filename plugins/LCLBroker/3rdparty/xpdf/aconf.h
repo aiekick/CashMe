@@ -42,7 +42,7 @@
 /*
  * Enable C++ exceptions.
  */
-#define USE_EXCEPTIONS 1
+#define USE_EXCEPTIONS 0
 
 /*
  * Use fixed point (instead of floating point) arithmetic.
@@ -84,13 +84,13 @@
 /*
  * Various include files and functions.
  */
-#define HAVE_MKSTEMP 0
-#define HAVE_MKSTEMPS 0
-/* #undef HAVE_POPEN */
+#define HAVE_MKSTEMP 1
+#define HAVE_MKSTEMPS 1
+#define HAVE_POPEN
 #define HAVE_STD_SORT 1
-#define HAVE_FSEEKO 0
+#define HAVE_FSEEKO 1
 #define HAVE_FSEEK64 0
-#define HAVE_FSEEKI64 1
+#define HAVE_FSEEKI64 0
 #define _FILE_OFFSET_BITS 64
 #define _LARGE_FILES 1
 #define _LARGEFILE_SOURCE 1

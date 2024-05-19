@@ -37,9 +37,11 @@ bool AccountPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, Im
             else
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
-            DataBrokers::Instance()->drawMenu(MainFrontend::Instance()->GetActionSystemRef());
-            DataBrokers::Instance()->DisplayAccounts();
-            DataBrokers::Instance()->DisplayTransactions();
+            if (ProjectFile::Instance()->IsProjectLoaded()){
+                DataBrokers::Instance()->drawMenu(MainFrontend::Instance()->GetActionSystemRef());
+                DataBrokers::Instance()->DisplayAccounts();
+                DataBrokers::Instance()->DisplayTransactions();
+            }
         }
 
         ImGui::End();

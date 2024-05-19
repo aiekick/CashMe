@@ -360,7 +360,7 @@ void DataBrokers::m_drawCreationMenu(FrameActionSystem& vFrameActionSystem) {
             m_ShowBankDialog(DialogMode::CREATION_MODE);
         }
         if (ImGui::MenuItem("Account")) {
-            m_ShowAccountDialog(DialogMode::CREATION_MODE);
+            m_ShowAccountDialog(DialogMode::CREATION_MODE, Account());
         }
         if (ImGui::MenuItem("Category")) {
             m_ShowCategoryDialog(DialogMode::CREATION_MODE);
@@ -369,7 +369,7 @@ void DataBrokers::m_drawCreationMenu(FrameActionSystem& vFrameActionSystem) {
             m_ShowOperationDialog(DialogMode::CREATION_MODE);
         }
         if (ImGui::MenuItem("Transaction")) {
-            m_ShowTransactionDialog(DialogMode::CREATION_MODE);
+            m_ShowTransactionDialog(DialogMode::CREATION_MODE, Transaction());
         }
         ImGui::EndMenu();
     }
@@ -1118,27 +1118,40 @@ void DataBrokers::m_drawSearchRow() {
     ImGui::TableNextColumn();
     for (size_t idx = 0; idx < 8; ++idx) {
         ImGui::TableNextColumn();
-        if (idx < 1) {
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-            if (ImGui::ContrastedButton("Reset", nullptr, nullptr, ImGui::GetColumnWidth(idx))) {
-                reset = true;
+        switch(idx) {
+            case 0: {
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+                if (ImGui::ContrastedButton("Reset", nullptr, nullptr, ImGui::GetColumnWidth(idx))) {
+                    reset = true;
+                }
+                ImGui::PopStyleVar();
             }
-            ImGui::PopStyleVar();
-        } else if (idx < 4) {
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-            if (m_SearchInputTexts.at(idx - 1).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
-                m_SearchTokens[idx - 1] = ct::toLower(m_SearchInputTexts.at(idx - 1).GetText());
-                change = true;
+            break;
+            case 1:
+            case 2:
+            case 3:{
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+                if (m_SearchInputTexts.at(idx - 1).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
+                    m_SearchTokens[idx - 1] = ct::toLower(m_SearchInputTexts.at(idx - 1).GetText());
+                    change = true;
+                }
+                ImGui::PopStyleVar();
             }
-            ImGui::PopStyleVar();
-        } else if (idx == 4) {
-            m_drawAmount(m_TotalDebit);
-        } else if (idx == 5) {
-            m_drawAmount(m_TotalCredit);
-        } else if (idx == 6) {
-            //m_drawAmount(m_CurrentBaseSolde);
-        } else if (idx == 7) {
-            ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size());
+            break;
+            case 4:
+                m_drawAmount(m_TotalDebit);
+                break;
+            case 5:
+                m_drawAmount(m_TotalCredit);
+                break;
+            case 6:
+                //m_drawAmount(m_CurrentBaseSolde);
+                break;
+            case 7:
+                ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size());
+                break;
+            default:
+                break;
         }
     }
     if (reset) {
