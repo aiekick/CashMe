@@ -65,7 +65,7 @@ void DataBrokers::drawDialogs(const ImVec2& vPos, const ImVec2& vSize) {
 void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
     if (ProjectFile::Instance()->IsProjectLoaded()) {
         if (ImGui::BeginMenuBar()) {
-            m_drawRefreshMenu(vFrameActionSystem);
+            m_drawAccountsMenu(vFrameActionSystem);
             m_drawCreationMenu(vFrameActionSystem);
             m_drawUpdateMenu(vFrameActionSystem);
             m_drawImportMenu(vFrameActionSystem);
@@ -316,6 +316,10 @@ void DataBrokers::m_drawSelectMenu(FrameActionSystem& vFrameActionSystem) {
 
 void DataBrokers::m_drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
     if (ImGui::BeginMenu("Debug")) {
+        if (ImGui::MenuItem("Refresh")) {
+            m_refreshDatas();
+        }
+        ImGui::Separator();
         if (ImGui::BeginMenu("Delete Tables")) {
             if (ImGui::MenuItem("Users")) {
                 DataBase::Instance()->DeleteUsers();
@@ -347,9 +351,62 @@ void DataBrokers::m_drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
     }
 }
 
-void DataBrokers::m_drawRefreshMenu(FrameActionSystem& vFrameActionSystem) {
-    if (ImGui::MenuItem("Refresh")) {
-        m_refreshDatas();
+void DataBrokers::m_drawAccountsMenu(FrameActionSystem& vFrameActionSystem) {
+    if (ImGui::BeginMenu("Accounts")) {
+        for (const auto& user : m_Accounts) {
+            if (ImGui::BeginMenu(user.first.c_str())) {
+                for (const auto& bank : user.second) {
+                    if (ImGui::BeginMenu(bank.first.c_str())) {
+                        static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+                        if (ImGui::BeginTable("##MenuAccounts", 4, flags)) {
+                            ImGui::TableSetupScrollFreeze(0, 1);
+                            ImGui::TableSetupColumn("Number", ImGuiTableColumnFlags_WidthFixed);
+                            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
+                            ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthStretch);
+                            ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed);
+                            ImGui::TableHeadersRow();
+                            size_t idx = 0U;
+                            for (const auto& number : bank.second) {
+                                const auto& a = number.second;
+                                ImGui::TableNextRow();
+
+                                ImGui::PushID(a.id);
+                                {
+                                    ImGui::TableNextColumn();
+                                    ImGui::PushID(&a);
+                                    {
+                                        if (ImGui::Selectable(a.number.c_str(), m_SelectedAccountIdx == idx, ImGuiSelectableFlags_SpanAllColumns)) {
+                                            m_ResetSelection();
+                                            m_UpdateTransactions(a.id);
+                                            m_SelectedAccountIdx = idx;
+                                        }
+                                    }
+                                    ImGui::PopID();
+                                    m_drawAccountMenu(a);
+
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text(a.name.c_str());
+
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text(a.type.c_str());
+
+                                    ImGui::TableNextColumn();
+                                    ImGui::Text("%u", a.count);
+
+                                }
+                                ImGui::PopID();
+
+                                ++idx;
+                            }
+                            ImGui::EndTable();
+                        }
+                        ImGui::EndMenu();
+                    }
+                }
+                ImGui::EndMenu();
+            }
+        }
+        ImGui::EndMenu();
     }
 }
 
@@ -818,6 +875,7 @@ void DataBrokers::m_UpdateAccounts() {
             a.count = vCount;
             m_Datas.accounts.push_back(a);
             m_Datas.accountNumbers.push_back(vAccountNumber);
+            m_Accounts[vUserName][vBankName][vAccountNumber] = a;
         });
     m_AccountsCombo = ImWidgets::QuickStringCombo(0, m_Datas.accountNumbers);
     if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
@@ -1175,7 +1233,7 @@ void DataBrokers::m_DrawTranactionDeletionDialog(const ImVec2& vPos) {
         const auto& displaySize = ImGui::GetIO().DisplaySize * 0.5f;
         static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
         if (ImGui::BeginTable("##TransactionsToDelete", 5, flags, displaySize)) {
-            ImGui::TableSetupScrollFreeze(0, 2);
+            ImGui::TableSetupScrollFreeze(0, 1);
             ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);

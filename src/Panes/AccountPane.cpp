@@ -39,7 +39,7 @@ bool AccountPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, Im
 #endif
             if (ProjectFile::Instance()->IsProjectLoaded()){
                 DataBrokers::Instance()->drawMenu(MainFrontend::Instance()->GetActionSystemRef());
-                DataBrokers::Instance()->DisplayAccounts();
+                //DataBrokers::Instance()->DisplayAccounts();
                 DataBrokers::Instance()->DisplayTransactions();
             }
         }

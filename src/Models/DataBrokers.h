@@ -123,6 +123,9 @@ private:
     // selection
     std::set<RowID> m_SelectedTransactions;
 
+    // accounts
+    std::map<UserName, std::map<BankName, std::map<AccountNumber, Account>>> m_Accounts;
+
 public:
     bool init();
     void unit();
@@ -140,7 +143,7 @@ public:
     bool setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas) override;
 
 private:
-    void m_drawRefreshMenu(FrameActionSystem& vFrameActionSystem);
+    void m_drawAccountsMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawCreationMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawUpdateMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawImportMenu(FrameActionSystem& vFrameActionSystem);
