@@ -99,6 +99,7 @@ void DataBrokers::DisplayAccounts() {
             ImGui::TableNextColumn();
             ImGui::PushID(&a);
             if (ImGui::Selectable(a.user.c_str(), m_SelectedAccountIdx == idx, ImGuiSelectableFlags_SpanAllColumns)) {
+                m_ResetSelection();
                 m_UpdateTransactions(a.id);
                 m_SelectedAccountIdx = idx;
             }
@@ -820,7 +821,6 @@ void DataBrokers::m_UpdateAccounts() {
         });
     m_AccountsCombo = ImWidgets::QuickStringCombo(0, m_Datas.accountNumbers);
     if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
-        m_ResetSelection();
         m_UpdateTransactions(m_Datas.accounts.at(m_SelectedAccountIdx).id);
     }
 }
