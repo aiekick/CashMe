@@ -30,15 +30,15 @@ private:
         AccountNumber account;
         TransactionDate date;
         TransactionDescription desc;
-        TransactionComment comm;
+        TransactionComment comment;
         CategoryName category;
         OperationName operation;
         TransactionAmount amount = 0.0;
         TransactionSolde solde = 0.0;
         TransactionsDoublon doublons = 1;
         TransactionsConfirmed confirmed = false;
-        // desc, cat, op
-        std::array<std::string, 3> optimized; // 
+        // date, desc, comm, cat, op
+        std::array<std::string, 5> optimized; // 
     };
     struct Datas {
         std::vector<UserName> userNames;
@@ -116,9 +116,9 @@ private:
     TransactionAmount m_TotalDebit = 0.0;
     TransactionAmount m_TotalCredit = 0.0;
 
-    // search for desc, cat, ope
-    std::array<ImWidgets::InputText, 3> m_SearchInputTexts;
-    std::array<std::string, 3> m_SearchTokens;
+    // search for date, desc, comm, cat, ope
+    std::array<ImWidgets::InputText, 5> m_SearchInputTexts;
+    std::array<std::string, 5> m_SearchTokens;
 
     // selection
     std::set<RowID> m_SelectedTransactions;
@@ -136,7 +136,6 @@ public:
     void drawDialogs(const ImVec2& vPos, const ImVec2& vSize);
     void drawMenu(FrameActionSystem& vFrameActionSystem);
 
-    void DisplayAccounts();
     void DisplayTransactions();
 
     std::string getXml(const std::string& vOffset, const std::string& vUserDatas) override;

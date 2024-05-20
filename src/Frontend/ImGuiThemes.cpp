@@ -74,7 +74,7 @@ ImGuiTheme GetOrangeBlueTheme() {
     res.style.ItemInnerSpacing = ImVec2(4.00f, 4.00f);
     res.style.TouchExtraPadding = ImVec2(0.00f, 0.00f);
     res.style.IndentSpacing = 8.00f;
-    res.style.ScrollbarSize = 10.00f;
+    res.style.ScrollbarSize = 15.00f;
     res.style.GrabMinSize = 8.00f;
 
     // Borders

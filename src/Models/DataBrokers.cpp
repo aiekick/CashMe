@@ -78,65 +78,16 @@ void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
     }
 }
 
-void DataBrokers::DisplayAccounts() {
-    ImGui::Header("Accounts");
-    static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-    if (ImGui::BeginTable("##Accounts", 6, flags)) {
-        ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableSetupColumn("Users", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Banks", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Number", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableHeadersRow();
-        size_t idx = 0U;
-        for (const auto& a : m_Datas.accounts) {
-            ImGui::TableNextRow();
-            
-            ImGui::PushID(a.id);
-
-            ImGui::TableNextColumn();
-            ImGui::PushID(&a);
-            if (ImGui::Selectable(a.user.c_str(), m_SelectedAccountIdx == idx, ImGuiSelectableFlags_SpanAllColumns)) {
-                m_ResetSelection();
-                m_UpdateTransactions(a.id);
-                m_SelectedAccountIdx = idx;
-            }
-            ImGui::PopID();
-            m_drawAccountMenu(a);
-
-            ImGui::TableNextColumn();
-            ImGui::Text(a.bank.c_str());
-
-            ImGui::TableNextColumn();
-            ImGui::Text(a.type.c_str());
-
-            ImGui::TableNextColumn();
-            ImGui::Text(a.name.c_str());
-
-            ImGui::TableNextColumn();
-            ImGui::Text(a.number.c_str());
-
-            ImGui::TableNextColumn();
-            ImGui::Text("%u", a.count);
-
-            ImGui::PopID();
-
-            ++idx;
-        }
-        ImGui::EndTable();
-    }
-}
-
 void DataBrokers::DisplayTransactions() {
     ImGui::Header("Transactions");
+    ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 30.0f);
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("##Transactions", 9, flags)) {
+    if (ImGui::BeginTable("##Transactions", 10, flags)) {
         ImGui::TableSetupScrollFreeze(0, 2);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Comments", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
@@ -209,6 +160,9 @@ void DataBrokers::DisplayTransactions() {
                 }
 
                 ImGui::TableNextColumn();
+                { ImGui::Text(t.comment.c_str()); }
+
+                ImGui::TableNextColumn();
                 { ImGui::Text(t.category.c_str()); }
 
                 ImGui::TableNextColumn();
@@ -267,6 +221,7 @@ void DataBrokers::DisplayTransactions() {
         m_TransactionsListClipper.End();
         ImGui::EndTable();
     }
+    ImGui::PopStyleVar();
 }
 
 void DataBrokers::m_drawImportMenu(FrameActionSystem& vFrameActionSystem) {
@@ -581,7 +536,7 @@ void DataBrokers::m_RefreshFiltering() {
     m_TotalCredit = 0.0;
     for (auto tr : m_Datas.transactions) {
         use = true;
-        for (size_t idx = 0; idx < 3; ++idx) {
+        for (size_t idx = 0; idx < 5; ++idx) {
             const auto& tk = m_SearchTokens.at(idx);
             if (!tk.empty()) {
                 use &= (tr.optimized.at(idx).find(tk) != std::string::npos);
@@ -1033,13 +988,15 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
                 t.id = vTransactionID;
                 t.account = account_number;
                 t.date = vTransactionDate;
+                t.optimized[0] = ct::toLower(vTransactionDate);
                 t.desc = vTransactionDescription;
-                t.optimized[0] = ct::toLower(vTransactionDescription);
-                t.comm = vTransactionComment;
+                t.optimized[1] = ct::toLower(vTransactionDescription);
+                t.comment = vTransactionComment;
+                t.optimized[2] = ct::toLower(vTransactionComment);
                 t.category = vCategoryName;
-                t.optimized[1] = ct::toLower(vCategoryName);
+                t.optimized[3] = ct::toLower(vCategoryName);
                 t.operation = vOperationName;
-                t.optimized[2] = ct::toLower(vOperationName);
+                t.optimized[4] = ct::toLower(vOperationName);
                 t.amount = vTransactionAmount;
                 t.doublons = vDoublons;
                 t.confirmed = vConfirmed;
@@ -1051,7 +1008,7 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
 #ifdef _DEBUG
                     if (t.doublons > 1) {
                         t.desc = ct::toStr("[Doublon : %u] ", idx) + vTransactionDescription;  // just for lcoate them in debug mode
-                        t.optimized[0] = ct::toLower(t.desc);
+                        t.optimized[1] = ct::toLower(t.desc);
                     }
 #endif
                     m_Datas.transactions.push_back(t);
@@ -1091,7 +1048,7 @@ void DataBrokers::m_ShowTransactionDialog(const DialogMode& vDialogMode, const T
         m_OperationsCombo.Select(vTransaction.operation);
         m_TransactionDateInputText.SetText(vTransaction.date);
         m_TransactionDescriptionInputText.SetText(vTransaction.desc);
-        m_TransactionCommentInputText.SetText(vTransaction.comm);
+        m_TransactionCommentInputText.SetText(vTransaction.comment);
         m_TransactionAmountInputDouble = vTransaction.amount;
         m_TransactionsDoublonInputUint = vTransaction.doublons;
         m_TransactionToUpdate = vTransaction;
@@ -1316,38 +1273,37 @@ void DataBrokers::m_drawSearchRow() {
     bool reset = false;
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+    if (ImGui::ContrastedButton("R", nullptr, nullptr, ImGui::GetColumnWidth(0))) {
+        reset = true;
+    }
+    ImGui::PopStyleVar();
     for (size_t idx = 0; idx < 8; ++idx) {
         ImGui::TableNextColumn();
         switch(idx) {
-            case 0: {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-                if (ImGui::ContrastedButton("Reset", nullptr, nullptr, ImGui::GetColumnWidth(idx))) {
-                    reset = true;
-                }
-                ImGui::PopStyleVar();
-            }
-            break;
+            case 0: 
             case 1:
             case 2:
-            case 3:{
+            case 3:
+            case 4: {
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-                if (m_SearchInputTexts.at(idx - 1).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
-                    m_SearchTokens[idx - 1] = ct::toLower(m_SearchInputTexts.at(idx - 1).GetText());
+                if (m_SearchInputTexts.at(idx).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
+                    m_SearchTokens[idx] = ct::toLower(m_SearchInputTexts.at(idx).GetText());
                     change = true;
                 }
                 ImGui::PopStyleVar();
             }
             break;
-            case 4:
+            case 5:
                 m_drawAmount(m_TotalDebit);
                 break;
-            case 5:
+            case 6:
                 m_drawAmount(m_TotalCredit);
                 break;
-            case 6:
+            case 7:
                 //m_drawAmount(m_CurrentBaseSolde);
                 break;
-            case 7:
+            case 8:
                 ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size());
                 break;
             default:

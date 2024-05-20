@@ -142,7 +142,7 @@ public:
             const RowID&,
             const TransactionDate&,
             const TransactionDescription&,
-            const TransactionComment& vComment,
+            const TransactionComment&,
             const CategoryName&,
             const OperationName&,
             const TransactionAmount&,

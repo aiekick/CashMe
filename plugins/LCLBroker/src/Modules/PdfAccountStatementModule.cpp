@@ -461,7 +461,7 @@ private:
             m_EndSolde = ct::dvariant(m_EndSoldeToken.token).GetD();
             double solde = m_StartSolde;
             double debit = 0.0, credit = 0.0;
-            // 0 is the header, sow e jump it
+            // 0 is the header, so we jump it
             for (size_t row_idx = 1; row_idx < vStms.size(); ++row_idx) {
                 const auto &row = vStms.at(row_idx);
                 is_new_line = false;
@@ -592,7 +592,6 @@ Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std
                 if (pages_count == 0) {
                     LogVarError("Fail, no pages are available in the pdf %s", vFilePathName.c_str());
                 } else {
-
                     //LogVarDebugInfo("LCl Table Extraction for %s", vFilePathName.c_str());
 
                     TableExtractor tbl;
