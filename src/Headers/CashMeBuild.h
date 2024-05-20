@@ -1,7 +1,7 @@
 #pragma once
 
 #define CashMe_Prefix "CashMe"
-#define CashMe_BuildNumber 275
+#define CashMe_BuildNumber 276
 #define CashMe_MinorNumber 0
 #define CashMe_MajorNumber 0
-#define CashMe_BuildId "0.0.275"
+#define CashMe_BuildId "0.0.276"

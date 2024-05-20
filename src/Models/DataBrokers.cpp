@@ -1255,13 +1255,13 @@ void DataBrokers::m_DrawTranactionDeletionDialog(const ImVec2& vPos) {
             }
         } 
 
-        if (ImGui::ContrastedButton("Confirm Deletion")) {
+        if (ImGui::ContrastedButton("Confirm")) {
             m_DeleteHoveredOrSelectedRows();
             m_showTransactionDialog = false;
             m_refreshDatas();
         }
         ImGui::SameLine();
-        if (ImGui::ContrastedButton("Cancel Deletion")) {
+        if (ImGui::ContrastedButton("Cancel")) {
             m_showTransactionDialog = false;
         }
         ImGui::EndPopup();
