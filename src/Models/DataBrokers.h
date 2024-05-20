@@ -49,14 +49,16 @@ private:
         std::vector<AccountNumber> accountNumbers;
         std::vector<Transaction> transactions;
         std::vector<Transaction> transactions_filtered;
+        std::vector<Transaction> transactions_to_delete;
+        std::set<RowID> transactions_filtered_rowids;
         void clear() {
+            accounts.clear();
             userNames.clear();
             bankNames.clear();
-            categoryNames.clear();
-            operationNames.clear();
-            accounts.clear();
-            accountNumbers.clear();
             transactions.clear();
+            categoryNames.clear();
+            accountNumbers.clear();
+            operationNames.clear();
             transactions_filtered.clear();
         }
     } m_Datas;
@@ -72,6 +74,7 @@ private:
     std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> m_DataBrokerModules;
     Cash::BankStatementModuleWeak m_SelectedBroker;
     ImGuiListClipper m_TransactionsListClipper;
+    ImGuiListClipper m_TransactionsDeletionListClipper;
     size_t m_SelectedAccountIdx = 0U;
 
     DialogMode m_dialogMode = DialogMode::CREATION_MODE;
@@ -117,6 +120,9 @@ private:
     std::array<ImWidgets::InputText, 3> m_SearchInputTexts;
     std::array<std::string, 3> m_SearchTokens;
 
+    // selection
+    std::set<RowID> m_SelectedTransactions;
+
 public:
     bool init();
     void unit();
@@ -138,6 +144,7 @@ private:
     void m_drawCreationMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawUpdateMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawImportMenu(FrameActionSystem& vFrameActionSystem);
+    void m_drawSelectMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawDebugMenu(FrameActionSystem& vFrameActionSystem);
     void m_refreshDatas();
     void m_Clear();
@@ -145,6 +152,13 @@ private:
     void m_ImportFromFiles(const std::vector<std::string> vFiles);
     void m_ResetFiltering();
     void m_RefreshFiltering();
+    void m_SelectOrDeselectRow(const Transaction& vTransaction);
+    bool m_IsRowSelected(const RowID& vRowID) const;
+    void m_ResetSelection();
+    void m_SelectPossibleDuplicateEntryOnPricesAndDates();
+    void m_SelectUnConfirmedTransactions();
+    void m_DeleteHoveredOrSelectedRows();
+    void m_UpdateTransactionsToDelete();
 
 private:  // ImGui
     void m_UpdateUsers();
@@ -172,6 +186,8 @@ private:  // ImGui
     void m_drawTransactionMenu(const Transaction& vTransaction);
     void m_ShowTransactionDialog(const DialogMode& vDialogMode, const Transaction& vTransaction);
     void m_DrawTransactionDialog(const ImVec2& vPos);
+    void m_DrawTranactionCreationDialog(const ImVec2& vPos);
+    void m_DrawTranactionDeletionDialog(const ImVec2& vPos);
 
     void m_drawSearchRow();
     void m_drawAmount(const double& vAmount);

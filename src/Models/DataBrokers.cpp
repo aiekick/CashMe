@@ -34,34 +34,6 @@ void DataBrokers::load() {
     m_refreshDatas();
 }
 
-std::time_t convertToEpochTime(const std::string& vIsoDateTime, const char* format) {
-    struct std::tm time = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-    std::istringstream ss(vIsoDateTime);
-    ss >> std::get_time(&time, format);
-    if (ss.fail()) {
-        std::cerr << "ERROR: Cannot parse date string (" << vIsoDateTime << "); required format %Y-%m-%d" << std::endl;
-        exit(1);
-    }
-    time.tm_hour = 0;
-    time.tm_min = 0;
-    time.tm_sec = 0;
-#ifdef _WIN32
-    return _mkgmtime(&time);
-#else
-    return timegm(&time);
-#endif
-}
-
-std::string convertToISO8601(const std::time_t& vEpochTime) {
-    auto tp = std::chrono::system_clock::from_time_t(vEpochTime);
-    auto tt = std::chrono::system_clock::to_time_t(tp);
-    auto* timeinfo = std::localtime(&tt);
-    std::ostringstream oss;
-    oss << std::put_time(timeinfo, "%Y-%m-%d");
-    return oss.str();
-}
-
-
 bool DataBrokers::draw() {
     bool change = false;
     return change;
@@ -97,6 +69,7 @@ void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
             m_drawCreationMenu(vFrameActionSystem);
             m_drawUpdateMenu(vFrameActionSystem);
             m_drawImportMenu(vFrameActionSystem);
+            m_drawSelectMenu(vFrameActionSystem);
 #ifdef _DEBUG
             m_drawDebugMenu(vFrameActionSystem);
 #endif
@@ -219,7 +192,17 @@ void DataBrokers::DisplayTransactions() {
                 ImGui::TableNextColumn();
                 {
                     ImGui::PushID(&t);
-                    ImGui::Selectable(t.desc.c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+                    auto is_selected = m_IsRowSelected(t.id);
+                    ImGui::Selectable(t.desc.c_str(), &is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+                    if (ImGui::IsItemHovered()) {
+                        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                            m_ResetSelection();
+                            m_SelectOrDeselectRow(t);
+                            m_ShowTransactionDialog(DialogMode::UPDATE_MODE, t);
+                        } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                            m_SelectOrDeselectRow(t);
+                        }
+                    }
                     ImGui::PopID();
                     m_drawTransactionMenu(t); 
                 }
@@ -306,6 +289,24 @@ void DataBrokers::m_drawImportMenu(FrameActionSystem& vFrameActionSystem) {
                     }
                 }
                 ImGui::EndMenu();
+            }
+        }
+        ImGui::EndMenu();
+    }
+}
+
+void DataBrokers::m_drawSelectMenu(FrameActionSystem& vFrameActionSystem) {
+    if (ImGui::BeginMenu("Select")) {
+        if (ImGui::MenuItem("UnConfirmed entries")) {
+            m_SelectUnConfirmedTransactions();
+        }
+        if (ImGui::MenuItem("Possible Duplicate entries on Prices and Dates")) {
+            m_SelectPossibleDuplicateEntryOnPricesAndDates();
+        }
+        if (!m_SelectedTransactions.empty()) {
+            ImGui::Separator();
+            if (ImGui::MenuItem("Reset Selection")) {
+                m_ResetSelection();
             }
         }
         ImGui::EndMenu();
@@ -508,6 +509,7 @@ void DataBrokers::m_ImportFromFiles(const std::vector<std::string> vFiles) {
 
 void DataBrokers::m_ResetFiltering() {
     m_Datas.transactions_filtered = m_Datas.transactions;
+    m_Datas.transactions_filtered_rowids = {};
     m_SearchInputTexts = {};
     m_SearchTokens = {};
     m_RefreshFiltering();
@@ -531,12 +533,76 @@ void DataBrokers::m_RefreshFiltering() {
             solde += tr.amount;
             tr.solde = solde;
             m_Datas.transactions_filtered.push_back(tr);
+            m_Datas.transactions_filtered_rowids.emplace(tr.id);
             if (tr.amount < 0.0) {
                 m_TotalDebit += tr.amount;
             }
             if (tr.amount > 0.0) {
                 m_TotalCredit += tr.amount;
             }
+        }
+    }
+}
+
+void DataBrokers::m_SelectOrDeselectRow(const Transaction& vTransaction) {
+    if (m_SelectedTransactions.find(vTransaction.id) != m_SelectedTransactions.end()) {
+        m_SelectedTransactions.erase(vTransaction.id);    // deselection
+    } else {
+        m_SelectedTransactions.emplace(vTransaction.id);  // selection
+    }
+}
+
+bool DataBrokers::m_IsRowSelected(const RowID& vRowID) const {
+    return (m_SelectedTransactions.find(vRowID) != m_SelectedTransactions.end());
+}
+
+void DataBrokers::m_ResetSelection() {
+    m_SelectedTransactions.clear();
+}
+
+void DataBrokers::m_SelectPossibleDuplicateEntryOnPricesAndDates() {
+    if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
+        RowID account_id = m_Datas.accounts.at(m_SelectedAccountIdx).id;
+        m_ResetSelection();
+        DataBase::Instance()->GetDuplicateTransactionsOnDatesAndAmount(  //
+            account_id,                                                  //
+            [this](const RowID& vRowID) {
+                if (m_Datas.transactions_filtered_rowids.find(vRowID) !=  //
+                    m_Datas.transactions_filtered_rowids.end()) {
+                    m_SelectedTransactions.emplace(vRowID);  // select row id
+                }
+            });
+    }
+}
+
+void DataBrokers::m_SelectUnConfirmedTransactions() {
+    if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
+        RowID account_id = m_Datas.accounts.at(m_SelectedAccountIdx).id;
+        m_ResetSelection();
+        DataBase::Instance()->GetUnConfirmedTransactions(  //
+            account_id,                                    //
+            [this](const RowID& vRowID) {
+                if (m_Datas.transactions_filtered_rowids.find(vRowID) !=  //
+                    m_Datas.transactions_filtered_rowids.end()) {
+                    m_SelectedTransactions.emplace(vRowID);  // select row id
+                }
+            });
+    }
+}
+
+void DataBrokers::m_DeleteHoveredOrSelectedRows() {
+    if (m_SelectedTransactions.empty()) {  // delete only the hovered line
+        DataBase::Instance()->DeleteTransaction(m_TransactionToUpdate.id);
+    } else {  // delete the selected rows
+        DataBase::Instance()->DeleteTransactions(m_SelectedTransactions);
+    }
+}
+
+void DataBrokers::m_UpdateTransactionsToDelete() {
+    m_Datas.transactions_to_delete.clear();
+    for (const auto& t : m_Datas.transactions_filtered) {
+        if (m_IsRowSelected(t.id)) {
+            m_Datas.transactions_to_delete.push_back(t);
         }
     }
 }
@@ -754,6 +820,7 @@ void DataBrokers::m_UpdateAccounts() {
         });
     m_AccountsCombo = ImWidgets::QuickStringCombo(0, m_Datas.accountNumbers);
     if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
+        m_ResetSelection();
         m_UpdateTransactions(m_Datas.accounts.at(m_SelectedAccountIdx).id);
     }
 }
@@ -937,22 +1004,21 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
 }
 
 void DataBrokers::m_drawTransactionMenu(const Transaction& vTransaction) {
-    const auto* ptr = &vTransaction;
-    ImGui::PushID(ptr);
-    if (ImGui::BeginPopupContextItem(               //
-            NULL,                                   //
-            ImGuiPopupFlags_NoOpenOverItems |       //
-                ImGuiPopupFlags_MouseButtonRight |  //
-                ImGuiPopupFlags_NoOpenOverExistingPopup)) {
-        if (ImGui::MenuItem("Update")) {
-            m_ShowTransactionDialog(DialogMode::UPDATE_MODE, vTransaction);
+    if (!m_SelectedTransactions.empty()) {
+        const auto* ptr = &vTransaction;
+        ImGui::PushID(ptr);
+        if (ImGui::BeginPopupContextItem(               //
+                NULL,                                   //
+                ImGuiPopupFlags_NoOpenOverItems |       //
+                    ImGuiPopupFlags_MouseButtonRight |  //
+                    ImGuiPopupFlags_NoOpenOverExistingPopup)) {
+            if (ImGui::MenuItem("Delete selection")) {
+                m_ShowTransactionDialog(DialogMode::DELETE_MODE, vTransaction);
+            }
+            ImGui::EndPopup();
         }
-        if (ImGui::MenuItem("Delete")) {
-            m_ShowTransactionDialog(DialogMode::DELETE_MODE, vTransaction);
-        }
-        ImGui::EndPopup();
+        ImGui::PopID();
     }
-    ImGui::PopID();
 }
 
 void DataBrokers::m_ShowTransactionDialog(const DialogMode& vDialogMode, const Transaction& vTransaction) {
@@ -973,141 +1039,217 @@ void DataBrokers::m_ShowTransactionDialog(const DialogMode& vDialogMode, const T
         m_TransactionToUpdate = vTransaction;
     } else if (m_dialogMode == DialogMode::DELETE_MODE) {
         m_TransactionToUpdate = vTransaction;
+        m_UpdateTransactionsToDelete();
     }
 }
 
 void DataBrokers::m_DrawTransactionDialog(const ImVec2& vPos) {
     if (m_showTransactionDialog) {
         if (m_dialogMode == DialogMode::DELETE_MODE) {
-            ImGui::OpenPopup("TransactionDeleteModalPopup");
-            ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-            if (ImGui::BeginPopupModal("TransactionDeleteModalPopup",
-                                       (bool*)nullptr,
-                                       ImGuiWindowFlags_NoTitleBar |            //
-                                           ImGuiWindowFlags_NoResize |          //
-                                           ImGuiWindowFlags_AlwaysAutoResize |  //
-                                           ImGuiWindowFlags_NoDocking)) {
-                ImGui::Header("Transaction Deletion Confirmation");
-                if (ImGui::ContrastedButton("Confirm Deletion")) {
-                    DataBase::Instance()->DeleteTransaction(m_TransactionToUpdate.id);
-                    m_showTransactionDialog = false;
-                    m_refreshDatas();
-                }
-                ImGui::SameLine();
-                if (ImGui::ContrastedButton("Cancel Deletion")) {
-                    m_showTransactionDialog = false;
-                }
-                ImGui::EndPopup();
-            }
+            m_DrawTranactionDeletionDialog(vPos);
         } else {
-            ImGui::OpenPopup("AccountTransactionCreationModalPopup");
-            ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-            if (ImGui::BeginPopupModal("AccountTransactionCreationModalPopup",
-                                       (bool*)nullptr,
-                                       ImGuiWindowFlags_NoTitleBar |            //
-                                           ImGuiWindowFlags_NoResize |          //
-                                           ImGuiWindowFlags_AlwaysAutoResize |  //
-                                           ImGuiWindowFlags_NoDocking)) {
-                if (m_dialogMode == DialogMode::CREATION_MODE) {
-                    ImGui::Header("Transaction Creation");
-                } else if (m_dialogMode == DialogMode::UPDATE_MODE) {
-                    ImGui::Header("Transaction Update");
-                }
-                ImGui::Separator();
-                const float& align = 125.0f;
-                const auto& width = 400.0f;
-                if (m_dialogMode == DialogMode::CREATION_MODE) {
-                    m_AccountsCombo.DisplayCombo(width, "Account Number", align);
-                } else if (m_dialogMode == DialogMode::UPDATE_MODE) {
-                    float px = ImGui::GetCursorPosX();
-                    ImGui::Text("Account Number");
-                    ImGui::SameLine(align);
-                    const float w = width - (ImGui::GetCursorPosX() - px);
-                    ImGui::PushID(++ImGui::CustomStyle::pushId);
-                    ImGui::PushItemWidth(w);
-                    ImGui::Text("%s", m_AccountsCombo.GetText().c_str());
-                    ImGui::PopItemWidth();
-                    ImGui::PopID();
-                }
-                m_CategoriesCombo.DisplayCombo(width, "Category", align);
-                m_OperationsCombo.DisplayCombo(width, "Operation", align);
-                m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
-                m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
-                m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
-                float px = ImGui::GetCursorPosX();
-                ImGui::Text("Amount");
-                ImGui::SameLine(align);
-                const float w = width - (ImGui::GetCursorPosX() - px);
-                ImGui::PushID(++ImGui::CustomStyle::pushId);
-                ImGui::PushItemWidth(w);
-                ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble);
-                ImGui::PopItemWidth();
-                ImGui::PopID();
-                ImGui::Text("Nombre de Doublons");
-                ImGui::SameLine(align);
-                ImGui::PushID(++ImGui::CustomStyle::pushId);
-                ImGui::PushItemWidth(w);
-                if (ImGui::InputInt("##Doublons", &m_TransactionsDoublonInputUint)) {
-                    if (m_TransactionsDoublonInputUint < 1) {
-                        m_TransactionsDoublonInputUint = 1;
-                    }
-                }
-                ImGui::PopItemWidth();
-                ImGui::PopID();
-
-                ImGui::Separator();
-                if (!m_TransactionDateInputText.empty() && !m_TransactionDescriptionInputText.empty() && m_TransactionAmountInputDouble != 0.0) {
-                    if (ImGui::ContrastedButton("Ok")) {
-                        RowID account_id = 0U;
-                        if (DataBase::Instance()->GetAccount(m_AccountsCombo.GetText(), account_id)) {
-                            if (DataBase::Instance()->OpenDBFile()) {
-                                const auto hash = ct::toStr(  //
-                                    "%s_%s_%f",               //
-                                    m_TransactionDateInputText.GetText().c_str(),
-                                    // un fichier ofc ne peut pas avoir des label de longueur > a 30
-                                    // alors on limite le hash a utiliser un label de 30
-                                    // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
-                                    m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
-                                    m_TransactionAmountInputDouble);  // must be unique per oepration
-                                if (m_dialogMode == DialogMode::CREATION_MODE) {
-                                    DataBase::Instance()->AddTransaction(             //
-                                        account_id,                                   //
-                                        m_CategoriesCombo.GetText(),                  //
-                                        m_OperationsCombo.GetText(),                  //
-                                        m_TransactionDateInputText.GetText(),         //
-                                        m_TransactionDescriptionInputText.GetText(),  //
-                                        m_TransactionCommentInputText.GetText(),      //
-                                        m_TransactionAmountInputDouble,
-                                        m_TransactionsDoublonInputUint,
-                                        false,
-                                        hash);
-                                } else if (m_dialogMode == DialogMode::UPDATE_MODE) {
-                                    DataBase::Instance()->UpdateTransaction(          //
-                                        m_TransactionToUpdate.id,                        //
-                                        m_CategoriesCombo.GetText(),                  //
-                                        m_OperationsCombo.GetText(),                  //
-                                        m_TransactionDateInputText.GetText(),         //
-                                        m_TransactionDescriptionInputText.GetText(),  //
-                                        m_TransactionCommentInputText.GetText(),      //
-                                        m_TransactionAmountInputDouble,
-                                        m_TransactionsDoublonInputUint,
-                                        false,
-                                        hash);
-                                }
-                                DataBase::Instance()->CloseDBFile();
-                            }
-                        }
-                        m_showTransactionDialog = false;
-                        m_refreshDatas();
-                    }
-                    ImGui::SameLine();
-                }
-                if (ImGui::ContrastedButton("Cancel")) {
-                    m_showTransactionDialog = false;
-                }
-                ImGui::EndPopup();
+            m_DrawTranactionCreationDialog(vPos);
+        }
+    }
+}
+void DataBrokers::m_DrawTranactionCreationDialog(const ImVec2& vPos) {
+    ImGui::OpenPopup("AccountTransactionCreationModalPopup");
+    ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("AccountTransactionCreationModalPopup",
+                               (bool*)nullptr,
+                               ImGuiWindowFlags_NoTitleBar |            //
+                                   ImGuiWindowFlags_NoResize |          //
+                                   ImGuiWindowFlags_AlwaysAutoResize |  //
+                                   ImGuiWindowFlags_NoDocking)) {
+        if (m_dialogMode == DialogMode::CREATION_MODE) {
+            ImGui::Header("Transaction Creation");
+        } else if (m_dialogMode == DialogMode::UPDATE_MODE) {
+            ImGui::Header("Transaction Update");
+        }
+        ImGui::Separator();
+        const float& align = 125.0f;
+        const auto& width = 400.0f;
+        if (m_dialogMode == DialogMode::CREATION_MODE) {
+            m_AccountsCombo.DisplayCombo(width, "Account Number", align);
+        } else if (m_dialogMode == DialogMode::UPDATE_MODE) {
+            float px = ImGui::GetCursorPosX();
+            ImGui::Text("Account Number");
+            ImGui::SameLine(align);
+            const float w = width - (ImGui::GetCursorPosX() - px);
+            ImGui::PushID(++ImGui::CustomStyle::pushId);
+            ImGui::PushItemWidth(w);
+            ImGui::Text("%s", m_AccountsCombo.GetText().c_str());
+            ImGui::PopItemWidth();
+            ImGui::PopID();
+        }
+        m_CategoriesCombo.DisplayCombo(width, "Category", align);
+        m_OperationsCombo.DisplayCombo(width, "Operation", align);
+        m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
+        m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
+        m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
+        float px = ImGui::GetCursorPosX();
+        ImGui::Text("Amount");
+        ImGui::SameLine(align);
+        const float w = width - (ImGui::GetCursorPosX() - px);
+        ImGui::PushID(++ImGui::CustomStyle::pushId);
+        ImGui::PushItemWidth(w);
+        ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble);
+        ImGui::PopItemWidth();
+        ImGui::PopID();
+        ImGui::Text("Nombre de Doublons");
+        ImGui::SameLine(align);
+        ImGui::PushID(++ImGui::CustomStyle::pushId);
+        ImGui::PushItemWidth(w);
+        if (ImGui::InputInt("##Doublons", &m_TransactionsDoublonInputUint)) {
+            if (m_TransactionsDoublonInputUint < 1) {
+                m_TransactionsDoublonInputUint = 1;
             }
         }
+        ImGui::PopItemWidth();
+        ImGui::PopID();
+
+        ImGui::Separator();
+        if (!m_TransactionDateInputText.empty() && !m_TransactionDescriptionInputText.empty() && m_TransactionAmountInputDouble != 0.0) {
+            if (ImGui::ContrastedButton("Ok")) {
+                RowID account_id = 0U;
+                if (DataBase::Instance()->GetAccount(m_AccountsCombo.GetText(), account_id)) {
+                    if (DataBase::Instance()->OpenDBFile()) {
+                        const auto hash = ct::toStr(  //
+                            "%s_%s_%f",               //
+                            m_TransactionDateInputText.GetText().c_str(),
+                            // un fichier ofc ne peut pas avoir des label de longueur > a 30
+                            // alors on limite le hash a utiliser un label de 30
+                            // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                            m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
+                            m_TransactionAmountInputDouble);  // must be unique per oepration
+                        if (m_dialogMode == DialogMode::CREATION_MODE) {
+                            DataBase::Instance()->AddTransaction(             //
+                                account_id,                                   //
+                                m_CategoriesCombo.GetText(),                  //
+                                m_OperationsCombo.GetText(),                  //
+                                m_TransactionDateInputText.GetText(),         //
+                                m_TransactionDescriptionInputText.GetText(),  //
+                                m_TransactionCommentInputText.GetText(),      //
+                                m_TransactionAmountInputDouble,
+                                m_TransactionsDoublonInputUint,
+                                false,
+                                hash);
+                        } else if (m_dialogMode == DialogMode::UPDATE_MODE) {
+                            DataBase::Instance()->UpdateTransaction(          //
+                                m_TransactionToUpdate.id,                     //
+                                m_CategoriesCombo.GetText(),                  //
+                                m_OperationsCombo.GetText(),                  //
+                                m_TransactionDateInputText.GetText(),         //
+                                m_TransactionDescriptionInputText.GetText(),  //
+                                m_TransactionCommentInputText.GetText(),      //
+                                m_TransactionAmountInputDouble,
+                                m_TransactionsDoublonInputUint,
+                                false,
+                                hash);
+                        }
+                        DataBase::Instance()->CloseDBFile();
+                    }
+                }
+                m_showTransactionDialog = false;
+                m_refreshDatas();
+            }
+            ImGui::SameLine();
+        }
+        if (ImGui::ContrastedButton("Cancel")) {
+            m_showTransactionDialog = false;
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void DataBrokers::m_DrawTranactionDeletionDialog(const ImVec2& vPos) {
+    ImGui::OpenPopup("TransactionDeleteModalPopup");
+    ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("TransactionDeleteModalPopup",
+                               (bool*)nullptr,
+                               ImGuiWindowFlags_NoTitleBar |            //
+                                   ImGuiWindowFlags_NoResize |          //
+                                   ImGuiWindowFlags_AlwaysAutoResize |  //
+                                   ImGuiWindowFlags_NoDocking)) {
+        ImGui::Header("Transaction Deletion Confirmation");
+        const auto& displaySize = ImGui::GetIO().DisplaySize * 0.5f;
+        static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
+        if (ImGui::BeginTable("##TransactionsToDelete", 5, flags, displaySize)) {
+            ImGui::TableSetupScrollFreeze(0, 2);
+            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableHeadersRow();
+            int32_t idx = 0;
+            int32_t idx_to_delete = -1;
+            const float& item_h = ImGui::GetTextLineHeightWithSpacing();
+            const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
+            const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
+            m_TransactionsDeletionListClipper.Begin((int)m_Datas.transactions_to_delete.size(), item_h);
+            while (m_TransactionsDeletionListClipper.Step()) {
+                for (idx = m_TransactionsDeletionListClipper.DisplayStart; idx < m_TransactionsDeletionListClipper.DisplayEnd; ++idx) {
+                    if (idx < 0) {
+                        continue;
+                    }
+
+                    const auto& t = m_Datas.transactions_to_delete.at(idx);
+
+                    ImGui::TableNextRow();
+
+                    ImGui::TableNextColumn();
+                    {
+                        if (ImGui::SmallContrastedButton("-")) {
+                            idx_to_delete = idx;
+                        }
+                    }
+
+                    ImGui::TableNextColumn();
+                    { ImGui::Text(t.date.c_str()); }
+
+                    ImGui::TableNextColumn();
+                    { ImGui::Text(t.desc.c_str()); }
+
+                    ImGui::TableNextColumn();
+                    {
+                        if (t.amount < 0.0) {
+                            ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
+                            ImGui::Text("%.2f", t.amount);
+                            ImGui::PopStyleColor();
+                        }
+                    }
+
+                    ImGui::TableNextColumn();
+                    {
+                        if (t.amount >= 0.0) {
+                            ImGui::PushStyleColor(ImGuiCol_Text, good_color);
+                            ImGui::Text("%.2f", t.amount);
+                            ImGui::PopStyleColor();
+                        }
+                    }
+                }
+            }
+            m_TransactionsDeletionListClipper.End();
+            ImGui::EndTable();
+
+            if (idx_to_delete > -1) {
+                const auto& t = m_Datas.transactions_to_delete.at(idx_to_delete);
+                m_SelectOrDeselectRow(t);
+                m_UpdateTransactionsToDelete();
+            }
+        } 
+
+        if (ImGui::ContrastedButton("Confirm Deletion")) {
+            m_DeleteHoveredOrSelectedRows();
+            m_showTransactionDialog = false;
+            m_refreshDatas();
+        }
+        ImGui::SameLine();
+        if (ImGui::ContrastedButton("Cancel Deletion")) {
+            m_showTransactionDialog = false;
+        }
+        ImGui::EndPopup();
     }
 }
 

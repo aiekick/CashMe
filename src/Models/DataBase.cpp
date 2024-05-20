@@ -90,6 +90,7 @@ void DataBase::CommitTransaction() {
     }
     // we will close the db so force it to reset
     m_TransactionStarted = false;
+    m_CloseDB();
 }
 
 void DataBase::RollbackTransaction() {
@@ -732,6 +733,79 @@ ORDER BY
     }
 }
 
+void DataBase::GetDuplicateTransactionsOnDatesAndAmount(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    auto select_query = ct::toStr(
+        u8R"(
+SELECT t.transaction_id
+FROM transactions t
+JOIN (
+    SELECT date, amount
+    FROM transactions
+    WHERE account_id = %u
+    GROUP BY date, amount
+    HAVING COUNT(*) > 1
+) AS duplicates
+ON t.date = duplicates.date AND t.amount = duplicates.amount
+WHERE t.account_id = %u
+ORDER BY t.date, t.amount;
+)",
+        vAccountID,
+        vAccountID);
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    RowID transaction_id = sqlite3_column_int(stmt, 0);
+                    vCallback(transaction_id);
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
+void DataBase::GetUnConfirmedTransactions(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    auto select_query = ct::toStr(
+        u8R"(
+SELECT 
+  transaction_id
+FROM 
+  transactions
+WHERE
+  confirmed = 0
+AND 
+  account_id = %u;
+)",
+        vAccountID);
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    RowID transaction_id = sqlite3_column_int(stmt, 0);
+                    vCallback(transaction_id);
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
 void DataBase::UpdateTransaction(  //
     const RowID& vRowID,
     const CategoryName& vCategoryName,
@@ -815,11 +889,30 @@ WHERE
 
 void DataBase::DeleteTransactions() {
     if (m_OpenDB()) {
-        auto insert_query = ct::toStr(u8R"(DELETE FROM transactions;)");
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        auto delete_query = ct::toStr(u8R"(DELETE FROM transactions;)");
+        if (sqlite3_exec(m_SqliteDB, delete_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of transactions table in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
+    }
+}
+
+void DataBase::DeleteTransactions(const std::set<RowID>& vRowIDs) {
+    if (BeginTransaction()) {
+        for (const auto& row_id : vRowIDs) {
+            auto insert_query = ct::toStr(
+                u8R"(
+DELETE FROM 
+  transactions
+WHERE
+  transactions.transaction_id = %u;
+)",
+                row_id);
+            if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+                LogVarError("Fail to delete a transaction in database : %s", m_LastErrorMsg);
+            }
+        }
+        CommitTransaction();
     }
 }
 

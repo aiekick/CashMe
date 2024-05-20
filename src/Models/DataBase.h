@@ -16,6 +16,7 @@ limitations under the License.
 
 #pragma once
 
+#include <set>
 #include <memory>
 #include <string>
 #include <functional>
@@ -147,6 +148,12 @@ public:
             const TransactionAmount&,
             const TransactionsDoublon&,
             const TransactionsConfirmed&)> vCallback);
+    void GetDuplicateTransactionsOnDatesAndAmount(  //
+        const RowID& vAccountID,                    //
+        std::function<void(const RowID&)> vCallback);
+    void GetUnConfirmedTransactions(  //
+        const RowID& vAccountID,      //
+        std::function<void(const RowID&)> vCallback);
     void UpdateTransaction(  //
         const RowID& vRowID,
         const CategoryName& vCategoryName,
@@ -163,6 +170,7 @@ public:
         const TransactionsConfirmed& vConfirmed);
     void DeleteTransaction(const RowID& vRowID);
     void DeleteTransactions();
+    void DeleteTransactions(const std::set<RowID>& vRowIDs);
 
     void ClearDataTables();
     std::string GetLastErrorMesg();

@@ -88,9 +88,12 @@
 #define HAVE_MKSTEMPS 1
 #define HAVE_POPEN
 #define HAVE_STD_SORT 1
-#define HAVE_FSEEKO 1
 #define HAVE_FSEEK64 0
+#ifdef _MSC_VER
 #define HAVE_FSEEKI64 0
+#else
+#define HAVE_FSEEKO 1
+#endif
 #define _FILE_OFFSET_BITS 64
 #define _LARGE_FILES 1
 #define _LARGEFILE_SOURCE 1
