@@ -126,6 +126,9 @@ private:
     // accounts
     std::map<UserName, std::map<BankName, std::map<AccountNumber, Account>>> m_Accounts;
 
+    // hidden mode
+    bool m_HiddenMode = false;
+
 public:
     bool init();
     void unit();
@@ -161,6 +164,8 @@ private:
     void m_SelectUnConfirmedTransactions();
     void m_DeleteHoveredOrSelectedRows();
     void m_UpdateTransactionsToDelete();
+    bool m_IsHiddenMode();
+    void m_HideByFilledRectForHiddenMode(const char* fmt, ...);
 
 private:  // ImGui
     void m_UpdateUsers();

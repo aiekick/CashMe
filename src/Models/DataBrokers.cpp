@@ -155,24 +155,35 @@ void DataBrokers::DisplayTransactions() {
                             m_SelectOrDeselectRow(t);
                         }
                     }
+                    m_HideByFilledRectForHiddenMode("%s", t.desc.c_str());
                     ImGui::PopID();
                     m_drawTransactionMenu(t); 
                 }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text(t.comment.c_str()); }
+                {
+                    ImGui::Text(t.comment.c_str());
+                    m_HideByFilledRectForHiddenMode("%s", t.comment.c_str());
+                }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text(t.category.c_str()); }
+                {
+                    ImGui::Text(t.category.c_str());
+                    m_HideByFilledRectForHiddenMode("%s", t.category.c_str());
+                }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text(t.operation.c_str()); }
+                {
+                    ImGui::Text(t.operation.c_str());
+                    m_HideByFilledRectForHiddenMode("%s", t.operation.c_str());
+                }
 
                 ImGui::TableNextColumn();
                 {
                     if (t.amount < 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
                         ImGui::Text("%.2f", t.amount);
+                        m_HideByFilledRectForHiddenMode("%.2f", t.amount);
                         ImGui::PopStyleColor();
                     }
                 }
@@ -182,6 +193,7 @@ void DataBrokers::DisplayTransactions() {
                     if (t.amount >= 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
                         ImGui::Text("%.2f", t.amount);
+                        m_HideByFilledRectForHiddenMode("%.2f", t.amount);
                         ImGui::PopStyleColor();
                     }
                 }
@@ -191,13 +203,16 @@ void DataBrokers::DisplayTransactions() {
                     if (t.solde < 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
                         ImGui::Text("%.2f", t.solde);
+                        m_HideByFilledRectForHiddenMode("%.2f", t.solde);
                         ImGui::PopStyleColor();
                     } else if (t.solde > 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
                         ImGui::Text("%.2f", t.solde);
+                        m_HideByFilledRectForHiddenMode("%.2f", t.solde);
                         ImGui::PopStyleColor();
                     } else {
                         ImGui::Text("%.2f", t.solde);
+                        m_HideByFilledRectForHiddenMode("%.2f", t.solde);
                     }
                 }
 
@@ -274,6 +289,8 @@ void DataBrokers::m_drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
         if (ImGui::MenuItem("Refresh")) {
             m_refreshDatas();
         }
+        ImGui::Separator();
+        ImGui::MenuItem("Hidden Mode", nullptr, &m_HiddenMode);
         ImGui::Separator();
         if (ImGui::BeginMenu("Delete Tables")) {
             if (ImGui::MenuItem("Users")) {
@@ -617,6 +634,32 @@ void DataBrokers::m_UpdateTransactionsToDelete() {
         if (m_IsRowSelected(t.id)) {
             m_Datas.transactions_to_delete.push_back(t);
         }
+    }
+}
+
+bool DataBrokers::m_IsHiddenMode() {
+    return
+#ifdef _DEBUG
+        m_HiddenMode;
+#else
+        false;
+#endif
+}
+
+void DataBrokers::m_HideByFilledRectForHiddenMode(const char* fmt, ...) {
+    if (m_IsHiddenMode()) {
+        va_list args;
+        va_start(args, fmt);
+        const char *text, *text_end;
+        ImFormatStringToTempBufferV(&text, &text_end, fmt, args);
+        if (strlen(text) != 0) {
+            const float& item_h = ImGui::GetTextLineHeightWithSpacing();
+            const auto min = ImGui::GetCursorScreenPos() - ImVec2(0, item_h);
+            const auto max = min + ImGui::CalcTextSize(text, text_end);
+            auto drawListPtr = ImGui::GetWindowDrawList();
+            drawListPtr->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_Text));
+        }
+        va_end(args);
     }
 }
 
@@ -1132,9 +1175,9 @@ void DataBrokers::m_DrawTranactionCreationDialog(const ImVec2& vPos) {
                         const auto hash = ct::toStr(  //
                             "%s_%s_%f",               //
                             m_TransactionDateInputText.GetText().c_str(),
-                            // un fichier ofc ne peut pas avoir des label de longueur > a 30
+                            // un fichier ofc ne peut pas avoir des labels de longueur > a 30
                             // alors on limite le hash a utiliser un label de 30
-                            // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                            // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
                             m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
                             m_TransactionAmountInputDouble);  // must be unique per oepration
                         if (m_dialogMode == DialogMode::CREATION_MODE) {
@@ -1280,8 +1323,8 @@ void DataBrokers::m_drawSearchRow() {
     ImGui::PopStyleVar();
     for (size_t idx = 0; idx < 8; ++idx) {
         ImGui::TableNextColumn();
-        switch(idx) {
-            case 0: 
+        switch (idx) {
+            case 0:
             case 1:
             case 2:
             case 3:
@@ -1292,22 +1335,18 @@ void DataBrokers::m_drawSearchRow() {
                     change = true;
                 }
                 ImGui::PopStyleVar();
-            }
-            break;
-            case 5:
+            } break;
+            case 5: {
                 m_drawAmount(m_TotalDebit);
-                break;
-            case 6:
+            } break;
+            case 6: {
                 m_drawAmount(m_TotalCredit);
-                break;
-            case 7:
-                //m_drawAmount(m_CurrentBaseSolde);
-                break;
-            case 8:
-                ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size());
-                break;
-            default:
-                break;
+            } break;
+            case 7: {
+                // m_drawAmount(m_CurrentBaseSolde);
+            } break;
+            case 8: ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size()); break;
+            default: break;
         }
     }
     if (reset) {
@@ -1323,13 +1362,16 @@ void DataBrokers::m_drawAmount(const double& vAmount) {
         const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
         ImGui::Text("%.2f", vAmount);
+        m_HideByFilledRectForHiddenMode("%.2f", vAmount);
         ImGui::PopStyleColor();
     } else if (vAmount > 0.0) {
         const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
         ImGui::Text("%.2f", vAmount);
+        m_HideByFilledRectForHiddenMode("%.2f", vAmount);
         ImGui::PopStyleColor();
     } else {
         ImGui::Text("%.2f", vAmount);
+        m_HideByFilledRectForHiddenMode("%.2f", vAmount);
     }
 }
