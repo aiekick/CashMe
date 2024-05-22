@@ -28,15 +28,17 @@ private:
     struct Transaction {
         RowID id = 0;
         AccountNumber account;
-        TransactionDate date;
-        TransactionDescription desc;
-        TransactionComment comment;
-        CategoryName category;
         OperationName operation;
+        CategoryName category;
+        SourceName source;
+        TransactionDate date;
+        TransactionDescription description;
+        TransactionComment comment;
         TransactionAmount amount = 0.0;
         TransactionSolde solde = 0.0;
-        TransactionsDoublon doublons = 1;
-        TransactionsConfirmed confirmed = false;
+        TransactionDoublons doublons = 1;
+        TransactionConfirmed confirmed = false;
+        TransactionHash hash;
         // date, desc, comm, cat, op
         std::array<std::string, 5> optimized; // 
     };
@@ -108,6 +110,8 @@ private:
     ImWidgets::InputText m_TransactionDateInputText;
     ImWidgets::InputText m_TransactionDescriptionInputText;
     ImWidgets::InputText m_TransactionCommentInputText;
+    SourceName m_SourceName;
+    SourceType m_SourceType;
     double m_TransactionAmountInputDouble = 0.0;
     int32_t m_TransactionsDoublonInputUint = 1;
     Transaction m_TransactionToUpdate;

@@ -78,15 +78,17 @@ struct IXmlSettings {
 };
 
 struct Transaction {
-    std::string date;
-    std::string label;
-    std::string category;
     std::string operation;
+    std::string category;
+    std::string source;
+    std::string source_type;
+    std::string date;
+    std::string description;
     std::string comment;
     std::string hash;
     double amount = 0.0;
     bool confirmed = false;
-    uint32_t count = 1; // le nombre de doublons mais pas un bug, juste deux transations identique le meme jour. donc avec le meme hash
+    uint32_t doublons = 1; // le nombre de doublons mais pas un bug, juste deux transations identique le meme jour. donc avec le meme hash
 };
 
 struct BankAccount {

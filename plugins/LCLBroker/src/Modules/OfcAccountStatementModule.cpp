@@ -51,17 +51,20 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                 trans = {};
             } else if (line.find("</STMTTRN>") != std::string::npos) {
                 if (is_a_stmt) {
-                    trans.hash = ct::toStr("%s_%s_%f",  //
-                                           trans.date.c_str(),
-                                           // un fichier ofc ne peut pas avoir des label de longueur > a 30
-                                           // alors on limite le hash a utiliser un label de 30
-                                           // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
-                                           trans.label.substr(0, 30).c_str(),
-                                           trans.amount);  // must be unique per oepration
+                    trans.hash = ct::toStr(  //
+                        "%s_%s_%f",          //
+                        trans.date.c_str(),
+                        // un fichier ofc ne peut pas avoir des description de longueur > a 30
+                        // alors on limite le hash a utiliser un description de 30
+                        // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                        trans.description.substr(0, 30).c_str(),
+                        trans.amount);  // must be unique per oepration
                     if (transactions.find(trans.hash) != transactions.end()) {
-                        ++trans.count;
+                        ++trans.doublons;
                         // LogVarDebugInfo("The Operation %s is in double", trans.hash.c_str());
                     }
+                    trans.source = ps.GetFPNE_WithPath("");
+                    trans.source_type = "ofc";
                     transactions[trans.hash] = trans;
                     is_a_stmt = false;
                 }
@@ -79,21 +82,21 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                     trans.amount = ct::dvariant(line).GetD();
                 } else if (line.find("<NAME>") != std::string::npos) {
                     ct::replaceString(line, "<NAME>", "");
-                    trans.label = line;
-                    const auto& first_not_space = trans.label.find_first_not_of(' ');
+                    trans.description = line;
+                    const auto& first_not_space = trans.description.find_first_not_of(' ');
                     if (first_not_space != std::string::npos) {
-                        const auto& space_pos = trans.label.find(' ', first_not_space);
+                        const auto& space_pos = trans.description.find(' ', first_not_space);
                         if (space_pos != std::string::npos) {
-                            trans.operation = trans.label.substr(first_not_space, space_pos - first_not_space);
+                            trans.operation = trans.description.substr(first_not_space, space_pos - first_not_space);
                         }
                     }
-                    while (ct::replaceString(trans.label, "  ", " ")) {
+                    while (ct::replaceString(trans.description, "  ", " ")) {
                     }
-                    if (trans.label.front() == ' ') {
-                        trans.label = trans.label.substr(1);
+                    if (trans.description.front() == ' ') {
+                        trans.description = trans.description.substr(1);
                     }
-                    if (trans.label.back() == ' ') {
-                        trans.label = trans.label.substr(0, trans.label.size() - 1U);
+                    if (trans.description.back() == ' ') {
+                        trans.description = trans.description.substr(0, trans.description.size() - 1U);
                     }
                 } else if (line.find("<MEMO>") != std::string::npos) {
                     ct::replaceString(line, "<MEMO>", "");
@@ -104,7 +107,7 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                 } else if (line.find("<CHKNUM>") != std::string::npos) {
                     ct::replaceString(line, "<CHKNUM>", "");
                     trans.operation = "CHEQUE";
-                    trans.label = "CHEQUE " + line;
+                    trans.description = "CHEQUE " + line;
                 }
             }
             

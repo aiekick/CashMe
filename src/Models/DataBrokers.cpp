@@ -145,7 +145,7 @@ void DataBrokers::DisplayTransactions() {
                 {
                     ImGui::PushID(&t);
                     auto is_selected = m_IsRowSelected(t.id);
-                    ImGui::Selectable(t.desc.c_str(), &is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+                    ImGui::Selectable(t.description.c_str(), &is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
                     if (ImGui::IsItemHovered()) {
                         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                             m_ResetSelection();
@@ -155,7 +155,7 @@ void DataBrokers::DisplayTransactions() {
                             m_SelectOrDeselectRow(t);
                         }
                     }
-                    m_HideByFilledRectForHiddenMode("%s", t.desc.c_str());
+                    m_HideByFilledRectForHiddenMode("%s", t.description.c_str());
                     ImGui::PopID();
                     m_drawTransactionMenu(t); 
                 }
@@ -522,8 +522,19 @@ void DataBrokers::m_ImportFromFiles(const std::vector<std::string> vFiles) {
                     if (DataBase::Instance()->GetAccount(stmt.account.number, account_id)) {
                         if (DataBase::Instance()->BeginTransaction()) {
                             for (const auto& s : stmt.statements) {
-                                DataBase::Instance()->AddTransaction(account_id, //
-                                    s.category, s.operation, s.date, s.label, s.comment, s.amount, s.count, s.confirmed, s.hash);
+                                DataBase::Instance()->AddTransaction(  //
+                                    account_id,                        //
+                                    s.operation,
+                                    s.category,
+                                    s.source,
+                                    s.source_type,
+                                    s.date,
+                                    s.description,
+                                    s.comment,
+                                    s.amount,
+                                    s.doublons,
+                                    s.confirmed,
+                                    s.hash);
                             }
                             DataBase::Instance()->CommitTransaction();
                         }
@@ -689,7 +700,7 @@ void DataBrokers::m_DrawUserDialog(const ImVec2& vPos) {
                                        ImGuiWindowFlags_NoDocking)) {
             ImGui::Header("User Creation");
             ImGui::Separator();
-            m_UserNameInputText.DisplayInputText(200.0f, "Name", "User");
+            m_UserNameInputText.DisplayInputText(200.0f, "Name", "");
             ImGui::Separator();
             if (!m_UserNameInputText.empty()) {
                 if (ImGui::ContrastedButton("Ok")) {
@@ -1017,22 +1028,25 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
         const auto& account_number = m_Datas.accounts.at(zero_based_account_id).number;
         DataBase::Instance()->GetTransactions(  //
             vAccountID,                         //
-            [this, &solde, account_number](const RowID& vTransactionID,
-                           const TransactionDate& vTransactionDate,
-                           const TransactionDescription& vTransactionDescription,
-                           const TransactionComment& vTransactionComment,
-                           const CategoryName& vCategoryName,
-                           const OperationName& vOperationName,
-                           const TransactionAmount& vTransactionAmount,
-                           const TransactionsDoublon& vDoublons,
-                           const TransactionsConfirmed& vConfirmed) {  //
+            [this, &solde, account_number](     //
+                const RowID& vTransactionID,
+                const OperationName& vOperationName,
+                const CategoryName& vCategoryName,
+                const SourceName& vSourceName,
+                const TransactionDate& vTransactionDate,
+                const TransactionDescription& vTransactionDescription,
+                const TransactionComment& vTransactionComment,
+                const TransactionAmount& vTransactionAmount,
+                const TransactionDoublons& vDoublons,
+                const TransactionConfirmed& vConfirmed,
+                const TransactionHash& vHash) {  //
                 solde += vTransactionAmount;
                 Transaction t;
                 t.id = vTransactionID;
                 t.account = account_number;
                 t.date = vTransactionDate;
                 t.optimized[0] = ct::toLower(vTransactionDate);
-                t.desc = vTransactionDescription;
+                t.description = vTransactionDescription;
                 t.optimized[1] = ct::toLower(vTransactionDescription);
                 t.comment = vTransactionComment;
                 t.optimized[2] = ct::toLower(vTransactionComment);
@@ -1040,6 +1054,8 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
                 t.optimized[3] = ct::toLower(vCategoryName);
                 t.operation = vOperationName;
                 t.optimized[4] = ct::toLower(vOperationName);
+                t.hash = vHash;
+                t.source = vSourceName;
                 t.amount = vTransactionAmount;
                 t.doublons = vDoublons;
                 t.confirmed = vConfirmed;
@@ -1050,8 +1066,8 @@ void DataBrokers::m_UpdateTransactions(const RowID& vAccountID) {
                 for (uint32_t idx = 0; idx < t.doublons; ++idx) {
 #ifdef _DEBUG
                     if (t.doublons > 1) {
-                        t.desc = ct::toStr("[Doublon : %u] ", idx) + vTransactionDescription;  // just for lcoate them in debug mode
-                        t.optimized[1] = ct::toLower(t.desc);
+                        t.description = ct::toStr("[Doublon : %u] ", idx) + vTransactionDescription;  // just for lcoate them in debug mode
+                        t.optimized[1] = ct::toLower(t.description);
                     }
 #endif
                     m_Datas.transactions.push_back(t);
@@ -1090,7 +1106,7 @@ void DataBrokers::m_ShowTransactionDialog(const DialogMode& vDialogMode, const T
         m_CategoriesCombo.Select(vTransaction.category);
         m_OperationsCombo.Select(vTransaction.operation);
         m_TransactionDateInputText.SetText(vTransaction.date);
-        m_TransactionDescriptionInputText.SetText(vTransaction.desc);
+        m_TransactionDescriptionInputText.SetText(vTransaction.description);
         m_TransactionCommentInputText.SetText(vTransaction.comment);
         m_TransactionAmountInputDouble = vTransaction.amount;
         m_TransactionsDoublonInputUint = vTransaction.doublons;
@@ -1183,26 +1199,29 @@ void DataBrokers::m_DrawTranactionCreationDialog(const ImVec2& vPos) {
                         if (m_dialogMode == DialogMode::CREATION_MODE) {
                             DataBase::Instance()->AddTransaction(             //
                                 account_id,                                   //
-                                m_CategoriesCombo.GetText(),                  //
                                 m_OperationsCombo.GetText(),                  //
+                                m_CategoriesCombo.GetText(),                  //
+                                m_SourceName,                                 //
+                                m_SourceType,                                 //
                                 m_TransactionDateInputText.GetText(),         //
                                 m_TransactionDescriptionInputText.GetText(),  //
                                 m_TransactionCommentInputText.GetText(),      //
-                                m_TransactionAmountInputDouble,
-                                m_TransactionsDoublonInputUint,
-                                false,
+                                m_TransactionAmountInputDouble,               //
+                                m_TransactionsDoublonInputUint,               //
+                                false,                                        //
                                 hash);
                         } else if (m_dialogMode == DialogMode::UPDATE_MODE) {
                             DataBase::Instance()->UpdateTransaction(          //
                                 m_TransactionToUpdate.id,                     //
-                                m_CategoriesCombo.GetText(),                  //
                                 m_OperationsCombo.GetText(),                  //
+                                m_CategoriesCombo.GetText(),                  //
+                                m_SourceName,                                 //
                                 m_TransactionDateInputText.GetText(),         //
                                 m_TransactionDescriptionInputText.GetText(),  //
                                 m_TransactionCommentInputText.GetText(),      //
-                                m_TransactionAmountInputDouble,
-                                m_TransactionsDoublonInputUint,
-                                false,
+                                m_TransactionAmountInputDouble,               //
+                                m_TransactionsDoublonInputUint,               //
+                                false,                                        //
                                 hash);
                         }
                         DataBase::Instance()->CloseDBFile();
@@ -1267,7 +1286,7 @@ void DataBrokers::m_DrawTranactionDeletionDialog(const ImVec2& vPos) {
                     { ImGui::Text(t.date.c_str()); }
 
                     ImGui::TableNextColumn();
-                    { ImGui::Text(t.desc.c_str()); }
+                    { ImGui::Text(t.description.c_str()); }
 
                     ImGui::TableNextColumn();
                     {
