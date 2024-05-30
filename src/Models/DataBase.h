@@ -20,28 +20,7 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <functional>
-
-typedef std::string DBFile;
-typedef uint32_t RowID;
-typedef std::string UserName;
-typedef std::string BankName;
-typedef std::string SourceName;
-typedef std::string SourceType;
-typedef std::string AccountType;
-typedef std::string AccountName;
-typedef std::string CategoryName;
-typedef std::string OperationName;
-typedef std::string AccountNumber;
-typedef double AccounBaseSolde;
-typedef std::string TransactionDate;
-typedef std::string TransactionDescription;
-typedef std::string TransactionComment;
-typedef double TransactionAmount;
-typedef double TransactionSolde;
-typedef uint32_t TransactionDoublons;
-typedef bool TransactionConfirmed;
-typedef uint32_t TransactionsCount;
-typedef std::string TransactionHash;
+#include <Headers/DatasDef.h>
 
 class DataBaseTable {
 public:
@@ -65,12 +44,6 @@ public:
     void CommitTransaction();
     void RollbackTransaction();
 
-    void AddUser(const UserName& vUserName);
-    bool GetUser(const UserName& vUserName, RowID& vOutRowID);
-    void GetUsers(std::function<void(const UserName&)> vCallback);
-    void UpdateUser(const RowID& vRowID, const UserName& vUserName);
-    void DeleteUsers();
-
     void AddBank(const BankName& vBankName, const std::string& vUrl = {});
     bool GetBank(const BankName& vBankName, RowID& vOutRowID);
     void GetBanks(std::function<void(const BankName&, const std::string&)> vCallback);
@@ -89,15 +62,15 @@ public:
     void UpdateOperation(const RowID& vRowID, const OperationName& vOperationName);
     void DeleteOperations();
 
-    void AddSource(const SourceName& vSourceName, const SourceType& vSourceType);
+    void AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha1& vSourceSha1);
     bool GetSource(const SourceName& vSourceName, RowID& vOutRowID);
     void GetSources(std::function<void(const SourceName&)> vCallback);
     void UpdateSource(const RowID& vRowID, const SourceName& vSourceName);
     void DeleteSources();
 
     void AddAccount(  //
-        const UserName& vUserName,
         const BankName& vBankName,
+        const BankAgency& vBankAgency,
         const AccountType& vAccountType,
         const AccountName& vAccountName,
         const AccountNumber& vAccountNumber,
@@ -106,8 +79,8 @@ public:
         const AccountNumber& vAccountNumber,
         RowID& vOutRowID);
     bool GetAccount(  //
-        const UserName& vUserName,
         const BankName& vBankName,
+        const BankAgency& vBankAgency,
         const AccountType& vAccountType,
         const AccountName& vAccountName,
         const AccountNumber& vAccountNumber,
@@ -115,8 +88,8 @@ public:
     void GetAccounts(        //
         std::function<void(  //
             const RowID&,
-            const UserName&,
             const BankName&,
+            const BankAgency&,
             const AccountType&,
             const AccountName&,
             const AccountNumber&,
@@ -124,8 +97,8 @@ public:
             const TransactionsCount&)> vCallback);
     void UpdateAccount(  //
         const RowID& vRowID,
-        const UserName& vUserName,
         const BankName& vBankName,
+        const BankAgency& vBankAgency,
         const AccountType& vAccountType,
         const AccountName& vAccountName,
         const AccountNumber& vAccountNumber,
@@ -139,27 +112,26 @@ public:
         const CategoryName& vCategoryName,
         const SourceName& vSourceName,
         const SourceType& vSourceType,
+        const SourceSha1& vSourceSha1,
         const TransactionDate& vDate,
         const TransactionDescription& vDescription,
         const TransactionComment& vComment,
         const TransactionAmount& vAmount,
-        const TransactionDoublons& vDoublon,
         const TransactionConfirmed& vConfirmed,
         const TransactionHash& vHash);
     void GetTransactions(  //
         const RowID& vAccountID,
         std::function<void(  //
-            const RowID& ,
-            const OperationName& ,
-            const CategoryName& ,
-            const SourceName& ,
-            const TransactionDate& ,
-            const TransactionDescription& ,
-            const TransactionComment& ,
-            const TransactionAmount& ,
-            const TransactionDoublons& ,
-            const TransactionConfirmed& ,
-            const TransactionHash& )> vCallback);
+            const RowID&,
+            const OperationName&,
+            const CategoryName&,
+            const SourceName&,
+            const TransactionDate&,
+            const TransactionDescription&,
+            const TransactionComment&,
+            const TransactionAmount&,
+            const TransactionConfirmed&,
+            const TransactionHash&)> vCallback);
     void GetDuplicateTransactionsOnDatesAndAmount(  //
         const RowID& vAccountID,                    //
         std::function<void(const RowID&)> vCallback);
@@ -175,7 +147,6 @@ public:
         const TransactionDescription& vDescription,
         const TransactionComment& vComment,
         const TransactionAmount& vAmount,
-        const TransactionDoublons& vDoublon,
         const TransactionConfirmed& vConfirmed,
         const TransactionHash& vHash);
     void ConfirmTransaction(  //

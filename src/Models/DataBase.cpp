@@ -101,76 +101,6 @@ void DataBase::RollbackTransaction() {
     m_TransactionStarted = false;
 }
 
-void DataBase::AddUser(const UserName& vUserName) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO users (name) VALUES("%s");)", vUserName.c_str());
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a user in database : %s", m_LastErrorMsg);
-    }
-}
-
-bool DataBase::GetUser(const UserName& vUserName, RowID& vOutRowID) {
-    bool ret = false;
-    auto select_query = ct::toStr(u8R"(SELECT id FROM users WHERE name = "%s";)", vUserName.c_str());
-    if (m_OpenDB()) {
-        sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
-        if (res != SQLITE_OK) {
-            LogVarError("%s %s", "Fail get user id with reason", sqlite3_errmsg(m_SqliteDB));
-        } else {
-            while (res == SQLITE_OK || res == SQLITE_ROW) {
-                res = sqlite3_step(stmt);
-                if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    vOutRowID = sqlite3_column_int(stmt, 0);
-                    ret = true;
-                }
-            }
-        }
-        sqlite3_finalize(stmt);
-        m_CloseDB();
-    }
-    return ret;
-}
-
-void DataBase::GetUsers(std::function<void(const UserName&)> vCallback) {
-    // no interest to call that without a callback for retrieve datas
-    assert(vCallback);
-    const auto& select_query = ct::toStr(u8R"(SELECT name FROM users GROUP BY name;)");
-    if (m_OpenDB()) {
-        sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
-        if (res != SQLITE_OK) {
-            LogVarError("%s %s", "Fail get users with reason", sqlite3_errmsg(m_SqliteDB));
-        } else {
-            while (res == SQLITE_OK || res == SQLITE_ROW) {
-                res = sqlite3_step(stmt);
-                if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    const char* user_name = (const char*)sqlite3_column_text(stmt, 0);
-                    vCallback(user_name != nullptr ? user_name : "");
-                }
-            }
-        }
-        sqlite3_finalize(stmt);
-        m_CloseDB();
-    }
-}
-
-void DataBase::UpdateUser(const RowID& vRowID, const UserName& vUserName) {
-    auto insert_query = ct::toStr(u8R"(UPDATE users SET name = "%s" WHERE id = %u;)", vUserName.c_str(), vRowID);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to update a user in database : %s", m_LastErrorMsg);
-    }
-}
-
-void DataBase::DeleteUsers() {
-    if (m_OpenDB()) {
-        auto insert_query = ct::toStr(u8R"(DELETE FROM users;)");
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-            LogVarError("Fail to delete content of users table in database : %s", m_LastErrorMsg);
-        }
-        m_CloseDB();
-    }
-}
-
 void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO banks (name, url) VALUES("%s", "%s");)", vBankName.c_str(), vUrl.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -384,8 +314,11 @@ void DataBase::DeleteOperations() {
     }
 }
 
-void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourceType) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO sources (name, type) VALUES("%s", "%s");)", vSourceName.c_str(), vSourceType.c_str());
+void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha1& vSourceSha1) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO sources (name, type, sha1) VALUES("%s", "%s");)",  //
+                                  vSourceName.c_str(),
+                                  vSourceType.c_str(),
+                                  vSourceSha1.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a source in database : %s", m_LastErrorMsg);
     }
@@ -454,27 +387,26 @@ void DataBase::DeleteSources() {
     }
 }
 
-void DataBase::AddAccount(const UserName& vUserName,
-                          const BankName& vBankName,
+void DataBase::AddAccount(const BankName& vBankName,
+                          const BankAgency& vBankAgency,
                           const AccountType& vAccountType,
                           const AccountName& vAccountName,
                           const AccountNumber& vAccountNumber,
                           const AccounBaseSolde& vBaseSolde) {
-    AddUser(vUserName);
     AddBank(vBankName);
     auto insert_query = ct::toStr(
         u8R"(
 INSERT OR IGNORE INTO accounts 
-    (user_id, bank_id, type, name, number, base_solde) VALUES(
-        (SELECT id FROM users WHERE users.name = "%s"), -- user id
+    (bank_id, bank_agency, type, name, number, base_solde) VALUES(
         (SELECT id FROM banks WHERE banks.name = "%s"), -- bank id
+        "%s", -- bank agency
         "%s", -- account type
         "%s", -- account name
         "%s", -- account number
         %f    -- account base solde
         );)",
-        vUserName.c_str(),
         vBankName.c_str(),
+        vBankAgency.c_str(),
         vAccountType.c_str(),
         vAccountName.c_str(),
         vAccountNumber.c_str(),
@@ -516,8 +448,8 @@ WHERE
     return ret;
 }
 
-bool DataBase::GetAccount(const UserName& vUserName,
-                          const BankName& vBankName,
+bool DataBase::GetAccount(const BankName& vBankName,
+                          const BankAgency& vBankAgency,
                           const AccountType& vAccountType,
                           const AccountName& vAccountName,
                           const AccountNumber& vAccountNumber,
@@ -529,17 +461,16 @@ SELECT
   id 
 FROM 
   accounts 
-  LEFT JOIN users ON accounts.user_id = users.id
   LEFT JOIN banks ON accounts.bank_id = banks.id
 WHERE 
-  users.name = "%s"
   AND banks.name = "%s"
+  AND banks.agency = "%s"
   AND accounts.type = "%s"
   AND accounts.name = "%s"
   AND accounts.number = "%s"
 ;)",
-        vUserName.c_str(),     //
         vBankName.c_str(),     //
+        vBankAgency.c_str(),   //
         vAccountType.c_str(),  //
         vAccountName.c_str(),  //
         vAccountNumber.c_str());
@@ -566,8 +497,8 @@ WHERE
 void DataBase::GetAccounts(  //
     std::function<void(      //
         const RowID&,
-        const UserName&,
         const BankName&,
+        const BankAgency&,
         const AccountType&,
         const AccountName&,
         const AccountNumber&,
@@ -579,18 +510,17 @@ void DataBase::GetAccounts(  //
         u8R"(
 SELECT
   accounts.id AS rowid,
-  users.name AS user_name,
   banks.name AS bank_name,
+  accounts.bank_agency AS bank_agency,
   accounts.type AS account_type,
   accounts.name AS account_name,
   accounts.number AS account_number,
   accounts.base_solde AS account_base_solde,
   COUNT(t.id) AS nombre_transactions
 FROM accounts
-LEFT JOIN users ON users.id = accounts.user_id
 LEFT JOIN banks ON banks.id = accounts.bank_id
 LEFT JOIN transactions t ON accounts.id = t.account_id
-GROUP BY user_name, bank_name, account_name
+GROUP BY bank_name, bank_agency, account_name
 ORDER BY accounts.id;
 )";
     if (m_OpenDB()) {
@@ -603,8 +533,8 @@ ORDER BY accounts.id;
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
                     RowID account_id = sqlite3_column_int(stmt, 0);
-                    const char* user_name = (const char*)sqlite3_column_text(stmt, 1);
-                    const char* bank_name = (const char*)sqlite3_column_text(stmt, 2);
+                    const char* bank_name = (const char*)sqlite3_column_text(stmt, 1);
+                    const char* bank_agency = (const char*)sqlite3_column_text(stmt, 2);
                     const char* account_type = (const char*)sqlite3_column_text(stmt, 3);
                     const char* account_name = (const char*)sqlite3_column_text(stmt, 4);
                     const char* account_number = (const char*)sqlite3_column_text(stmt, 5);
@@ -612,8 +542,8 @@ ORDER BY accounts.id;
                     TransactionsCount transactions_count = sqlite3_column_int(stmt, 7);
                     vCallback(                                            //
                         account_id,                                       //
-                        user_name != nullptr ? user_name : "",            //
                         bank_name != nullptr ? bank_name : "",            //
+                        bank_agency != nullptr ? bank_agency : "",        //
                         account_type != nullptr ? account_type : "",      //
                         account_name != nullptr ? account_name : "",      //
                         account_number != nullptr ? account_number : "",  //
@@ -628,8 +558,8 @@ ORDER BY accounts.id;
 }
 
 void DataBase::UpdateAccount(const RowID& vRowID,
-                             const UserName& vUserName,
                              const BankName& vBankName,
+                             const BankAgency& vBankAgency,
                              const AccountType& vAccountType,
                              const AccountName& vAccountName,
                              const AccountNumber& vAccountNumber,
@@ -639,7 +569,6 @@ void DataBase::UpdateAccount(const RowID& vRowID,
 UPDATE 
   accounts
 SET 
-  user_id = (SELECT id FROM users WHERE name = "%s"),
   bank_id = (SELECT id FROM banks WHERE name = "%s"),
   type = "%s",
   name = "%s",
@@ -648,7 +577,6 @@ SET
 WHERE
   accounts.id = %u;
 )",
-        vUserName.c_str(),
         vBankName.c_str(),
         vAccountType.c_str(),
         vAccountName.c_str(),
@@ -693,42 +621,39 @@ void DataBase::AddTransaction(  //
     const CategoryName& vCategoryName,
     const SourceName& vSourceName,
     const SourceType& vSourceType,
+    const SourceSha1& vSourceSha1,
     const TransactionDate& vDate,
     const TransactionDescription& vDescription,
     const TransactionComment& vComment,
     const TransactionAmount& vAmount,
-    const TransactionDoublons& vDoublon,
     const TransactionConfirmed& vConfirmed,
     const TransactionHash& vHash) {
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
-    AddSource(vSourceName, vSourceType);
-    assert(vDoublon != 0);  // vDoublon mut be 1 at least
+    AddSource(vSourceName, vSourceType, vSourceSha1);
     auto insert_query = ct::toStr(
         u8R"(
 INSERT OR IGNORE INTO transactions 
-    (account_id, operation_id, category_id, source_id, date, description, comment, amount, doublons, confirmed, hash) VALUES(
+    (account_id, operation_id, category_id, source_id, date, description, comment, amount, confirmed, hash) VALUES(
         %u, -- account id
         (SELECT id FROM operations WHERE operations.name = "%s"), -- operation id
         (SELECT id FROM categories WHERE categories.name = "%s"), -- category id
-        (SELECT id FROM sources WHERE sources.name = "%s"), -- source id
+        (SELECT id FROM sources WHERE sources.sha1 = "%s"), -- source id
         "%s", 
         "%s",
         "%s",
-        %.6f, 
-        "%u",
+        %.6f,
         "%u",
         "%s"
         );)",
         vAccountID,
         vOperationName.c_str(),
         vCategoryName.c_str(),
-        vSourceName.c_str(),
+        vSourceSha1.c_str(),
         vDate.c_str(),
         vDescription.c_str(),
         vComment.c_str(),
         vAmount,
-        vDoublon,
         vConfirmed,
         vHash.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -747,7 +672,6 @@ void DataBase::GetTransactions(  //
         const TransactionDescription&,
         const TransactionComment&,
         const TransactionAmount&,
-        const TransactionDoublons&,
         const TransactionConfirmed&,
         const TransactionHash&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
@@ -763,7 +687,6 @@ SELECT
   transactions.description,
   transactions.comment,
   transactions.amount,
-  transactions.doublons,
   transactions.confirmed,
   transactions.hash
 FROM
@@ -795,9 +718,8 @@ ORDER BY
                     auto description = (const char*)sqlite3_column_text(stmt, 5);
                     auto comment = (const char*)sqlite3_column_text(stmt, 6);
                     TransactionAmount amount = sqlite3_column_double(stmt, 7);
-                    TransactionDoublons doublons = sqlite3_column_int(stmt, 8);
-                    TransactionConfirmed confirmed = sqlite3_column_int(stmt, 9);
-                    auto hash = (const char*)sqlite3_column_text(stmt, 10);
+                    TransactionConfirmed confirmed = sqlite3_column_int(stmt, 8);
+                    auto hash = (const char*)sqlite3_column_text(stmt, 9);
                     vCallback(  //
                         id,
                         operation != nullptr ? operation : "",      //
@@ -807,7 +729,6 @@ ORDER BY
                         description != nullptr ? description : "",  //
                         comment != nullptr ? comment : "",          //
                         amount,                                     //
-                        doublons,                                   //
                         confirmed,                                  //
                         hash);
                 }
@@ -900,10 +821,8 @@ void DataBase::UpdateTransaction(  //
     const TransactionDescription& vDescription,
     const TransactionComment& vComment,
     const TransactionAmount& vAmount,
-    const TransactionDoublons& vDoublon,
     const TransactionConfirmed& vConfirmed,
     const TransactionHash& vHash) {
-    assert(vDoublon != 0);  // vDoublon mut be 1 at least
     auto insert_query = ct::toStr(
         u8R"(
 UPDATE 
@@ -916,7 +835,6 @@ SET
   description = "%s",
   comment = "%s",
   amount = %.6f,
-  doublons = %u,
   confirmed = %u,
   hash = "%s"
 WHERE
@@ -929,7 +847,6 @@ WHERE
         vDescription.c_str(),
         vComment.c_str(),
         vAmount,
-        vDoublon,
         vConfirmed,
         vHash.c_str(),
         vRowID);
@@ -1065,7 +982,6 @@ void DataBase::ClearDataTables() {
     auto clear_query =
         u8R"(
 BEGIN TRANSACTION;
-DELETE FROM users;
 DELETE FROM banks;
 DELETE FROM accounts;
 DELETE FROM sources;
@@ -1110,33 +1026,29 @@ void DataBase::m_CreateDBTables(const bool& vPrintLogs) {
     if (m_SqliteDB) {  // in the doubt
         const char* create_tables =
             u8R"(
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
-);
-
 CREATE TABLE banks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
+    address TEXT,
     url TEXT
 );
 
 CREATE TABLE accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     number TEXT NOT NULL UNIQUE,
-    user_id INTEGER NOT NULL,
     bank_id INTEGER NOT NULL,
+    bank_agency TEXT,
     type TEXT NOT NULL,
     name TEXT NOT NULL,
     base_solde REAL,
-    FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (bank_id) REFERENCES banks(id)
 );
 
 CREATE TABLE sources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    type TEXT NOT NULL
+    type TEXT NOT NULL,
+    sha TEXT NOT NULL
 );
 
 CREATE TABLE categories (
@@ -1160,7 +1072,6 @@ CREATE TABLE transactions (
     description TEXT,
     comment TEXT,
     amount REAL NOT NULL,
-    doublons INTEGER NOT NULL, -- the doublons count op in double but not a bug
     confirmed INTEGER,
     hash NOT NULL UNIQUE,
     FOREIGN KEY (account_id) REFERENCES accounts(id),
