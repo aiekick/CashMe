@@ -30,11 +30,15 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
 
         bool is_a_stmt = false;
         Cash::Transaction trans;
+        uint32_t doublons = 0U;
 
         // we start at 1, since 0 is the header
         for (size_t idx = 1; idx < lines.size(); ++idx) {
             auto line = lines.at(idx);
-            if (line.find("<ACCTID>") != std::string::npos) {
+            if (line.find("<BANKID>") != std::string::npos) {
+                ct::replaceString(line, "<BANKID>", "");
+                ret.account.bank_id = line;
+            } else if (line.find("<ACCTID>") != std::string::npos) {
                 ct::replaceString(line, "<ACCTID>", "");
                 ret.account.number = line;
             } else if (line.find("<DTSTART>") != std::string::npos) {
@@ -60,7 +64,7 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                         trans.description.substr(0, 30).c_str(),
                         trans.amount);  // must be unique per oepration
                     if (transactions.find(trans.hash) != transactions.end()) {
-                        ++trans.doublons;
+                        ++doublons;
                         // LogVarDebugInfo("The Operation %s is in double", trans.hash.c_str());
                     }
                     trans.source = ps.GetFPNE_WithPath("");
@@ -112,9 +116,15 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
             }
             
         }
+
+        for (const auto& t : transactions) {
+            auto trans = t.second;
+            for (uint32_t idx = 0U; idx < doublons; ++idx) {
+                trans.hash = t.second.hash + ct::toStr("_%u", idx);
+                ret.statements.push_back(trans);
+            }
+        }
     }
-    for (const auto& t : transactions) {
-        ret.statements.push_back(t.second);
-    }
+
     return ret;
 }

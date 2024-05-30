@@ -177,6 +177,7 @@ include_directories(
 	${GLFW_INCLUDE_DIR}
 	${GLAD_INCLUDE_DIR}
 	${CURL_INCLUDE_DIR}
+	${SHA1_INCLUDE_DIR}
 	${FMT_INCLUDE_DIR}
 )
 

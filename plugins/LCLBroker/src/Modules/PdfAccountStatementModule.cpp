@@ -429,10 +429,12 @@ private:
         }
 
         {  // account infos
+            std::string bank_id;
             std::string guichet;
             std::string number;
             if (m_RibDatas.fields.size() == 4U) {
                 // RIB // Compte Depot
+                bank_id = m_RibDatas.fields.at(0).token;
                 guichet = m_RibDatas.fields.at(1).token;
                 number = m_RibDatas.fields.at(2).token;
             } else if (m_RibDatas.fields.size() == 2U) {
@@ -453,11 +455,14 @@ private:
                 number = number.substr(number.size() - 7U);
             }
 
+            ret.account.bank_id = bank_id;
             ret.account.number = guichet + " " + number;
         }
 
         {  // statements
             Cash::Transaction trans;
+            uint32_t doublons = 0U;
+
             bool is_new_line = false;
             m_StartSolde = ct::dvariant(m_StartSoldeToken.token).GetD();
             m_EndSolde = ct::dvariant(m_EndSoldeToken.token).GetD();
@@ -544,12 +549,9 @@ private:
                                            trans.description.substr(0, 30).c_str(),
                                            trans.amount);  // must be unique per oepration
                     if (transactions.find(trans.hash) != transactions.end()) {
-                        ++trans.doublons;
-                        // LogVarDebugInfo("The Operation %s is in double", trans.hash.c_str());
+                        ++doublons;
                     }
-#ifdef _DEBUG
-                    trans.confirmed = true;
-#endif
+
                     trans.source = vSourceName;
                     trans.source_type = "pdf";
                     
@@ -565,10 +567,14 @@ private:
                                  compute_solde_str.c_str(),
                                  final_solde_str.c_str());
             }
-        }
 
-        for (const auto &t : transactions) {
-            ret.statements.push_back(t.second);
+            for (const auto &t : transactions) {
+                auto trans = t.second;
+                for (uint32_t idx = 0U; idx < doublons; ++idx) {
+                    trans.hash = t.second.hash + ct::toStr("_%u", idx);
+                    ret.statements.push_back(trans);
+                }
+            }
         }
 
         return ret;
