@@ -57,7 +57,11 @@ void DataBrokers::drawDialogs(const ImVec2& vPos, const ImVec2& vSize) {
     m_CategoryDialog.draw(center);
     m_OperationDialog.draw(center);
     m_TransactionDialog.draw(center);
-    if (ImGuiFileDialog::Instance()->Display("Import Datas")) {
+
+    ImVec2 min = vSize * 0.5f;
+    ImVec2 max = vSize;
+
+    if (ImGuiFileDialog::Instance()->Display("Import Datas", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
             const auto& selection = ImGuiFileDialog::Instance()->GetSelection();
             if (!selection.empty()) {
@@ -77,7 +81,6 @@ void DataBrokers::drawMenu(FrameActionSystem& vFrameActionSystem) {
         if (ImGui::BeginMenuBar()) {
             m_drawAccountsMenu(vFrameActionSystem);
             m_drawCreationMenu(vFrameActionSystem);
-            m_drawUpdateMenu(vFrameActionSystem);
             m_drawImportMenu(vFrameActionSystem);
             m_drawSelectMenu(vFrameActionSystem);
 #ifdef _DEBUG
@@ -413,30 +416,6 @@ void DataBrokers::m_drawCreationMenu(FrameActionSystem& vFrameActionSystem) {
     }
 }
 
-void DataBrokers::m_drawUpdateMenu(FrameActionSystem& vFrameActionSystem) {
-    /*if (ImGui::BeginMenu("Update")) {
-        if (ImGui::MenuItem("User")) {
-            m_ShowUserDialog(DialogMode::UPDATE_ONCE_MODE);
-        }
-        if (ImGui::MenuItem("Bank")) {
-            m_ShowBankDialog(DialogMode::UPDATE_ONCE_MODE);
-        }
-        if (ImGui::MenuItem("Account")) {
-            m_ShowAccountDialog(DialogMode::UPDATE_ONCE_MODE);
-        }
-        if (ImGui::MenuItem("Category")) {
-            m_ShowCategoryDialog(DialogMode::UPDATE_ONCE_MODE);
-        }
-        if (ImGui::MenuItem("Operation")) {
-            m_ShowOperationDialog(DialogMode::UPDATE_ONCE_MODE);
-        }
-        if (ImGui::MenuItem("Transaction")) {
-            m_ShowTransactionDialog(DialogMode::UPDATE_ONCE_MODE);
-        }
-        ImGui::EndMenu();
-    }*/
-}
-
 std::string DataBrokers::getXml(const std::string& vOffset, const std::string& vUserDatas) {
     UNUSED(vUserDatas);
     std::string res;
@@ -542,6 +521,7 @@ void DataBrokers::m_ImportFromFiles(const std::vector<std::string> vFiles) {
                                 s.hash); 
                         }
                         DataBase::Instance()->CommitTransaction();
+                        m_RefreshFiltering();
                     }
                 } else {
                     LogVarError("Import interrupted, no account found for %s", stmt.account.number.c_str());
@@ -637,24 +617,6 @@ void DataBrokers::m_SelectUnConfirmedTransactions() {
                     m_SelectedTransactions.emplace(vRowID);  // select row id
                 }
             });
-    }
-}
-
-void DataBrokers::m_DeleteHoveredOrSelectedRows() {
-    if (m_SelectedTransactions.empty()) {  // delete only the hovered line
-        CTOOL_DEBUG_BREAK;
-        //DataBase::Instance()->DeleteTransaction(m_TransactionToUpdate.id);
-    } else {  // delete the selected rows
-        DataBase::Instance()->DeleteTransactions(m_SelectedTransactions);
-    }
-}
-
-void DataBrokers::m_UpdateTransactionsToDelete() {
-    m_Datas.transactions_to_delete.clear();
-    for (const auto& t : m_Datas.transactions_filtered) {
-        if (m_IsRowSelected(t.id)) {
-            m_Datas.transactions_to_delete.push_back(t);
-        }
     }
 }
 
@@ -924,15 +886,30 @@ void DataBrokers::m_drawTransactionMenu(const Transaction& vTransaction) {
                 ImGuiPopupFlags_NoOpenOverItems |       //
                     ImGuiPopupFlags_MouseButtonRight |  //
                     ImGuiPopupFlags_NoOpenOverExistingPopup)) {
-            if (m_SelectedTransactions.size() > 1U) {
-                if (ImGui::MenuItem("Update selection")) {
-                    CTOOL_DEBUG_BREAK;
-                    //m_ShowTransactionDialog(DIALOG_UPDATE_ALL, {});
+            if (ImGui::MenuItem("Update selection")) {
+                std::vector<Transaction> transactions_to_update;
+                for (const auto& trans : m_Datas.transactions_filtered) {
+                    if (m_SelectedTransactions.find(trans.id) != m_SelectedTransactions.end()) {
+                        transactions_to_update.push_back(trans);
+                    }
+                }
+                if (transactions_to_update.size() > 1U) {
+                    m_TransactionDialog.setTransactionsToUpdate(transactions_to_update);
+                    m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ALL);
+                } else if (transactions_to_update.size() == 1U) {
+                    m_TransactionDialog.setTransaction(transactions_to_update.front());
+                    m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
                 }
             }
             if (ImGui::MenuItem("Delete selection")) {
-                CTOOL_DEBUG_BREAK;
-                //m_ShowTransactionDialog(DIALOG_MODE_DELETE, vTransaction);
+                std::vector<Transaction> transactions_to_delete;
+                for (const auto& trans : m_Datas.transactions_filtered) {
+                    if (m_SelectedTransactions.find(trans.id) != m_SelectedTransactions.end()) {
+                        transactions_to_delete.push_back(trans);
+                    }
+                }
+                m_TransactionDialog.setTransactionsToDelete(transactions_to_delete);
+                m_TransactionDialog.show(DataDialogMode::MODE_DELETE_ALL);
             }
             ImGui::EndPopup();
         }

@@ -8,6 +8,7 @@
 class ProjectFile;
 class BudgetPane : public AbstractPane {
 private:
+    ImWidgets::QuickStringEditCombo m_EditCombo;
 
 public:
     bool Init() override;

@@ -24,8 +24,7 @@ private:
     const char* m_PopupLabel = nullptr;
 
 public:
-    explicit ADataDialog(const char* vPopupLabel) : m_PopupLabel(vPopupLabel) {
-    }
+    explicit ADataDialog(const char* vPopupLabel) : m_PopupLabel(vPopupLabel) {}
     virtual ~ADataDialog() = default;
     virtual bool init() = 0;
     virtual void unit() = 0;

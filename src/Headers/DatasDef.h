@@ -13,7 +13,7 @@ typedef std::string BankUrl;
 typedef std::string BankAgency;
 typedef std::string SourceName;
 typedef std::string SourceType;
-typedef std::string SourceSha1;
+typedef std::string SourceSha;
 typedef std::string AccountType;
 typedef std::string AccountName;
 typedef std::string CategoryName;

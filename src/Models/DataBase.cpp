@@ -314,11 +314,11 @@ void DataBase::DeleteOperations() {
     }
 }
 
-void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha1& vSourceSha1) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO sources (name, type, sha1) VALUES("%s", "%s");)",  //
+void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha& vSourceSha) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO sources (name, type, sha) VALUES("%s", "%s", "%s");)",  //
                                   vSourceName.c_str(),
                                   vSourceType.c_str(),
-                                  vSourceSha1.c_str());
+                                  vSourceSha.c_str());
     if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a source in database : %s", m_LastErrorMsg);
     }
@@ -621,7 +621,7 @@ void DataBase::AddTransaction(  //
     const CategoryName& vCategoryName,
     const SourceName& vSourceName,
     const SourceType& vSourceType,
-    const SourceSha1& vSourceSha1,
+    const SourceSha& vSourceSha,
     const TransactionDate& vDate,
     const TransactionDescription& vDescription,
     const TransactionComment& vComment,
@@ -630,7 +630,7 @@ void DataBase::AddTransaction(  //
     const TransactionHash& vHash) {
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
-    AddSource(vSourceName, vSourceType, vSourceSha1);
+    AddSource(vSourceName, vSourceType, vSourceSha);
     auto insert_query = ct::toStr(
         u8R"(
 INSERT OR IGNORE INTO transactions 
@@ -638,7 +638,7 @@ INSERT OR IGNORE INTO transactions
         %u, -- account id
         (SELECT id FROM operations WHERE operations.name = "%s"), -- operation id
         (SELECT id FROM categories WHERE categories.name = "%s"), -- category id
-        (SELECT id FROM sources WHERE sources.sha1 = "%s"), -- source id
+        (SELECT id FROM sources WHERE sources.sha = "%s"), -- source id
         "%s", 
         "%s",
         "%s",
@@ -649,7 +649,7 @@ INSERT OR IGNORE INTO transactions
         vAccountID,
         vOperationName.c_str(),
         vCategoryName.c_str(),
-        vSourceSha1.c_str(),
+        vSourceSha.c_str(),
         vDate.c_str(),
         vDescription.c_str(),
         vComment.c_str(),

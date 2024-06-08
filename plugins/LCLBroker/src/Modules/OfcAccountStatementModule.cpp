@@ -15,7 +15,13 @@ Cash::BankStatementModulePtr OfcAccountStatementModule::create() {
 
 Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
     Cash::AccountStatements ret;
-    std::map<std::string, Cash::Transaction> transactions;
+
+    struct TransDoublon {
+        uint32_t doublons = 1U;
+        Cash::Transaction trans;
+    };
+    std::map<std::string, TransDoublon> transactions;
+
     auto ps = FileHelper::Instance()->ParsePathFileName(vFilePathName);
     if (ps.isOk) {
         auto lines = ct::splitStringToVector(FileHelper::Instance()->LoadFileToString(vFilePathName), '\n');
@@ -29,8 +35,7 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
         }
 
         bool is_a_stmt = false;
-        Cash::Transaction trans;
-        uint32_t doublons = 0U;
+        TransDoublon trans;
 
         // we start at 1, since 0 is the header
         for (size_t idx = 1; idx < lines.size(); ++idx) {
@@ -55,63 +60,63 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                 trans = {};
             } else if (line.find("</STMTTRN>") != std::string::npos) {
                 if (is_a_stmt) {
-                    trans.hash = ct::toStr(  //
-                        "%s_%s_%f",          //
-                        trans.date.c_str(),
-                        // un fichier ofc ne peut pas avoir des description de longueur > a 30
-                        // alors on limite le hash a utiliser un description de 30
-                        // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
-                        trans.description.substr(0, 30).c_str(),
-                        trans.amount);  // must be unique per oepration
-                    if (transactions.find(trans.hash) != transactions.end()) {
-                        ++doublons;
-                        // LogVarDebugInfo("The Operation %s is in double", trans.hash.c_str());
+                    trans.trans.source = ps.GetFPNE_WithPath("");
+                    trans.trans.source_type = "ofc";
+                    trans.trans.hash = ct::toStr("%s_%s_%f",  //
+                                                 trans.trans.date.c_str(),
+                                                 // un fichier ofc ne peut pas avoir des description de longueur > a 30
+                                                 // alors on limite le hash a utiliser un description de 30
+                                                 // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                                                 trans.trans.description.substr(0, 30).c_str(),
+                                                 trans.trans.amount);  // must be unique per oepration
+                    if (transactions.find(trans.trans.hash) != transactions.end()) {
+                        ++transactions.at(trans.trans.hash).doublons;
+                    } else {
+                        transactions[trans.trans.hash] = trans;
                     }
-                    trans.source = ps.GetFPNE_WithPath("");
-                    trans.source_type = "ofc";
-                    transactions[trans.hash] = trans;
+                    trans = {};
                     is_a_stmt = false;
                 }
             }
             if (is_a_stmt) {
                 if (line.find("<DTPOSTED>") != std::string::npos) {
                     ct::replaceString(line, "<DTPOSTED>", "");
-                    trans.date = line;
-                    if (trans.date.size() == 8U) {
-                        trans.date.insert(6, "-");
-                        trans.date.insert(4, "-");
+                    trans.trans.date = line;
+                    if (trans.trans.date.size() == 8U) {
+                        trans.trans.date.insert(6, "-");
+                        trans.trans.date.insert(4, "-");
                     }
                 } else if (line.find("<TRNAMT>") != std::string::npos) {
                     ct::replaceString(line, "<TRNAMT>", "");
-                    trans.amount = ct::dvariant(line).GetD();
+                    trans.trans.amount = ct::dvariant(line).GetD();
                 } else if (line.find("<NAME>") != std::string::npos) {
                     ct::replaceString(line, "<NAME>", "");
-                    trans.description = line;
-                    const auto& first_not_space = trans.description.find_first_not_of(' ');
+                    trans.trans.description = line;
+                    const auto& first_not_space = trans.trans.description.find_first_not_of(' ');
                     if (first_not_space != std::string::npos) {
-                        const auto& space_pos = trans.description.find(' ', first_not_space);
+                        const auto& space_pos = trans.trans.description.find(' ', first_not_space);
                         if (space_pos != std::string::npos) {
-                            trans.operation = trans.description.substr(first_not_space, space_pos - first_not_space);
+                            trans.trans.operation = trans.trans.description.substr(first_not_space, space_pos - first_not_space);
                         }
                     }
-                    while (ct::replaceString(trans.description, "  ", " ")) {
+                    while (ct::replaceString(trans.trans.description, "  ", " ")) {
                     }
-                    if (trans.description.front() == ' ') {
-                        trans.description = trans.description.substr(1);
+                    if (trans.trans.description.front() == ' ') {
+                        trans.trans.description = trans.trans.description.substr(1);
                     }
-                    if (trans.description.back() == ' ') {
-                        trans.description = trans.description.substr(0, trans.description.size() - 1U);
+                    if (trans.trans.description.back() == ' ') {
+                        trans.trans.description = trans.trans.description.substr(0, trans.trans.description.size() - 1U);
                     }
                 } else if (line.find("<MEMO>") != std::string::npos) {
                     ct::replaceString(line, "<MEMO>", "");
-                    trans.comment = line;
+                    trans.trans.comment = line;
                 } else if (line.find("<FITID>") != std::string::npos) {
                     ct::replaceString(line, "<FITID>", "");
                     //trans.hash = line;
                 } else if (line.find("<CHKNUM>") != std::string::npos) {
                     ct::replaceString(line, "<CHKNUM>", "");
-                    trans.operation = "CHEQUE";
-                    trans.description = "CHEQUE " + line;
+                    trans.trans.operation = "CHEQUE";
+                    trans.trans.description = "CHEQUE " + line;
                 }
             }
             
@@ -119,9 +124,9 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
 
         for (const auto& t : transactions) {
             auto trans = t.second;
-            for (uint32_t idx = 0U; idx < doublons; ++idx) {
-                trans.hash = t.second.hash + ct::toStr("_%u", idx);
-                ret.statements.push_back(trans);
+            for (uint32_t idx = 0U; idx < trans.doublons; ++idx) {
+                trans.trans.hash = t.second.trans.hash + ct::toStr("_%u", idx);
+                ret.statements.push_back(trans.trans);
             }
         }
     }

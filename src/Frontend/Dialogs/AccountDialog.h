@@ -6,7 +6,7 @@
 class AccountDialog : public ADataDialog<Account> {
 private:
     Account m_Account;
-    ImWidgets::QuickStringCombo m_BanksCombo;
+    ImWidgets::QuickStringEditCombo m_BanksCombo;
     ImWidgets::InputText m_BankAgencyInputText;
     ImWidgets::InputText m_AccountNameInputText;
     ImWidgets::InputText m_AccountTypeInputText;

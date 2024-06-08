@@ -30,7 +30,6 @@ private:
         std::vector<AccountNumber> accountNumbers;
         std::vector<Transaction> transactions;
         std::vector<Transaction> transactions_filtered;
-        std::vector<Transaction> transactions_to_delete;
         std::set<RowID> transactions_filtered_rowids;
         void clear() {
             accounts.clear();
@@ -95,7 +94,6 @@ public:
 private:
     void m_drawAccountsMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawCreationMenu(FrameActionSystem& vFrameActionSystem);
-    void m_drawUpdateMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawImportMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawSelectMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawDebugMenu(FrameActionSystem& vFrameActionSystem);
@@ -110,8 +108,6 @@ private:
     void m_SelectCurrentRows();
     void m_SelectPossibleDuplicateEntryOnPricesAndDates();
     void m_SelectUnConfirmedTransactions();
-    void m_DeleteHoveredOrSelectedRows();
-    void m_UpdateTransactionsToDelete();
     bool m_IsHiddenMode();
     void m_HideByFilledRectForHiddenMode(const char* fmt, ...);
     void m_DisplayAlignedWidget(  //

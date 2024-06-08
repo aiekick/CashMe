@@ -417,7 +417,12 @@ private:
     }
     Cash::AccountStatements extractStatements(const StatementRows &vStms, const std::string &vSourceName) {
         Cash::AccountStatements ret;
-        std::map<std::string, Cash::Transaction> transactions;
+
+        struct TransDoublon {
+            uint32_t doublons = 1U;
+            Cash::Transaction trans;
+        };
+        std::map<std::string, TransDoublon> transactions;
 
         {  // dates
             ret.start_date = m_StartDate;
@@ -460,8 +465,7 @@ private:
         }
 
         {  // statements
-            Cash::Transaction trans;
-            uint32_t doublons = 0U;
+            TransDoublon trans;
 
             bool is_new_line = false;
             m_StartSolde = ct::dvariant(m_StartSoldeToken.token).GetD();
@@ -478,40 +482,40 @@ private:
                         if (!tk.token.empty()) {
                             trans = {};
                             is_new_line = true;
-                            trans.date = tk.token;
-                            auto arr = ct::splitStringToVector(trans.date, ".");
+                            trans.trans.date = tk.token;
+                            auto arr = ct::splitStringToVector(trans.trans.date, ".");
                             if (arr.size() == 2U) {
-                                trans.date = arr.at(1) + "-" + arr.at(0);
+                                trans.trans.date = arr.at(1) + "-" + arr.at(0);
                             } else {
                                 CTOOL_DEBUG_BREAK;
                             }
                         }
                     } else if (idx == 1) {
                         if (is_new_line) {
-                            trans.description = tk.token;
-                            const auto &first_not_space = trans.description.find_first_not_of(' ');
+                            trans.trans.description = tk.token;
+                            const auto &first_not_space = trans.trans.description.find_first_not_of(' ');
                             if (first_not_space != std::string::npos) {
-                                const auto &space_pos = trans.description.find(' ', first_not_space);
+                                const auto &space_pos = trans.trans.description.find(' ', first_not_space);
                                 if (space_pos != std::string::npos) {
-                                    trans.operation = trans.description.substr(first_not_space, space_pos - first_not_space);
+                                    trans.trans.operation = trans.trans.description.substr(first_not_space, space_pos - first_not_space);
                                 }
                             }
-                            while (ct::replaceString(trans.description, "  ", " ")) {
+                            while (ct::replaceString(trans.trans.description, "  ", " ")) {
                             }
-                            if (trans.description.front() == ' ') {
-                                trans.description = trans.description.substr(1);
+                            if (trans.trans.description.front() == ' ') {
+                                trans.trans.description = trans.trans.description.substr(1);
                             }
-                            if (trans.description.back() == ' ') {
-                                trans.description = trans.description.substr(0, trans.description.size() - 1U);
+                            if (trans.trans.description.back() == ' ') {
+                                trans.trans.description = trans.trans.description.substr(0, trans.trans.description.size() - 1U);
                             }
                         } else {
-                            trans.comment += tk.token;
+                            trans.trans.comment += tk.token;
                         }
                     } else if (idx == 2) {
                         if (is_new_line) {
                             auto arr = ct::splitStringToVector(tk.token, ".");
                             if (arr.size() == 3U) {
-                                trans.date = "20" + arr.at(2) + "-" + trans.date;
+                                trans.trans.date = "20" + arr.at(2) + "-" + trans.trans.date;
                             } else {
                                 CTOOL_DEBUG_BREAK;
                             }
@@ -523,8 +527,8 @@ private:
                             ct::replaceString(tok, ",", ".");
                             debit = ct::dvariant(tok).GetD();
                             if (debit > 0.0) {
-                                trans.amount = debit * -1.0;
-                                solde += trans.amount;
+                                trans.trans.amount = debit * -1.0;
+                                solde += trans.trans.amount;
                             }
                         }
                     } else if (idx == 4) {
@@ -534,28 +538,27 @@ private:
                             ct::replaceString(tok, ",", ".");
                             credit = ct::dvariant(tok).GetD();
                             if (credit > 0.0) {
-                                trans.amount = credit;
-                                solde += trans.amount;
+                                trans.trans.amount = credit;
+                                solde += trans.trans.amount;
                             }
                         }
                     }
                 }
                 if (is_new_line) {
-                    trans.hash = ct::toStr("%s_%s_%f",  //
-                                           trans.date.c_str(),
-                                           // un fichier ofc ne peut pas avoir des description de longueur > a 30
-                                           // alors on limite le hash a utiliser un description de 30
-                                           // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
-                                           trans.description.substr(0, 30).c_str(),
-                                           trans.amount);  // must be unique per oepration
-                    if (transactions.find(trans.hash) != transactions.end()) {
-                        ++doublons;
-                    }
-
-                    trans.source = vSourceName;
-                    trans.source_type = "pdf";
-                    
-                    transactions[trans.hash] = trans;
+                    trans.trans.source = vSourceName;
+                    trans.trans.source_type = "pdf";
+                    trans.trans.hash = ct::toStr("%s_%s_%f",  //
+                                                 trans.trans.date.c_str(),
+                                                 // un fichier ofc ne peut pas avoir des description de longueur > a 30
+                                                 // alors on limite le hash a utiliser un description de 30
+                                                 // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                                                 trans.trans.description.substr(0, 30).c_str(),
+                                                 trans.trans.amount);  // must be unique per oepration
+                    if (transactions.find(trans.trans.hash) != transactions.end()) {
+                        ++transactions.at(trans.trans.hash).doublons;
+                    } else { 
+                        transactions[trans.trans.hash] = trans;
+                    }                    
                     trans = {};
                 }
             }
@@ -563,16 +566,16 @@ private:
             const auto &compute_solde_str = ct::round_n(solde, 2);
             const auto &final_solde_str = ct::round_n(m_EndSolde, 2);
             if (compute_solde_str != final_solde_str) {
-                LogVarDebugError("Fail, the computed solde of %s not match the end solde of the file.some lines are basdly parsed maybe",
+                LogVarDebugError("Fail, the computed solde of %s not match the end solde of the file.some lines are badly parsed maybe",
                                  compute_solde_str.c_str(),
                                  final_solde_str.c_str());
             }
 
             for (const auto &t : transactions) {
                 auto trans = t.second;
-                for (uint32_t idx = 0U; idx < doublons; ++idx) {
-                    trans.hash = t.second.hash + ct::toStr("_%u", idx);
-                    ret.statements.push_back(trans);
+                for (uint32_t idx = 0U; idx < trans.doublons; ++idx) {
+                    trans.trans.hash = t.second.trans.hash + ct::toStr("_%u", idx);
+                    ret.statements.push_back(trans.trans);
                 }
             }
         }

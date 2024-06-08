@@ -62,7 +62,7 @@ public:
     void UpdateOperation(const RowID& vRowID, const OperationName& vOperationName);
     void DeleteOperations();
 
-    void AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha1& vSourceSha1);
+    void AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha& vSourceSha);
     bool GetSource(const SourceName& vSourceName, RowID& vOutRowID);
     void GetSources(std::function<void(const SourceName&)> vCallback);
     void UpdateSource(const RowID& vRowID, const SourceName& vSourceName);
@@ -112,7 +112,7 @@ public:
         const CategoryName& vCategoryName,
         const SourceName& vSourceName,
         const SourceType& vSourceType,
-        const SourceSha1& vSourceSha1,
+        const SourceSha& vSourceSha,
         const TransactionDate& vDate,
         const TransactionDescription& vDescription,
         const TransactionComment& vComment,

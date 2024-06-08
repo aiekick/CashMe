@@ -21,11 +21,17 @@ void AccountDialog::setAccount(const Account& vAccount) {
 void AccountDialog::m_drawContent(const ImVec2& vPos) {
     const auto& mode = getCurrentMode();
     switch (mode) {
-        case DataDialogMode::MODE_CREATION: m_drawContentCreation(vPos); break;
-        case DataDialogMode::MODE_DELETE_ONCE: m_drawContentDeletion(vPos); break;
-        case DataDialogMode::MODE_DELETE_ALL: m_drawContentDeletion(vPos); break;
-        case DataDialogMode::MODE_UPDATE_ONCE: m_drawContentUpdate(vPos); break;
-        case DataDialogMode::MODE_UPDATE_ALL: m_drawContentUpdate(vPos); break;
+        case DataDialogMode::MODE_CREATION: {
+            m_drawContentCreation(vPos);
+        } break;
+        case DataDialogMode::MODE_DELETE_ONCE:
+        case DataDialogMode::MODE_DELETE_ALL: {
+            m_drawContentDeletion(vPos);
+        } break;
+        case DataDialogMode::MODE_UPDATE_ONCE:
+        case DataDialogMode::MODE_UPDATE_ALL: {
+            m_drawContentUpdate(vPos);
+        } break;
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -36,7 +42,7 @@ void AccountDialog::m_prepare() {
     const auto& mode = getCurrentMode();
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
-            m_BanksCombo.Select(m_Account.bank);
+            m_BankAgencyInputText.Clear();
             m_AccountNameInputText.Clear();
             m_AccountTypeInputText.Clear();
             m_AccountNumberInputText.Clear();
@@ -47,7 +53,8 @@ void AccountDialog::m_prepare() {
         } break;
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: {
-            m_BanksCombo.Select(m_Account.bank);
+            m_BanksCombo.select(m_Account.bank);
+            m_BankAgencyInputText.SetText(m_Account.agency);
             m_AccountNameInputText.SetText(m_Account.name);
             m_AccountTypeInputText.SetText(m_Account.type);
             m_AccountNumberInputText.SetText(m_Account.number);
@@ -75,7 +82,8 @@ const char* AccountDialog::m_getTitle() const {
 bool AccountDialog::m_canConfirm() {
     return !m_AccountNameInputText.empty() &&  //
         !m_AccountTypeInputText.empty() &&     //
-        !m_AccountNumberInputText.empty();
+        !m_AccountNumberInputText.empty() &&   //
+        !m_BankAgencyInputText.empty();
 }
 
 void AccountDialog::m_confirmDialog() {
@@ -104,7 +112,7 @@ void AccountDialog::m_cancelDialog() {
 void AccountDialog::m_confirmDialogCreation() {
     if (DataBase::Instance()->OpenDBFile()) {
         DataBase::Instance()->AddAccount(        //
-            m_BanksCombo.GetText(),              //
+            m_BanksCombo.getText(),              //
             m_BankAgencyInputText.GetText(),     //
             m_AccountTypeInputText.GetText(),    //
             m_AccountNameInputText.GetText(),    //
@@ -118,7 +126,8 @@ void AccountDialog::m_confirmDialogCreation() {
 void AccountDialog::m_drawContentCreation(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_BanksCombo.DisplayCombo(width, "Bank Name", align);
+    m_BanksCombo.displayCombo(width, "Bank Name", align);
+    m_BankAgencyInputText.DisplayInputText(width, "bank Agency", "", false, align, true);
     m_AccountNameInputText.DisplayInputText(width, "Account Name", "", false, align, true);
     m_AccountTypeInputText.DisplayInputText(width, "Account Type", "", false, align, true);
     m_AccountNumberInputText.DisplayInputText(width, "Account Number", "", false, align, true);
@@ -129,7 +138,7 @@ void AccountDialog::m_confirmDialogUpdate() {
     if (DataBase::Instance()->OpenDBFile()) {
         DataBase::Instance()->UpdateAccount(     //
             m_Account.id,                        //
-            m_BanksCombo.GetText(),              //
+            m_BanksCombo.getText(),              //
             m_BankAgencyInputText.GetText(),     //
             m_AccountTypeInputText.GetText(),    //
             m_AccountNameInputText.GetText(),    //
@@ -143,7 +152,7 @@ void AccountDialog::m_confirmDialogUpdate() {
 void AccountDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_BanksCombo.DisplayCombo(width, "Bank Name", align);
+    m_BanksCombo.displayCombo(width, "Bank Name", align);
     m_AccountNameInputText.DisplayInputText(width, "Account Name", "", false, align, true);
     m_AccountTypeInputText.DisplayInputText(width, "Account Type", "", false, align, true);
     m_AccountNumberInputText.DisplayInputText(width, "Account Number", "", false, align, true);
@@ -159,10 +168,11 @@ void AccountDialog::m_drawContentDeletion(const ImVec2& vPos) {
 }
 
 void AccountDialog::m_UpdateBanks() {
-    m_BanksCombo.Clear();
+    m_BanksCombo.clear();
     DataBase::Instance()->GetBanks(                                       //
         [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
-            m_BanksCombo.GetArrayRef().push_back(vUserName);
+            m_BanksCombo.getArrayRef().push_back(vUserName);
         });
-    m_BanksCombo.GetIndexRef() = 0;
+    m_BanksCombo.getIndexRef() = 0;
+    m_BanksCombo.finalize();
 }

@@ -15,6 +15,7 @@ BudgetPane::~BudgetPane() {
 }
 
 bool BudgetPane::Init() {
+    m_EditCombo.init(0, {"TOTO", "TATA", "TITI", "TUTU"});
     return true;
 }
 
@@ -41,7 +42,7 @@ bool BudgetPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, ImG
         }
 
         if (ProjectFile::Instance()->IsProjectLoaded()) {
-
+            m_EditCombo.displayCombo(200.0f, "Items", 50.0f);
         }
 
         ImGui::End();
