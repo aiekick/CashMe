@@ -3,7 +3,7 @@ name: Osx
 on:
   push:
     branches:
-    - DemoApp
+    - master
 
 jobs:
   build_Osx:

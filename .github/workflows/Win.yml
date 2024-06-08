@@ -3,7 +3,7 @@ name: Win
 on:
   push:
     branches:
-    - DemoApp
+    - master
 
 jobs:
   build_Win_latest:
