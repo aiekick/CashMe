@@ -3,7 +3,7 @@
 #include <Headers/DatasDef.h>
 #include <Frontend/Dialogs/abstract/ADataDialog.hpp>
 
-class CategoryDialog : public ADataDialog<Category> {
+class CategoryDialog : public ADataDialog {
 private:
     Category m_Category;
     ImWidgets::InputText m_CategoryNameInputText;

@@ -3,7 +3,7 @@
 #include <Headers/DatasDef.h>
 #include <Frontend/Dialogs/abstract/ADataDialog.hpp>
 
-class AccountDialog : public ADataDialog<Account> {
+class AccountDialog : public ADataDialog {
 private:
     Account m_Account;
     ImWidgets::QuickStringEditCombo m_BanksCombo;

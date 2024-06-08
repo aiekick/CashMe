@@ -3,7 +3,7 @@
 #include <Headers/DatasDef.h>
 #include <Frontend/Dialogs/abstract/ADataDialog.hpp>
 
-class OperationDialog : public ADataDialog<Operation> {
+class OperationDialog : public ADataDialog {
 private:
     Operation m_Operation;
     ImWidgets::InputText m_OperationNameInputText;

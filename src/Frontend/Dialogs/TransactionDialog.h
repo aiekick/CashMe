@@ -3,7 +3,7 @@
 #include <Headers/DatasDef.h>
 #include <Frontend/Dialogs/abstract/ADataDialog.hpp>
 
-class TransactionDialog : public ADataDialog<Transaction> {
+class TransactionDialog : public ADataDialog {
 private:
     Transaction m_TransactionToUpdate;
 

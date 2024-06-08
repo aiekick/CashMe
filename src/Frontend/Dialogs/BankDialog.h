@@ -3,7 +3,7 @@
 #include <Headers/DatasDef.h>
 #include <Frontend/Dialogs/abstract/ADataDialog.hpp>
 
-class BankDialog : public ADataDialog<Bank> {
+class BankDialog : public ADataDialog {
 private:
     Bank m_Bank;
     ImWidgets::InputText m_BankNameInputText;
