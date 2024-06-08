@@ -195,7 +195,7 @@ target_link_libraries(${PROJECT}
 	${FMT_LIBRARIES}
 )
 
-# define for let CashMe detext what is the config of a plugin 
+# define for let CashMe detect what is the config of a plugin 
 target_compile_definitions(${PROJECT} PRIVATE -DPLUGIN_RUNTIME_CONFIG=$<$<CONFIG:Debug>:"_Debug">$<$<CONFIG:Release>:"_Release">$<$<CONFIG:MinSizeRel>:"_MinSizeRel">$<$<CONFIG:RelWithDebInfo>:"_RelWithDebInfo">)
 target_compile_definitions(${PROJECT} PRIVATE -DPROJECT_EXT=".cash")
 target_compile_definitions(${PROJECT} PRIVATE -DPROJECT_EXT_DOT_LESS="cash")
