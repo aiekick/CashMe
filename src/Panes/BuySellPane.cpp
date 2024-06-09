@@ -1,7 +1,7 @@
 // This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Budget Analyzer for C, C++ and C#: http://www.viva64.com
 
-#include <Panes/BudgetPane.h>
+#include <Panes/BuySellPane.h>
 
 #include <cinttypes>  // printf zu
 
@@ -9,24 +9,24 @@
 
 #include <Project/ProjectFile.h>
 
-BudgetPane::BudgetPane() = default;
-BudgetPane::~BudgetPane() {
+BuySellPane::BuySellPane() = default;
+BuySellPane::~BuySellPane() {
     Unit();
 }
 
-bool BudgetPane::Init() {
+bool BuySellPane::Init() {
     m_EditCombo.init(0, {"TOTO", "TATA", "TITI", "TUTU"});
     return true;
 }
 
-void BudgetPane::Unit() {
+void BuySellPane::Unit() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-bool BudgetPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool BuySellPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     bool change = false;
     if (vOpened != nullptr && *vOpened) {
@@ -42,7 +42,6 @@ bool BudgetPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, ImG
         }
 
         if (ProjectFile::Instance()->IsProjectLoaded()) {
-            m_EditCombo.displayCombo(200.0f, "Items", 50.0f);
         }
 
         ImGui::End();
@@ -50,17 +49,17 @@ bool BudgetPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, ImG
     return change;
 }
 
-bool BudgetPane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool BuySellPane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }
 
-bool BudgetPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool BuySellPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);    
     return false;
 }
 
-bool BudgetPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool BuySellPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }

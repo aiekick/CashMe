@@ -35,7 +35,6 @@
 #include <Panes/ConsolePane.h>
 
 #include <Models/DataBase.h>
-#include <Models/DataBrokers.h>
 
 #include <Systems/SettingsDialog.h>
 
@@ -244,7 +243,7 @@ void MainBackend::m_RenderOffScreen() {
 
 void MainBackend::m_MainLoop() {
     int display_w, display_h;
-    ImVec2 pos, size;
+    ImRect viewRect;
     while (!glfwWindowShouldClose(m_MainWindowPtr)) {
         ProjectFile::Instance()->NewFrame();
 
@@ -264,11 +263,13 @@ void MainBackend::m_MainLoop() {
 
         ImGuiViewport* viewport = ImGui::GetMainViewport();
         if (viewport) {
-            pos = viewport->WorkPos;
-            size = viewport->WorkSize;
+            viewRect.Min = viewport->WorkPos;
+            viewRect.Max = viewRect.Min + viewport->WorkSize;
+        } else {
+            viewRect.Max = ImVec2((float)display_w, (float)display_h);
         }
 
-        MainFrontend::Instance()->Display(m_CurrentFrame, pos, size);
+        MainFrontend::Instance()->Display(m_CurrentFrame, viewRect);
 
         ImGui::Render();
 
@@ -460,11 +461,9 @@ void MainBackend::m_InitPlugins() {
 }
 
 void MainBackend::m_InitModels() {
-    DataBrokers::Instance()->init();
 }
 
 void MainBackend::m_UnitModels() {
-    DataBrokers::Instance()->unit();
 }
 
 void MainBackend::m_UnitPlugins() {

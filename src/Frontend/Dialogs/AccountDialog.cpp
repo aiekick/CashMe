@@ -1,6 +1,5 @@
 #include "AccountDialog.h"
 #include <Models/DataBase.h>
-#include <Models/DataBrokers.h>
 #include <ctools/cTools.h>
 
 AccountDialog::AccountDialog() : ADataDialog("AccountModalPopup") {
@@ -103,7 +102,6 @@ void AccountDialog::m_confirmDialog() {
         case DataDialogMode::MODE_NONE:
         default: break;
     }
-    DataBrokers::Instance()->RefreshDatas();
 }
 
 void AccountDialog::m_cancelDialog() {
@@ -119,7 +117,6 @@ void AccountDialog::m_confirmDialogCreation() {
             m_AccountNumberInputText.GetText(),  //
             m_AccountBaseSoldeInputDouble);
         DataBase::Instance()->CloseDBFile();
-        DataBrokers::Instance()->RefreshDatas();
     }
 }
 
@@ -145,7 +142,6 @@ void AccountDialog::m_confirmDialogUpdate() {
             m_AccountNumberInputText.GetText(),  //
             m_AccountBaseSoldeInputDouble);
         DataBase::Instance()->CloseDBFile();
-        DataBrokers::Instance()->RefreshDatas();
     }
 }
 

@@ -6,7 +6,7 @@
 #include <string>
 
 class ProjectFile;
-class BudgetPane : public AbstractPane {
+class BuySellPane : public AbstractPane {
 private:
     ImWidgets::QuickStringEditCombo m_EditCombo;
 
@@ -22,16 +22,16 @@ public:
         const uint32_t& vCurrentFrame, const ImRect& vRect,  ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
 
 public:  // singleton
-    static std::shared_ptr<BudgetPane> Instance() {
-        static std::shared_ptr<BudgetPane> _instance = std::make_shared<BudgetPane>();
+    static std::shared_ptr<BuySellPane> Instance() {
+        static std::shared_ptr<BuySellPane> _instance = std::make_shared<BuySellPane>();
         return _instance;
     }
 
 public:
-    BudgetPane();                              // Prevent construction
-    BudgetPane(const BudgetPane&) = default;  // Prevent construction by copying
-    BudgetPane& operator=(const BudgetPane&) {
+    BuySellPane();                              // Prevent construction
+    BuySellPane(const BuySellPane&) = default;  // Prevent construction by copying
+    BuySellPane& operator=(const BuySellPane&) {
         return *this;
     };                       // Prevent assignment
-    virtual ~BudgetPane();  // Prevent unwanted destruction};
+    virtual ~BuySellPane();  // Prevent unwanted destruction};
 };

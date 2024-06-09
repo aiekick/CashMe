@@ -1,10 +1,12 @@
 #pragma once
 
 #include <set>
+#include <map>
 #include <array>
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <apis/CashMePluginApi.h>
 
 typedef std::string DBFile;
 typedef uint32_t RowID;
@@ -28,6 +30,9 @@ typedef double TransactionSolde;
 typedef bool TransactionConfirmed;
 typedef uint32_t TransactionsCount;
 typedef std::string TransactionHash;
+typedef std::string DataBrokerName;
+typedef std::string DataBrokerWay;
+typedef std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> DataBrockerContainer;
 
 struct Bank {
     RowID id = 0;

@@ -22,7 +22,8 @@ const bool& ADataDialog::isCurrentModeShown() const {
     return m_ShowDialogMode.at(static_cast<size_t>(m_CurrentMode));
 }
 
-void ADataDialog::draw(const ImVec2& vPos) {
+bool ADataDialog::draw(const ImVec2& vPos) {
+    bool ret = false;
     if (isCurrentModeShown()) {
         ImGui::OpenPopup(m_PopupLabel);
         ImGui::SetNextWindowPos(vPos, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
@@ -40,6 +41,7 @@ void ADataDialog::draw(const ImVec2& vPos) {
                 if (ImGui::ContrastedButton("Ok")) {
                     m_confirmDialog();
                     hide(getCurrentMode());
+                    ret = true;
                 }
                 ImGui::SameLine();
             }
@@ -50,6 +52,7 @@ void ADataDialog::draw(const ImVec2& vPos) {
             ImGui::EndPopup();
         }
     }
+    return ret;
 }
 
 void ADataDialog::m_DisplayAlignedWidget(const float& vWidth, const std::string& vLabel, const float& vOffsetFromStart, std::function<void()> vWidget) {

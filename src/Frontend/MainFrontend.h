@@ -25,8 +25,6 @@ limitations under the License.
 
 #include <Backend/MainBackend.h>
 
-#include <Models/DataBrokers.h>
-
 #include <functional>
 #include <string>
 #include <vector>
@@ -109,8 +107,7 @@ private:
     bool m_ShowImPlot = false;
     bool m_ShowMetric = false;
     ImFont* m_ToolbarFontPtr = nullptr;
-    ImVec2 m_DisplayPos = ImVec2(0, 0);  // viewport
-    ImVec2 m_DisplaySize = ImVec2(1280, 720);
+    ImRect m_DisplayRect = ImRect(ImVec2(0, 0), ImVec2(1280, 720));
     bool m_ShowAboutDialog = false;          // show about dlg
     bool m_SaveDialogIfRequired = false;     // open save options dialog (save / save as / continue without saving / cancel)
     bool m_SaveDialogActionWasDone = false;  // if action was done by save options dialog
@@ -128,11 +125,11 @@ public:
     bool isValid() const;
     bool isThereAnError() const;
 
-    void Display(const uint32_t& vCurrentFrame, const ImVec2& vpos, const ImVec2& vSize);
+    void Display(const uint32_t& vCurrentFrame, const ImRect& vRect);
 
     bool DrawWidgets(const uint32_t& vCurrentFrame, ImGuiContext* vContextPtr, void* vUserDatas);
     bool DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr, void* vUserDatas);
-    bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImVec2& vMaxSize, ImGuiContext* vContextPtr, void* vUserDatas);
+    bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect,  ImGuiContext* vContextPtr, void* vUserDatas);
 
     void OpenAboutDialog();
 

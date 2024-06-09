@@ -21,11 +21,12 @@ limitations under the License.
 
 #include <ctools/Logger.h>
 #include <ctools/FileHelper.h>
+
 #include <LayoutManager.h>
-#include <Plugins/PluginManager.h>
-#include <Models/DataBrokers.h>
-#include <Systems/SettingsDialog.h>
 #include <Models/DataBase.h>
+#include <Panes/AccountPane.h>
+#include <Plugins/PluginManager.h>
+#include <Systems/SettingsDialog.h>
 
 ProjectFile::ProjectFile() = default;
 
@@ -98,7 +99,7 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                         m_ProjectFilePath = ps.path;
                     }
                     m_IsLoaded = true;
-                    DataBrokers::Instance()->load();
+                    AccountPane::Instance()->load();
                     SetProjectChange(false);
                 } else {
                     Clear();
@@ -200,7 +201,7 @@ std::string ProjectFile::getXml(const std::string& vOffset, const std::string& /
     str += vOffset + "<project>\n";
     const std::string& project_tag = "project";
     str += LayoutManager::Instance()->getXml(vOffset + "\t", project_tag);
-    str += DataBrokers::Instance()->getXml(vOffset + "\t", project_tag);
+    str += AccountPane::Instance()->getXml(vOffset + "\t", project_tag);
     str += SettingsDialog::Instance()->getXml(vOffset + "\t", project_tag);
     str += vOffset + "</project>\n";
     return str;
@@ -222,7 +223,7 @@ bool ProjectFile::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* 
     } else if (strName == "project") {
         const std::string& project_tag = "project";
         LayoutManager::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
-        DataBrokers::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
+        AccountPane::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
         SettingsDialog::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
     }
 

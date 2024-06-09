@@ -1,6 +1,5 @@
 #include "BankDialog.h"
 #include <Models/DataBase.h>
-#include <Models/DataBrokers.h>
 #include <ctools/cTools.h>
 
 BankDialog::BankDialog() : ADataDialog("BankModalPopup") {
@@ -86,7 +85,6 @@ void BankDialog::m_confirmDialog() {
         case DataDialogMode::MODE_NONE:
         default: break;
     }
-    DataBrokers::Instance()->RefreshDatas();
 }
 
 void BankDialog::m_cancelDialog() {
@@ -98,7 +96,6 @@ void BankDialog::m_confirmDialogCreation() {
             m_BankNameInputText.GetText(),    //
             m_BankUrlInputText.GetText());
         DataBase::Instance()->CloseDBFile();
-        DataBrokers::Instance()->RefreshDatas();
     }
 }
 
@@ -116,7 +113,6 @@ void BankDialog::m_confirmDialogUpdate() {
             m_BankNameInputText.GetText(),    //
             m_BankUrlInputText.GetText());
         DataBase::Instance()->CloseDBFile();
-        DataBrokers::Instance()->RefreshDatas();
     }
 }
 

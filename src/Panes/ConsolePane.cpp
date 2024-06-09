@@ -50,7 +50,7 @@ bool ConsolePane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& 
     return false;
 }
 
-bool ConsolePane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImVec2& /*vMaxSize*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool ConsolePane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }

@@ -1,6 +1,5 @@
 #include "TransactionDialog.h"
 #include <Models/DataBase.h>
-#include <Models/DataBrokers.h>
 #include <ctools/cTools.h>
 
 #define MULTIPLE_VALUES "Many values"
@@ -244,7 +243,6 @@ void TransactionDialog::m_confirmDialog() {
         case DataDialogMode::MODE_NONE:
         default: break;
     }    
-    DataBrokers::Instance()->RefreshDatas();
 }
 
 void TransactionDialog::m_cancelDialog() {

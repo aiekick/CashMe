@@ -1,6 +1,5 @@
 #include "CategoryDialog.h"
 #include <Models/DataBase.h>
-#include <Models/DataBrokers.h>
 #include <ctools/cTools.h>
 
 CategoryDialog::CategoryDialog() : ADataDialog("CategoryModalPopup") {
@@ -84,7 +83,6 @@ void CategoryDialog::m_confirmDialog() {
         case DataDialogMode::MODE_NONE:
         default: break;
     }
-    DataBrokers::Instance()->RefreshDatas();
 }
 
 void CategoryDialog::m_cancelDialog() {
@@ -95,7 +93,6 @@ void CategoryDialog::m_confirmDialogCreation() {
         DataBase::Instance()->AddCategory(        //
             m_CategoryNameInputText.GetText());
         DataBase::Instance()->CloseDBFile();
-        DataBrokers::Instance()->RefreshDatas();
     }
 }
 
@@ -111,7 +108,6 @@ void CategoryDialog::m_confirmDialogUpdate() {
             m_Category.id,                        //
             m_CategoryNameInputText.GetText());
         DataBase::Instance()->CloseDBFile();
-        DataBrokers::Instance()->RefreshDatas();
     }
 }
 

@@ -1,6 +1,5 @@
 #include "OperationDialog.h"
 #include <Models/DataBase.h>
-#include <Models/DataBrokers.h>
 #include <ctools/cTools.h>
 
 OperationDialog::OperationDialog() : ADataDialog("OperationModalPopup") {
@@ -83,7 +82,6 @@ void OperationDialog::m_confirmDialog() {
         case DataDialogMode::MODE_NONE:
         default: break;
     }
-    DataBrokers::Instance()->RefreshDatas();
 }
 
 void OperationDialog::m_cancelDialog() {
@@ -94,7 +92,6 @@ void OperationDialog::m_confirmDialogCreation() {
         DataBase::Instance()->AddOperation(  //
             m_OperationNameInputText.GetText());
         DataBase::Instance()->CloseDBFile();
-        DataBrokers::Instance()->RefreshDatas();
     }
 }
 
@@ -110,7 +107,6 @@ void OperationDialog::m_confirmDialogUpdate() {
             m_Operation.id,                     //
             m_OperationNameInputText.GetText());
         DataBase::Instance()->CloseDBFile();
-        DataBrokers::Instance()->RefreshDatas();
     }
 }
 

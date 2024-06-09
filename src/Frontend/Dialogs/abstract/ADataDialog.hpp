@@ -29,7 +29,7 @@ public:
     void hide(const DataDialogMode& vMode);
     const DataDialogMode& getCurrentMode() const;
     const bool& isCurrentModeShown() const;
-    void draw(const ImVec2& vPos);
+    bool draw(const ImVec2& vPos);
 
 protected:
     virtual void m_drawContent(const ImVec2& vPos) = 0;

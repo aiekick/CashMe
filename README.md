@@ -7,14 +7,14 @@
 CashMe is a Money Manager.
 
 The features are :
- - Bank statement imports based on plugins
- - Can show Tranactions, with filtering
- - Can Update Once/All Transactions
- - Can Delete Once/All Transactions
- - Can display categories / operations per transactions
+ * Bank statement imports based on plugins
+ * Can show Tranactions, with filtering
+ * Can Update Once/All Transactions
+ * Can Delete Once/All Transactions
+ * Can display categories / operations per transactions
  
-THe available plugins are :
- - LCL : Can import ofc and pdf files
+The available plugins are :
+ * LCL : Can import ofc and pdf files
 
 ## How to Build : 
 

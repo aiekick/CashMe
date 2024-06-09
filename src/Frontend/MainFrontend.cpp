@@ -27,11 +27,10 @@ limitations under the License.
 
 #include <Plugins/PluginManager.h>
 
+#include <Panes/BudgetPane.h>
 #include <Panes/ConsolePane.h>
 #include <Panes/AccountPane.h>
-#include <Panes/BudgetPane.h>
-
-#include <Models/DataBrokers.h>
+#include <Panes/BuySellPane.h>
 
 #include <Systems/SettingsDialog.h>
 
@@ -77,7 +76,8 @@ bool MainFrontend::init() {
 
     LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console Pane", "", "BOTTOM", 0.25f, false, false);
     LayoutManager::Instance()->AddPane(AccountPane::Instance(), "Account Pane", "", "CENTRAL", 0.25f, true, true);
-    LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget Pane", "", "CENTRAL", 0.0f, true, false);
+    LayoutManager::Instance()->AddPane(BuySellPane::Instance(), "Buy/Sell Pane", "", "CENTRAL", 0.0f, true, false);
+    LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget Pane", "", "CENTRAL", 0.0f, false, false);
 
     // InitPänes is done in m_InitPanes, because a specific order is needed
 
@@ -102,13 +102,12 @@ bool MainFrontend::isThereAnError() const {
     return false;
 }
 
-void MainFrontend::Display(const uint32_t& vCurrentFrame, const ImVec2& vPos, const ImVec2& vSize) {
+void MainFrontend::Display(const uint32_t& vCurrentFrame, const ImRect& vRect) {
     const auto context_ptr = ImGui::GetCurrentContext();
     if (context_ptr != nullptr) {
         const auto& io = ImGui::GetIO();
 
-        m_DisplayPos = vPos;
-        m_DisplaySize = vSize;
+        m_DisplayRect = vRect;
 
         MainFrontend::sCentralWindowHovered = (ImGui::GetCurrentContext()->HoveredWindow == nullptr);
         ImGui::CustomStyle::ResetCustomId();
@@ -132,7 +131,7 @@ void MainFrontend::Display(const uint32_t& vCurrentFrame, const ImVec2& vPos, co
             ProjectFile::Instance()->SetProjectChange();
         }
 
-        DrawDialogsAndPopups(vCurrentFrame, MainBackend::Instance()->GetDisplaySize(), context_ptr, {});
+        DrawDialogsAndPopups(vCurrentFrame, m_DisplayRect, context_ptr, {});
 
         ImGuiThemeHelper::Instance()->Draw();
         LayoutManager::Instance()->InitAfterFirstDisplay(io.DisplaySize);
@@ -150,10 +149,9 @@ bool MainFrontend::DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRe
 }
 
 bool MainFrontend::DrawDialogsAndPopups(
-    const uint32_t& vCurrentFrame, const ImVec2& vMaxSize, ImGuiContext* vContextPtr, void* vUserDatas) {
+    const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr, void* vUserDatas) {
     m_ActionSystem.RunActions();
-    LayoutManager::Instance()->DrawDialogsAndPopups(vCurrentFrame, vMaxSize, vContextPtr, vUserDatas);
-    DataBrokers::Instance()->drawDialogs(m_DisplayPos, m_DisplaySize);
+    LayoutManager::Instance()->DrawDialogsAndPopups(vCurrentFrame, vRect, vContextPtr, vUserDatas);
     if (m_ShowImGui) {
         ImGui::ShowDemoWindow(&m_ShowImGui);
     }
@@ -316,7 +314,7 @@ bool MainFrontend::ShowUnSavedDialog() {
                 ImGui::CloseCurrentPopup();
                 const char* label = "Save before closing ?";
                 ImGui::OpenPopup(label);
-                ImGui::SetNextWindowPos(m_DisplayPos + m_DisplaySize * 0.5f, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+                ImGui::SetNextWindowPos(m_DisplayRect.GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
                 if (ImGui::BeginPopupModal(label, (bool*)0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking)) {
                     const auto& width = ImGui::CalcTextSize("Continue without saving").x + ImGui::GetStyle().ItemInnerSpacing.x;
                     
@@ -559,8 +557,8 @@ void MainFrontend::Action_UnSavedDialog_Cancel() {
 bool MainFrontend::Display_NewProjectDialog() {
     // need to return false to continue to be displayed next frame
 
-    ImVec2 min = m_DisplaySize * 0.5f;
-    ImVec2 max = m_DisplaySize;
+    ImVec2 max = m_DisplayRect.GetSize();
+    ImVec2 min = max * 0.5f;
 
     if (ImGuiFileDialog::Instance()->Display("NewProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
@@ -583,8 +581,8 @@ bool MainFrontend::Display_NewProjectDialog() {
 bool MainFrontend::Display_OpenProjectDialog() {
     // need to return false to continue to be displayed next frame
 
-    ImVec2 min = m_DisplaySize * 0.5f;
-    ImVec2 max = m_DisplaySize;
+    ImVec2 max = m_DisplayRect.GetSize();
+    ImVec2 min = max * 0.5f;
 
     if (ImGuiFileDialog::Instance()->Display("OpenProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
@@ -606,8 +604,8 @@ bool MainFrontend::Display_OpenProjectDialog() {
 bool MainFrontend::Display_SaveProjectDialog() {
     // need to return false to continue to be displayed next frame
 
-    ImVec2 min = m_DisplaySize * 0.5f;
-    ImVec2 max = m_DisplaySize;
+    ImVec2 max = m_DisplayRect.GetSize();
+    ImVec2 min = max * 0.5f;
 
     if (ImGuiFileDialog::Instance()->Display("SaveProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
         if (ImGuiFileDialog::Instance()->IsOk()) {
