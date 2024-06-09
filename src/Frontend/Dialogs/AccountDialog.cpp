@@ -1,6 +1,6 @@
 #include "AccountDialog.h"
-#include <Models/DataBase.h>
 #include <ctools/cTools.h>
+#include <Models/DataBase.h>
 
 AccountDialog::AccountDialog() : ADataDialog("AccountModalPopup") {
 }

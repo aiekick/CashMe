@@ -739,6 +739,132 @@ ORDER BY
     }
 }
 
+std::string DataBase::GetFormatDate(const DateFormat& vDateFormat) {
+    std::string ret;
+    switch (vDateFormat) {
+        case DateFormat::DAYS: {
+            ret = "%Y-%m-%d";
+        } break;
+        case DateFormat::MONTHS: {
+            ret = "%Y-%m";
+        } break;
+        case DateFormat::YEARS: {
+            ret = "%Y";
+        } break;
+        case DateFormat::Count:
+        default: break;
+    }
+    return ret;
+}
+
+void DataBase::GetGroupedTransactions(  //
+    const RowID& vAccountID,
+    const GroupBy& vGroupBy,
+    const DateFormat& vDateFormat,
+    std::function<void(  //
+        const RowID&,
+        const TransactionDate&,
+        const TransactionDescription&,
+        const CategoryName&,
+        const OperationName&,
+        const TransactionDebit&,
+        const TransactionCredit&)> vCallback) {  // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    const auto& format_date = GetFormatDate(vDateFormat);
+    std::string group_by;
+    std::string order_by;
+    switch (vGroupBy) {
+        case GroupBy::DATES: {
+            group_by = "new_date";
+            order_by = "new_date";
+        } break;
+        case GroupBy::CATEGORIES: {
+            group_by = "new_category";
+            order_by = "new_category";
+        } break;
+        case GroupBy::OPERATIONS: {
+            group_by = "new_operation";
+            order_by = "new_operation";
+        } break;
+        case GroupBy::DESCRIPTIONS: {
+            group_by = "new_description";
+            order_by = "new_date";
+        } break;
+        case GroupBy::Count:
+        default: break;
+    }
+    auto select_query = ct::toStr(
+        u8R"(
+SELECT
+  transactions.id,
+  strftime("%s", transactions.date) AS new_date,
+  transactions.description AS new_description,
+  categories.name AS new_category,
+  operations.name AS new_operation,
+  ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS new_debit,
+  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS new_credit
+FROM
+  transactions
+  LEFT JOIN categories ON transactions.category_id = categories.id
+  LEFT JOIN operations ON transactions.operation_id = operations.id
+WHERE
+  account_id = %u
+GROUP BY
+  %s
+ORDER BY
+  %s;
+)",
+        format_date.c_str(),
+        vAccountID,
+        group_by.c_str(),
+        order_by.c_str());
+#ifdef _DEBUG
+    FileHelper::Instance()->SaveStringToFile(select_query, "lastSqliteQuery.sql");
+#endif
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    RowID id = sqlite3_column_int(stmt, 0);
+                    const char* date = nullptr;
+                    if (vGroupBy == GroupBy::DATES) {
+                        date = (const char*)sqlite3_column_text(stmt, 1);
+                    }
+                    const char* description = nullptr;
+                    if (vGroupBy == GroupBy::DESCRIPTIONS) {
+                        description = (const char*)sqlite3_column_text(stmt, 2);
+                    }
+                    const char* category = nullptr;
+                    if (vGroupBy == GroupBy::CATEGORIES) {
+                        category = (const char*)sqlite3_column_text(stmt, 3);
+                    }
+                    const char* operation = nullptr;
+                    if (vGroupBy == GroupBy::OPERATIONS) {
+                        operation = (const char*)sqlite3_column_text(stmt, 4);
+                    }
+                    TransactionDebit debit = sqlite3_column_double(stmt, 5);
+                    TransactionCredit credit = sqlite3_column_double(stmt, 6);
+                    vCallback(                                      //
+                        id,                                         //
+                        date != nullptr ? date : "",                //
+                        description != nullptr ? description : "",  //
+                        category != nullptr ? category : "",        //
+                        operation != nullptr ? operation : "",      //
+                        debit,                                      //
+                        credit);                                    //
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
 void DataBase::GetDuplicateTransactionsOnDatesAndAmount(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);

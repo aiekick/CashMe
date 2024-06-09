@@ -9,6 +9,8 @@
 #include <Project/ProjectFile.h>
 #include <Frontend/MainFrontend.h>
 #include <Plugins/PluginManager.h>
+#include <Panes/DebitCreditPane.h>
+#include <Systems/SettingsDialog.h>
 
 AccountPane::AccountPane() = default;
 AccountPane::~AccountPane() {
@@ -74,7 +76,10 @@ bool AccountPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const 
 
     bool ret = false;
     ret |= m_BankDialog.draw(center);
-    ret |= m_AccountDialog.draw(center);
+    if (m_AccountDialog.draw(center)) {
+        DebitCreditPane::Instance()->Load();
+        ret = true;
+    }
     ret |= m_CategoryDialog.draw(center);
     ret |= m_OperationDialog.draw(center);
     ret |= m_TransactionDialog.draw(center);
@@ -109,7 +114,7 @@ bool AccountPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* v
     return false;
 }
 
-void AccountPane::load() {
+void AccountPane::Load() {
     m_refreshDatas();
 }
 
@@ -212,7 +217,7 @@ void AccountPane::m_displayTransactions() {
                             m_SelectOrDeselectRow(t);
                         }
                     }
-                    ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%s", t.description.c_str());
+                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.description.c_str());
                     ImGui::PopID();
                     m_drawTransactionMenu(t);
                 }
@@ -220,19 +225,19 @@ void AccountPane::m_displayTransactions() {
                 ImGui::TableNextColumn();
                 {
                     ImGui::Text(t.comment.c_str());
-                    ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%s", t.comment.c_str());
+                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.comment.c_str());
                 }
 
                 ImGui::TableNextColumn();
                 {
                     ImGui::Text(t.category.c_str());
-                    ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%s", t.category.c_str());
+                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.category.c_str());
                 }
 
                 ImGui::TableNextColumn();
                 {
                     ImGui::Text(t.operation.c_str());
-                    ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%s", t.operation.c_str());
+                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.operation.c_str());
                 }
 
                 ImGui::TableNextColumn();
@@ -240,7 +245,7 @@ void AccountPane::m_displayTransactions() {
                     if (t.amount < 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
                         ImGui::Text("%.2f", t.amount);
-                        ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%.2f", t.amount);
+                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.amount);
                         ImGui::PopStyleColor();
                     }
                 }
@@ -250,7 +255,7 @@ void AccountPane::m_displayTransactions() {
                     if (t.amount >= 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
                         ImGui::Text("%.2f", t.amount);
-                        ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%.2f", t.amount);
+                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.amount);
                         ImGui::PopStyleColor();
                     }
                 }
@@ -260,16 +265,16 @@ void AccountPane::m_displayTransactions() {
                     if (t.solde < 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
                         ImGui::Text("%.2f", t.solde);
-                        ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%.2f", t.solde);
+                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.solde);
                         ImGui::PopStyleColor();
                     } else if (t.solde > 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
                         ImGui::Text("%.2f", t.solde);
-                        ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%.2f", t.solde);
+                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.solde);
                         ImGui::PopStyleColor();
                     } else {
                         ImGui::Text("%.2f", t.solde);
-                        ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%.2f", t.solde);
+                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.solde);
                     }
                 }
 
@@ -349,8 +354,6 @@ void AccountPane::m_drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
         if (ImGui::MenuItem("Refresh")) {
             m_refreshDatas();
         }
-        ImGui::Separator();
-        ImGui::MenuItem("Hidden Mode", nullptr, &m_HiddenMode);
         ImGui::Separator();
         if (ImGui::BeginMenu("Delete Tables")) {
             if (ImGui::MenuItem("Banks")) {
@@ -655,15 +658,6 @@ void AccountPane::m_SelectUnConfirmedTransactions() {
     }
 }
 
-bool AccountPane::m_IsHiddenMode() {
-    return
-#ifdef _DEBUG
-        m_HiddenMode;
-#else
-        false;
-#endif
-}
-
 void AccountPane::m_UpdateBanks() {
     m_Datas.bankNames.clear();
     DataBase::Instance()->GetBanks(                                       //
@@ -873,16 +867,16 @@ void AccountPane::m_drawAmount(const double& vAmount) {
         const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
         ImGui::Text("%.2f", vAmount);
-        ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%.2f", vAmount);
+        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
         ImGui::PopStyleColor();
     } else if (vAmount > 0.0) {
         const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
         ImGui::Text("%.2f", vAmount);
-        ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%.2f", vAmount);
+        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
         ImGui::PopStyleColor();
     } else {
         ImGui::Text("%.2f", vAmount);
-        ImGui::HideByFilledRectForHiddenMode(m_IsHiddenMode(), "%.2f", vAmount);
+        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
     }
 }

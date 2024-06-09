@@ -4,10 +4,11 @@
 #include <apis/CashMePluginApi.h>
 
 class SettingsDialog : public conf::ConfigAbstract {
-public:
+private:
     std::map<Cash::SettingsCategoryPath, Cash::ISettingsWeak> m_SettingsPerCategoryPath;
     bool m_ShowDialog = false;
     Cash::SettingsCategoryPath m_SelectedCategoryPath;
+    bool m_IsHiddenMode = false;
 
 public:
     bool init();
@@ -20,6 +21,8 @@ public:
 
     std::string getXml(const std::string& vOffset, const std::string& vUserDatas = "") override;
     bool setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas = "") override;
+
+    const bool& isHiddenMode();
 
 private:
     void m_DrawCategoryPanes();

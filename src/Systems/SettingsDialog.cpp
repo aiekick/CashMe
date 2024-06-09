@@ -54,6 +54,9 @@ bool SettingsDialog::Draw() {
 
     return false;
 }
+const bool& SettingsDialog::isHiddenMode() {
+    return m_IsHiddenMode;
+}
 
 void SettingsDialog::m_DrawCategoryPanes() {
     const auto size = ImGui::GetContentRegionMax() - ImVec2(100, 68);

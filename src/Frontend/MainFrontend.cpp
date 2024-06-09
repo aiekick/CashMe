@@ -30,7 +30,7 @@ limitations under the License.
 #include <Panes/BudgetPane.h>
 #include <Panes/ConsolePane.h>
 #include <Panes/AccountPane.h>
-#include <Panes/BuySellPane.h>
+#include <Panes/DebitCreditPane.h>
 
 #include <Systems/SettingsDialog.h>
 
@@ -74,10 +74,10 @@ bool MainFrontend::init() {
     LayoutManager::Instance()->SetPaneDisposalRatio("RIGHT", 0.25f);
     LayoutManager::Instance()->SetPaneDisposalRatio("BOTTOM", 0.25f);
 
-    LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console Pane", "", "BOTTOM", 0.25f, false, false);
-    LayoutManager::Instance()->AddPane(AccountPane::Instance(), "Account Pane", "", "CENTRAL", 0.25f, true, true);
-    LayoutManager::Instance()->AddPane(BuySellPane::Instance(), "Buy/Sell Pane", "", "CENTRAL", 0.0f, true, false);
-    LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget Pane", "", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console", "", "BOTTOM", 0.25f, false, false);
+    LayoutManager::Instance()->AddPane(AccountPane::Instance(), "Account Statement", "", "CENTRAL", 0.25f, true, true);
+    LayoutManager::Instance()->AddPane(DebitCreditPane::Instance(), "Debit/Credit", "", "CENTRAL", 0.0f, true, false);
+    LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget", "", "CENTRAL", 0.0f, false, false);
 
     // InitPänes is done in m_InitPanes, because a specific order is needed
 

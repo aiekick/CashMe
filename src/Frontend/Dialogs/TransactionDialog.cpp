@@ -181,8 +181,8 @@ void TransactionDialog::m_prepare() {
     }
     m_SourceName = m_TransactionToUpdate.source;
     m_AccountsCombo.select(m_TransactionToUpdate.account);
-    m_CategoriesCombo.select(m_TransactionToUpdate.category);
-    m_OperationsCombo.select(m_TransactionToUpdate.operation);
+    m_CategoriesCombo.setText(m_TransactionToUpdate.category);
+    m_OperationsCombo.setText(m_TransactionToUpdate.operation);
     m_TransactionDateInputText.SetText(m_TransactionToUpdate.date);
     m_TransactionDescriptionInputText.SetText(m_TransactionToUpdate.description);
     m_TransactionCommentInputText.SetText(m_TransactionToUpdate.comment);
@@ -312,38 +312,41 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
     RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
-            for (auto t : m_TransactionsToUpdate) {
-                if (m_OperationsCombo.getText() != MULTIPLE_VALUES) {
-                    t.operation = m_OperationsCombo.getText();
-                    DataBase::Instance()->AddOperation(t.operation);
+            if (DataBase::Instance()->BeginTransaction()) {
+                for (auto t : m_TransactionsToUpdate) {
+                    if (m_OperationsCombo.getText() != MULTIPLE_VALUES) {
+                        t.operation = m_OperationsCombo.getText();
+                        DataBase::Instance()->AddOperation(t.operation);
+                    }
+                    if (m_CategoriesCombo.getText() != MULTIPLE_VALUES) {
+                        t.category = m_CategoriesCombo.getText();
+                        DataBase::Instance()->AddCategory(t.category);
+                    }
+                    if (m_TransactionDateInputText.GetText() != MULTIPLE_VALUES) {
+                        t.date = m_TransactionDateInputText.GetText();
+                    }
+                    if (m_TransactionDescriptionInputText.GetText() != MULTIPLE_VALUES) {
+                        t.description = m_TransactionDescriptionInputText.GetText();
+                    }
+                    if (m_TransactionCommentInputText.GetText() != MULTIPLE_VALUES) {
+                        t.comment = m_TransactionCommentInputText.GetText();
+                    }
+                    if (!m_TransactionConfirmedManyValues) {
+                        t.confirmed = m_TransactionConfirmed;
+                    }
+                    DataBase::Instance()->UpdateTransaction(  //
+                        t.id,                                 //
+                        t.operation,                          //
+                        t.category,                           //
+                        t.source,                             //
+                        t.date,                               //
+                        t.description,                        //
+                        t.comment,                            //
+                        t.amount,                             //
+                        t.confirmed,                          //
+                        t.hash);
                 }
-                if (m_CategoriesCombo.getText() != MULTIPLE_VALUES) {
-                    t.category = m_CategoriesCombo.getText();
-                    DataBase::Instance()->AddCategory(t.category);
-                }
-                if (m_TransactionDateInputText.GetText() != MULTIPLE_VALUES) {
-                    t.date = m_TransactionDateInputText.GetText();
-                }
-                if (m_TransactionDescriptionInputText.GetText() != MULTIPLE_VALUES) {
-                    t.description = m_TransactionDescriptionInputText.GetText();
-                }
-                if (m_TransactionCommentInputText.GetText() != MULTIPLE_VALUES) {
-                    t.comment = m_TransactionCommentInputText.GetText();
-                }
-                if (!m_TransactionConfirmedManyValues) {
-                    t.confirmed = m_TransactionConfirmed;
-                }
-                DataBase::Instance()->UpdateTransaction(  //
-                    t.id,                                 //
-                    t.operation,                          //
-                    t.category,                           //
-                    t.source,                             //
-                    t.date,                               //
-                    t.description,                        //
-                    t.comment,                            //
-                    t.amount,                             //
-                    t.confirmed,                          //
-                    t.hash);
+                DataBase::Instance()->CommitTransaction();
             }
             DataBase::Instance()->CloseDBFile();
         }

@@ -25,6 +25,7 @@ limitations under the License.
 #include <LayoutManager.h>
 #include <Models/DataBase.h>
 #include <Panes/AccountPane.h>
+#include <Panes/DebitCreditPane.h>
 #include <Plugins/PluginManager.h>
 #include <Systems/SettingsDialog.h>
 
@@ -99,7 +100,8 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                         m_ProjectFilePath = ps.path;
                     }
                     m_IsLoaded = true;
-                    AccountPane::Instance()->load();
+                    AccountPane::Instance()->Load();
+                    DebitCreditPane::Instance()->Load();
                     SetProjectChange(false);
                 } else {
                     Clear();

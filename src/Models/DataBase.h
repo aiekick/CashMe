@@ -22,6 +22,9 @@ limitations under the License.
 #include <functional>
 #include <Headers/DatasDef.h>
 
+enum class DateFormat { DAYS = 0, MONTHS, YEARS, Count };
+enum class GroupBy { DATES = 0, OPERATIONS, CATEGORIES, DESCRIPTIONS, Count };
+
 class DataBaseTable {
 public:
 };
@@ -132,6 +135,19 @@ public:
             const TransactionAmount&,
             const TransactionConfirmed&,
             const TransactionHash&)> vCallback);
+    void GetGroupedTransactions(  //
+        const RowID& vAccountID,
+        const GroupBy& vGroupBy,
+        const DateFormat& vGroupByDate,
+        std::function<void(  //
+            const RowID&,
+            const TransactionDate&,
+            const TransactionDescription&,
+            const CategoryName&,
+            const OperationName&,
+            const TransactionDebit&,
+            const TransactionCredit&)> vCallback);
+    std::string GetFormatDate(const DateFormat& vDateFormat);
     void GetDuplicateTransactionsOnDatesAndAmount(  //
         const RowID& vAccountID,                    //
         std::function<void(const RowID&)> vCallback);

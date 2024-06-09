@@ -26,6 +26,8 @@ typedef std::string TransactionDate;
 typedef std::string TransactionDescription;
 typedef std::string TransactionComment;
 typedef double TransactionAmount;
+typedef double TransactionCredit;
+typedef double TransactionDebit;
 typedef double TransactionSolde;
 typedef bool TransactionConfirmed;
 typedef uint32_t TransactionsCount;

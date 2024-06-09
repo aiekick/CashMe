@@ -63,9 +63,6 @@ private:
     // accounts display
     std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
 
-    // hidden mode
-    bool m_HiddenMode = false;
-
 public:
     bool Init() override;
     void Unit() override;
@@ -74,7 +71,7 @@ public:
     bool DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened = nullptr, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
 
-    void load();
+    void Load();
 
     std::string getXml(const std::string& vOffset, const std::string& vUserDatas) override;
     bool setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas) override;
@@ -100,7 +97,6 @@ private:
     void m_SelectCurrentRows();
     void m_SelectPossibleDuplicateEntryOnPricesAndDates();
     void m_SelectUnConfirmedTransactions();
-    bool m_IsHiddenMode();
 
     void m_UpdateBanks();
     void m_UpdateAccounts();
