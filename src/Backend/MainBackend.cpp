@@ -33,6 +33,7 @@
 #include <Frontend/MainFrontend.h>
 
 #include <Panes/ConsolePane.h>
+#include <Panes/AccountPane.h>
 
 #include <Models/DataBase.h>
 
@@ -154,6 +155,9 @@ void MainBackend::PostRenderingActions() {
         ProjectFile::Instance()->Clear();
         m_NeedToCloseProject = false;
     }
+
+    // Backend operation, cant be blocked if a imgui item is not displayed
+    AccountPane::Instance()->DoBackend();
 }
 
 bool MainBackend::IsNeedToCloseApp() {

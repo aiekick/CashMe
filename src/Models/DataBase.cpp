@@ -1357,12 +1357,14 @@ CREATE TABLE settings (
 }
 
 void DataBase::m_CloseDB() {
-    if (m_SqliteDB) {
-        if (sqlite3_close(m_SqliteDB) == SQLITE_BUSY) {
-            // try to force closing
-            sqlite3_close_v2(m_SqliteDB);
+    if (!m_TransactionStarted) {
+        if (m_SqliteDB) {
+            if (sqlite3_close(m_SqliteDB) == SQLITE_BUSY) {
+                // try to force closing
+                sqlite3_close_v2(m_SqliteDB);
+            }
         }
+        m_SqliteDB = nullptr;
+        // there is also sqlite3LeaveMutexAndCloseZombie when sqlite is stucked
     }
-    m_SqliteDB = nullptr;
-    // there is also sqlite3LeaveMutexAndCloseZombie when sqlite is stucked
 }

@@ -75,6 +75,7 @@ bool AccountPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const 
     const ImVec2 center = vRect.GetCenter();
 
     bool ret = false;
+
     ret |= m_BankDialog.draw(center);
     if (m_AccountDialog.draw(center)) {
         DebitCreditPane::Instance()->Load();
@@ -83,6 +84,8 @@ bool AccountPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const 
     ret |= m_CategoryDialog.draw(center);
     ret |= m_OperationDialog.draw(center);
     ret |= m_TransactionDialog.draw(center);
+    
+    m_ImportThread.drawDialog(center);
 
     if (ret) {
         m_refreshDatas();
@@ -112,6 +115,10 @@ bool AccountPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const 
 bool AccountPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
+}
+
+void AccountPane::DoBackend() {
+    m_ImportThread.finishIfNeeded();
 }
 
 void AccountPane::Load() {
@@ -549,42 +556,16 @@ void AccountPane::m_GetAvailableDataBrokers() {
     }
 }
 
-void AccountPane::m_ImportFromFiles(const std::vector<std::string> vFiles) {
-    auto ptr = m_SelectedBroker.lock();
-    if (ptr != nullptr) {
-        for (const auto& file : vFiles) {
-            const auto& stmt = ptr->importBankStatement(file);
-            if (!stmt.statements.empty()) {
-                RowID account_id = 0U;
-                if (DataBase::Instance()->GetAccount(stmt.account.number, account_id)) {
-                    if (DataBase::Instance()->BeginTransaction()) {
-                        for (const auto& s : stmt.statements) {
-                            DataBase::Instance()->AddTransaction(  //
-                                account_id,
-                                s.entity,
-                                s.operation,
-                                s.category,
-                                s.source,
-                                s.source_type,
-                                s.source_sha1,
-                                s.date,
-                                s.description,
-                                s.comment,
-                                s.amount,
-                                s.confirmed,
-                                s.hash);
-                        }
-                        DataBase::Instance()->CommitTransaction();
-                        m_refreshDatas();
-                        m_refreshFiltering();
-                    }
-                } else {
-                    LogVarError("Import interrupted, no account found for %s", stmt.account.number.c_str());
-                    break;
-                }
-            }
-        }
-    }
+void AccountPane::m_ImportFromFiles(const std::vector<std::string>& vFiles) {
+    m_ImportThread.start(  //
+        "Import Datas",
+        m_SelectedBroker,
+        vFiles,
+        [this]() {
+            m_refreshDatas();
+            m_refreshFiltering();
+        },
+        nullptr);
 }
 
 void AccountPane::m_ResetFiltering() {

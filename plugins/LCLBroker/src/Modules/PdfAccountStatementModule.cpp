@@ -492,23 +492,7 @@ private:
                         }
                     } else if (idx == 1) {
                         if (is_new_line) {
-                            trans.trans.description = tk.token;
-                            const auto &first_not_space = trans.trans.description.find_first_not_of(' ');
-                            if (first_not_space != std::string::npos) {
-                                const auto &space_pos = trans.trans.description.find(' ', first_not_space);
-                                if (space_pos != std::string::npos) {
-                                    trans.trans.operation = trans.trans.description.substr(first_not_space, space_pos - first_not_space);
-                                }
-                            }
-                            trans.trans.entity = "";//todo
-                            while (ct::replaceString(trans.trans.description, "  ", " ")) {
-                            }
-                            if (trans.trans.description.front() == ' ') {
-                                trans.trans.description = trans.trans.description.substr(1);
-                            }
-                            if (trans.trans.description.back() == ' ') {
-                                trans.trans.description = trans.trans.description.substr(0, trans.trans.description.size() - 1U);
-                            }
+                            parseDescription(tk.token, trans.trans.entity, trans.trans.operation, trans.trans.description);
                         } else {
                             trans.trans.comment += tk.token;
                         }

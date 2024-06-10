@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Headers/DatasDef.h>
-#include <Frontend/Dialogs/abstract/ADataDialog.hpp>
+#include <Frontend/Dialogs/abstract/ADataDialog.h>
 
 class OperationDialog : public ADataDialog {
 private:

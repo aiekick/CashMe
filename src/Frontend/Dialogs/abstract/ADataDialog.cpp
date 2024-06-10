@@ -1,4 +1,4 @@
-#include <Frontend/Dialogs/abstract/ADataDialog.hpp>
+#include <Frontend/Dialogs/abstract/ADataDialog.h>
 
 ADataDialog::ADataDialog(const char* vPopupLabel) : m_PopupLabel(vPopupLabel) {
 }
@@ -53,18 +53,4 @@ bool ADataDialog::draw(const ImVec2& vPos) {
         }
     }
     return ret;
-}
-
-void ADataDialog::m_DisplayAlignedWidget(const float& vWidth, const std::string& vLabel, const float& vOffsetFromStart, std::function<void()> vWidget) {
-    float px = ImGui::GetCursorPosX();
-    ImGui::Text("%s", vLabel.c_str());
-    ImGui::SameLine(vOffsetFromStart);
-    const float w = vWidth - (ImGui::GetCursorPosX() - px);
-    ImGui::PushID(++ImGui::CustomStyle::pushId);
-    ImGui::PushItemWidth(w);
-    if (vWidget != nullptr) {
-        vWidget();
-    }
-    ImGui::PopItemWidth();
-    ImGui::PopID();
 }

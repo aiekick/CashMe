@@ -128,7 +128,7 @@ void AccountDialog::m_drawContentCreation(const ImVec2& vPos) {
     m_AccountNameInputText.DisplayInputText(width, "Account Name", "", false, align, true);
     m_AccountTypeInputText.DisplayInputText(width, "Account Type", "", false, align, true);
     m_AccountNumberInputText.DisplayInputText(width, "Account Number", "", false, align, true);
-    m_DisplayAlignedWidget(width, "Base Solde", align, [this]() { ImGui::InputDouble("##BaseSolde", &m_AccountBaseSoldeInputDouble); });
+    ImGui::DisplayAlignedWidget(width, "Base Solde", align, [this]() { ImGui::InputDouble("##BaseSolde", &m_AccountBaseSoldeInputDouble); });
 }
 
 void AccountDialog::m_confirmDialogUpdate() {
@@ -152,7 +152,7 @@ void AccountDialog::m_drawContentUpdate(const ImVec2& vPos) {
     m_AccountNameInputText.DisplayInputText(width, "Account Name", "", false, align, true);
     m_AccountTypeInputText.DisplayInputText(width, "Account Type", "", false, align, true);
     m_AccountNumberInputText.DisplayInputText(width, "Account Number", "", false, align, true);
-    m_DisplayAlignedWidget(width, "Base Solde", align, [this]() { ImGui::InputDouble("##BaseSolde", &m_AccountBaseSoldeInputDouble); });
+    ImGui::DisplayAlignedWidget(width, "Base Solde", align, [this]() { ImGui::InputDouble("##BaseSolde", &m_AccountBaseSoldeInputDouble); });
 }
 
 void AccountDialog::m_confirmDialogDeletion() {

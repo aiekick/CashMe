@@ -38,5 +38,4 @@ protected:
     virtual bool m_canConfirm() = 0;
     virtual void m_confirmDialog() = 0;
     virtual void m_cancelDialog() = 0;
-    void m_DisplayAlignedWidget(const float& vWidth, const std::string& vLabel, const float& vOffsetFromStart, std::function<void()> vWidget);
 };

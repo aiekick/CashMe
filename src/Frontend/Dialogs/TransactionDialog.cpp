@@ -56,8 +56,8 @@ void TransactionDialog::m_drawContentCreation(const ImVec2& vPos) {
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
     m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
     m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
-    m_DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble); });
-    m_DisplayAlignedWidget(width, "Confirmed", align, [this]() { ImGui::CheckBoxBoolDefault("##Confirmed", &m_TransactionConfirmed, false); });
+    ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble); });
+    ImGui::DisplayAlignedWidget(width, "Confirmed", align, [this]() { ImGui::CheckBoxBoolDefault("##Confirmed", &m_TransactionConfirmed, false); });
 }
 
 void TransactionDialog::m_drawContentUpdate(const ImVec2& vPos) {
@@ -72,9 +72,9 @@ void TransactionDialog::m_drawContentUpdate(const ImVec2& vPos) {
     m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
     // the update all if for descriptive items buit not for amounrt
     if (getCurrentMode() != DataDialogMode::MODE_UPDATE_ALL) {
-        m_DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble); });
+        ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble); });
     }
-    m_DisplayAlignedWidget(width, "Confirmed", align, [this]() {
+    ImGui::DisplayAlignedWidget(width, "Confirmed", align, [this]() {
         if (!m_TransactionConfirmedManyValues) {
             ImGui::CheckBoxBoolDefault("##Confirmed", &m_TransactionConfirmed, false);
         } else {

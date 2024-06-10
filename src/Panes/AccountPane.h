@@ -8,7 +8,7 @@
 #include <ctools/ConfigAbstract.h>
 
 #include <Systems/FrameActionSystem.h>
-
+#include <Threads/ImportWorkerThread.h>
 #include <Frontend/Dialogs/BankDialog.h>
 #include <Frontend/Dialogs/AccountDialog.h>
 #include <Frontend/Dialogs/EntityDialog.h>
@@ -45,6 +45,8 @@ private:
     ImGuiListClipper m_TransactionsListClipper;
     size_t m_SelectedAccountIdx = 0U;
 
+    ImportWorkerThread m_ImportThread;
+
     BankDialog m_BankDialog;
     AccountDialog m_AccountDialog;
     EntityDialog m_EntityDialog;
@@ -73,6 +75,8 @@ public:
     bool DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened = nullptr, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
 
+    void DoBackend();
+
     void Load();
 
     std::string getXml(const std::string& vOffset, const std::string& vUserDatas) override;
@@ -90,7 +94,6 @@ private:
     void m_drawDebugMenu(FrameActionSystem& vFrameActionSystem);
     void m_Clear();
     void m_GetAvailableDataBrokers();
-    void m_ImportFromFiles(const std::vector<std::string> vFiles);
     void m_ResetFiltering();
     void m_refreshFiltering();
     void m_SelectOrDeselectRow(const Transaction& vTransaction);
@@ -109,9 +112,10 @@ private:
 
     void m_drawAccountMenu(const Account& vAccount);
     void m_drawTransactionMenu(const Transaction& vTransaction);
-
     void m_drawSearchRow();
     void m_drawAmount(const double& vAmount);
+
+    void m_ImportFromFiles(const std::vector<std::string>& vFiles);
 
 public:  // singleton
     static std::shared_ptr<AccountPane> Instance() {
