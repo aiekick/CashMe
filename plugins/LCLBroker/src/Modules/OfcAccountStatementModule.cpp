@@ -99,7 +99,9 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                             trans.trans.operation = trans.trans.description.substr(first_not_space, space_pos - first_not_space);
                         }
                     }
+                    trans.trans.entity = "";  // todo
                     while (ct::replaceString(trans.trans.description, "  ", " ")) {
+                        // empty
                     }
                     if (trans.trans.description.front() == ' ') {
                         trans.trans.description = trans.trans.description.substr(1);

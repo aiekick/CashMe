@@ -78,6 +78,7 @@ struct IXmlSettings {
 };
 
 struct Transaction {
+    std::string entity;
     std::string operation;
     std::string category;
     std::string source;

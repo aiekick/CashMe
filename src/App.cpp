@@ -25,12 +25,15 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 int App::run(int /*argc*/, char** argv) {
-
     printf("-----------\n");
     printf("[[ CashMe Beta %s ]]\n", CashMe_BuildId);
 
     FileHelper::Instance()->SetAppPath(argv[0]);
     FileHelper::Instance()->SetCurDirectory(FileHelper::Instance()->GetAppPath());
+
+#ifdef _DEBUG
+    FileHelper::Instance()->CreateDirectoryIfNotExist("sqlite3");
+#endif
 
     m_InitMessaging();
 

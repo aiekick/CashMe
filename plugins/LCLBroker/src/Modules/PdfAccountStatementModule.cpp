@@ -171,7 +171,7 @@ public:
         const auto &tbl = fillTable(vContainer);
         const auto &stms = solveTableColumns(tbl);
 #if _DEBUG
-        printTable(stms);
+        //printTable(stms);
 #endif
         return extractStatements(stms, vSourceName);
     }
@@ -500,6 +500,7 @@ private:
                                     trans.trans.operation = trans.trans.description.substr(first_not_space, space_pos - first_not_space);
                                 }
                             }
+                            trans.trans.entity = "";//todo
                             while (ct::replaceString(trans.trans.description, "  ", " ")) {
                             }
                             if (trans.trans.description.front() == ' ') {

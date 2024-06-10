@@ -28,7 +28,43 @@ limitations under the License.
 #include <sqlite3.hpp>
 #include <fstream>
 
-// will check database header magic number
+static int debug_sqlite3_exec(  //
+    const char* vDebugLabel,
+    sqlite3* db,                                 /* An open database */
+    const char* sql_query,                       /* SQL to be evaluated */
+    int (*callback)(void*, int, char**, char**), /* Callback function */
+    void* arg1,                                  /* 1st argument to callback */
+    char** errmsg) {                             /* Error msg written here */
+#ifdef _DEBUG
+    std::string func_name = vDebugLabel;
+    ct::replaceString(func_name, "DataBase::", "");
+    FileHelper::Instance()->SaveStringToFile(                     //
+        sql_query,                                                //
+        FileHelper::Instance()->CorrectSlashTypeForFilePathName(  //
+            ct::toStr("sqlite3/%s.sql", func_name.c_str())));
+#endif
+    return sqlite3_exec(db, sql_query, callback, arg1, errmsg);
+}
+
+static int debug_sqlite3_prepare_v2(  //
+    const char* vDebugLabel,
+    sqlite3* db,           /* Database handle. */
+    const char* sql_query, /* UTF-8 encoded SQL statement. */
+    int nBytes,            /* Length of zSql in bytes. */
+    sqlite3_stmt** ppStmt, /* OUT: A pointer to the prepared statement */
+    const char** pzTail) { /* OUT: End of parsed string */
+#ifdef _DEBUG
+    std::string func_name = vDebugLabel;
+    ct::replaceString(func_name, "DataBase::", "");
+    FileHelper::Instance()->SaveStringToFile(  //
+        sql_query,                             //
+        FileHelper::Instance()->CorrectSlashTypeForFilePathName(//
+            ct::toStr("sqlite3/%s.sql", func_name.c_str())));
+#endif
+    return sqlite3_prepare_v2(db, sql_query, nBytes, ppStmt, pzTail);
+}
+
+    // will check database header magic number
 // https://www.sqlite.org/fileformat.html : section 1.3
 // Offset	Size	Description
 // 0	    16	    The header string : "SQLite format 3\000"
@@ -75,7 +111,7 @@ void DataBase::CloseDBFile() {
 
 bool DataBase::BeginTransaction() {
     if (m_OpenDB()) {
-        if (sqlite3_exec(m_SqliteDB, "BEGIN TRANSACTION;", nullptr, nullptr, &m_LastErrorMsg) == SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, "BEGIN TRANSACTION;", nullptr, nullptr, &m_LastErrorMsg) == SQLITE_OK) {
             m_TransactionStarted = true;
             return true;
         }
@@ -85,7 +121,7 @@ bool DataBase::BeginTransaction() {
 }
 
 void DataBase::CommitTransaction() {
-    if (sqlite3_exec(m_SqliteDB, "COMMIT;", nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, "COMMIT;", nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to commit : %s", m_LastErrorMsg);
     }
     // we will close the db so force it to reset
@@ -94,7 +130,7 @@ void DataBase::CommitTransaction() {
 }
 
 void DataBase::RollbackTransaction() {
-    if (sqlite3_exec(m_SqliteDB, "ROLLBACK;", nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, "ROLLBACK;", nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to ROLLBACK : %s", m_LastErrorMsg);
     }
     // we will close the db so force it to reset
@@ -103,7 +139,7 @@ void DataBase::RollbackTransaction() {
 
 void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO banks (name, url) VALUES("%s", "%s");)", vBankName.c_str(), vUrl.c_str());
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a bank in database : %s", m_LastErrorMsg);
     }
 }
@@ -113,7 +149,7 @@ bool DataBase::GetBank(const BankName& vBankName, RowID& vOutRowID) {
     auto select_query = ct::toStr(u8R"(SELECT id FROM banks WHERE name = "%s";)", vBankName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get bank id with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -137,7 +173,7 @@ void DataBase::GetBanks(std::function<void(const BankName&, const std::string&)>
     const auto& select_query = ct::toStr(u8R"(SELECT name, url FROM banks GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get banks with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -159,7 +195,7 @@ void DataBase::GetBanks(std::function<void(const BankName&, const std::string&)>
 
 void DataBase::UpdateBank(const RowID& vRowID, const BankName& vBankName, const std::string& vUrl) {
     auto insert_query = ct::toStr(u8R"(UPDATE banks SET name = "%s", url = "%s" WHERE id = %u;)", vBankName.c_str(), vUrl.c_str(), vRowID);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a bank in database : %s", m_LastErrorMsg);
     }
 }
@@ -167,8 +203,78 @@ void DataBase::UpdateBank(const RowID& vRowID, const BankName& vBankName, const 
 void DataBase::DeleteBanks() {
     if (m_OpenDB()) {
         auto insert_query = ct::toStr(u8R"(DELETE FROM banks;)");
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of banks table in database : %s", m_LastErrorMsg);
+        }
+        m_CloseDB();
+    }
+}
+
+void DataBase::AddEntity(const EntityName& vEntityName) {
+    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO entities (name) VALUES("%s");)", vEntityName.c_str());
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a entity in database : %s", m_LastErrorMsg);
+    }
+}
+
+bool DataBase::GetEntity(const EntityName& vUserName, RowID& vOutRowID) {
+    bool ret = false;
+    auto select_query = ct::toStr(u8R"(SELECT id FROM entities WHERE name = "%s";)", vUserName.c_str());
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get entity id with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    vOutRowID = sqlite3_column_int(stmt, 0);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+    return ret;
+}
+
+void DataBase::GetEntities(std::function<void(const EntityName&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    const auto& select_query = ct::toStr(u8R"(SELECT name FROM entities GROUP BY name;)");
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get entities with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    const char* entity_name = (const char*)sqlite3_column_text(stmt, 0);
+                    vCallback(entity_name != nullptr ? entity_name : "");
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
+void DataBase::UpdateEntity(const RowID& vRowID, const EntityName& vEntityName) {
+    auto insert_query = ct::toStr(u8R"(UPDATE entities SET name = "%s" WHERE id = %u;)", vEntityName.c_str(), vRowID);
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to update a entity in database : %s", m_LastErrorMsg);
+    }
+}
+
+void DataBase::DeleteEntities() {
+    if (m_OpenDB()) {
+        auto insert_query = ct::toStr(u8R"(DELETE FROM entities;)");
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to delete content of entities table in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
     }
@@ -176,7 +282,7 @@ void DataBase::DeleteBanks() {
 
 void DataBase::AddCategory(const CategoryName& vCategoryName) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO categories (name) VALUES("%s");)", vCategoryName.c_str());
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a category in database : %s", m_LastErrorMsg);
     }
 }
@@ -186,7 +292,7 @@ bool DataBase::GetCategory(const CategoryName& vUserName, RowID& vOutRowID) {
     auto select_query = ct::toStr(u8R"(SELECT id FROM categories WHERE name = "%s";)", vUserName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get category id with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -210,7 +316,7 @@ void DataBase::GetCategories(std::function<void(const CategoryName&)> vCallback)
     const auto& select_query = ct::toStr(u8R"(SELECT name FROM categories GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get categories with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -229,7 +335,7 @@ void DataBase::GetCategories(std::function<void(const CategoryName&)> vCallback)
 
 void DataBase::UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName) {
     auto insert_query = ct::toStr(u8R"(UPDATE categories SET name = "%s" WHERE id = %u;)", vCategoryName.c_str(), vRowID);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a category in database : %s", m_LastErrorMsg);
     }
 }
@@ -237,7 +343,7 @@ void DataBase::UpdateCategory(const RowID& vRowID, const CategoryName& vCategory
 void DataBase::DeleteCategories() {
     if (m_OpenDB()) {
         auto insert_query = ct::toStr(u8R"(DELETE FROM categories;)");
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of categories table in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
@@ -246,7 +352,7 @@ void DataBase::DeleteCategories() {
 
 void DataBase::AddOperation(const OperationName& vOperationName) {
     auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO operations (name) VALUES("%s");)", vOperationName.c_str());
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a operation in database : %s", m_LastErrorMsg);
     }
 }
@@ -256,7 +362,7 @@ bool DataBase::GetOperation(const OperationName& vOperationName, RowID& vOutRowI
     auto select_query = ct::toStr(u8R"(SELECT id FROM operations WHERE name = "%s";)", vOperationName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get operation id with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -280,7 +386,7 @@ void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback
     const auto& select_query = ct::toStr(u8R"(SELECT name FROM operations GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get operations with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -299,7 +405,7 @@ void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback
 
 void DataBase::UpdateOperation(const RowID& vRowID, const OperationName& vOperationName) {
     auto insert_query = ct::toStr(u8R"(UPDATE operations SET name = "%s" WHERE id = %u;)", vOperationName.c_str(), vRowID);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a operation in database : %s", m_LastErrorMsg);
     }
 }
@@ -307,7 +413,7 @@ void DataBase::UpdateOperation(const RowID& vRowID, const OperationName& vOperat
 void DataBase::DeleteOperations() {
     if (m_OpenDB()) {
         auto insert_query = ct::toStr(u8R"(DELETE FROM operations;)");
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of operations table in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
@@ -319,7 +425,7 @@ void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourc
                                   vSourceName.c_str(),
                                   vSourceType.c_str(),
                                   vSourceSha.c_str());
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a source in database : %s", m_LastErrorMsg);
     }
 }
@@ -329,7 +435,7 @@ bool DataBase::GetSource(const SourceName& vSourceName, RowID& vOutRowID) {
     auto select_query = ct::toStr(u8R"(SELECT id FROM sources WHERE name = "%s";)", vSourceName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get source id with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -353,7 +459,7 @@ void DataBase::GetSources(std::function<void(const SourceName&)> vCallback) {
     const auto& select_query = ct::toStr(u8R"(SELECT name FROM sources GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get sources with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -372,7 +478,7 @@ void DataBase::GetSources(std::function<void(const SourceName&)> vCallback) {
 
 void DataBase::UpdateSource(const RowID& vRowID, const SourceName& vSourceName) {
     auto insert_query = ct::toStr(u8R"(UPDATE sources SET name = "%s" WHERE id = %u;)", vSourceName.c_str(), vRowID);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a source in database : %s", m_LastErrorMsg);
     }
 }
@@ -380,7 +486,7 @@ void DataBase::UpdateSource(const RowID& vRowID, const SourceName& vSourceName) 
 void DataBase::DeleteSources() {
     if (m_OpenDB()) {
         auto insert_query = ct::toStr(u8R"(DELETE FROM sources;)");
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of sources table in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
@@ -411,7 +517,7 @@ INSERT OR IGNORE INTO accounts
         vAccountName.c_str(),
         vAccountNumber.c_str(),
         vBaseSolde);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a Bank Account in database : %s", m_LastErrorMsg);
     }
 }
@@ -430,7 +536,7 @@ WHERE
         vAccountNumber.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get account id with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -476,7 +582,7 @@ WHERE
         vAccountNumber.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get account id with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -525,7 +631,7 @@ ORDER BY accounts.id;
 )";
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get accounts with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -583,7 +689,7 @@ WHERE
         vAccountNumber.c_str(),
         vBaseSolde,
         vRowID);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a account in database : %s", m_LastErrorMsg);
     }
 }
@@ -598,7 +704,7 @@ WHERE
 )",
         vRowID);
     if (m_OpenDB()) {
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete a account in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
@@ -608,7 +714,7 @@ WHERE
 void DataBase::DeleteAccounts() {
     if (m_OpenDB()) {
         auto insert_query = ct::toStr(u8R"(DELETE FROM accounts;)");
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of accounts table in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
@@ -617,6 +723,7 @@ void DataBase::DeleteAccounts() {
 
 void DataBase::AddTransaction(  //
     const RowID& vAccountID,
+    const EntityName& vEntityName,
     const OperationName& vOperationName,
     const CategoryName& vCategoryName,
     const SourceName& vSourceName,
@@ -628,14 +735,16 @@ void DataBase::AddTransaction(  //
     const TransactionAmount& vAmount,
     const TransactionConfirmed& vConfirmed,
     const TransactionHash& vHash) {
+    AddEntity(vEntityName);
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
     AddSource(vSourceName, vSourceType, vSourceSha);
     auto insert_query = ct::toStr(
         u8R"(
 INSERT OR IGNORE INTO transactions 
-    (account_id, operation_id, category_id, source_id, date, description, comment, amount, confirmed, hash) VALUES(
+    (account_id, entity_id, operation_id, category_id, source_id, date, description, comment, amount, confirmed, hash) VALUES(
         %u, -- account id
+        (SELECT id FROM entities WHERE entities.name = "%s"), -- entity id
         (SELECT id FROM operations WHERE operations.name = "%s"), -- operation id
         (SELECT id FROM categories WHERE categories.name = "%s"), -- category id
         (SELECT id FROM sources WHERE sources.sha = "%s"), -- source id
@@ -647,6 +756,7 @@ INSERT OR IGNORE INTO transactions
         "%s"
         );)",
         vAccountID,
+        vEntityName.c_str(),
         vOperationName.c_str(),
         vCategoryName.c_str(),
         vSourceSha.c_str(),
@@ -656,7 +766,7 @@ INSERT OR IGNORE INTO transactions
         vAmount,
         vConfirmed,
         vHash.c_str());
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
     }
 }
@@ -665,6 +775,7 @@ void DataBase::GetTransactions(  //
     const RowID& vAccountID,
     std::function<void(  //
         const RowID&,
+        const EntityName&,
         const OperationName&,
         const CategoryName&,
         const SourceName&,
@@ -680,6 +791,7 @@ void DataBase::GetTransactions(  //
         u8R"(
 SELECT
   transactions.id AS rowid,
+  entities.name AS entity,
   operations.name AS operation,
   categories.name AS category,
   sources.name AS source,
@@ -692,6 +804,7 @@ SELECT
 FROM
   transactions
   LEFT JOIN accounts ON transactions.account_id = accounts.id
+  LEFT JOIN entities ON transactions.entity_id = entities.id
   LEFT JOIN operations ON transactions.operation_id = operations.id
   LEFT JOIN categories ON transactions.category_id = categories.id
   LEFT JOIN sources ON transactions.source_id = sources.id
@@ -703,7 +816,7 @@ ORDER BY
         vAccountID);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -711,17 +824,19 @@ ORDER BY
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
                     RowID id = sqlite3_column_int(stmt, 0);
-                    auto operation = (const char*)sqlite3_column_text(stmt, 1);
-                    auto category = (const char*)sqlite3_column_text(stmt, 2);
-                    auto source = (const char*)sqlite3_column_text(stmt, 3);
-                    auto date = (const char*)sqlite3_column_text(stmt, 4);
-                    auto description = (const char*)sqlite3_column_text(stmt, 5);
-                    auto comment = (const char*)sqlite3_column_text(stmt, 6);
-                    TransactionAmount amount = sqlite3_column_double(stmt, 7);
-                    TransactionConfirmed confirmed = sqlite3_column_int(stmt, 8);
-                    auto hash = (const char*)sqlite3_column_text(stmt, 9);
-                    vCallback(  //
-                        id,
+                    auto entity = (const char*)sqlite3_column_text(stmt, 1);
+                    auto operation = (const char*)sqlite3_column_text(stmt, 2);
+                    auto category = (const char*)sqlite3_column_text(stmt, 3);
+                    auto source = (const char*)sqlite3_column_text(stmt, 4);
+                    auto date = (const char*)sqlite3_column_text(stmt, 5);
+                    auto description = (const char*)sqlite3_column_text(stmt, 6);
+                    auto comment = (const char*)sqlite3_column_text(stmt, 7);
+                    TransactionAmount amount = sqlite3_column_double(stmt, 8);
+                    TransactionConfirmed confirmed = sqlite3_column_int(stmt, 9);
+                    auto hash = (const char*)sqlite3_column_text(stmt, 10);
+                    vCallback(                                      //
+                        id,                                         //
+                        entity != nullptr ? entity : "",            //
                         operation != nullptr ? operation : "",      //
                         category != nullptr ? category : "",        //
                         source != nullptr ? source : "",            //
@@ -765,6 +880,7 @@ void DataBase::GetGroupedTransactions(  //
         const RowID&,
         const TransactionDate&,
         const TransactionDescription&,
+        const EntityName&,
         const CategoryName&,
         const OperationName&,
         const TransactionDebit&,
@@ -777,6 +893,10 @@ void DataBase::GetGroupedTransactions(  //
         case GroupBy::DATES: {
             group_by = "new_date";
             order_by = "new_date";
+        } break;
+        case GroupBy::ENTITIES: {
+            group_by = "new_entity";
+            order_by = "new_entity";
         } break;
         case GroupBy::CATEGORIES: {
             group_by = "new_category";
@@ -799,12 +919,14 @@ SELECT
   transactions.id,
   strftime("%s", transactions.date) AS new_date,
   transactions.description AS new_description,
+  entities.name AS new_entity,
   categories.name AS new_category,
   operations.name AS new_operation,
   ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS new_debit,
   ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS new_credit
 FROM
   transactions
+  LEFT JOIN entities ON transactions.entity_id = entities.id
   LEFT JOIN categories ON transactions.category_id = categories.id
   LEFT JOIN operations ON transactions.operation_id = operations.id
 WHERE
@@ -818,12 +940,9 @@ ORDER BY
         vAccountID,
         group_by.c_str(),
         order_by.c_str());
-#ifdef _DEBUG
-    FileHelper::Instance()->SaveStringToFile(select_query, "lastSqliteQuery.sql");
-#endif
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -839,20 +958,25 @@ ORDER BY
                     if (vGroupBy == GroupBy::DESCRIPTIONS) {
                         description = (const char*)sqlite3_column_text(stmt, 2);
                     }
+                    const char* entity = nullptr;
+                    if (vGroupBy == GroupBy::ENTITIES) {
+                        entity = (const char*)sqlite3_column_text(stmt, 3);
+                    }
                     const char* category = nullptr;
                     if (vGroupBy == GroupBy::CATEGORIES) {
-                        category = (const char*)sqlite3_column_text(stmt, 3);
+                        category = (const char*)sqlite3_column_text(stmt, 4);
                     }
                     const char* operation = nullptr;
                     if (vGroupBy == GroupBy::OPERATIONS) {
-                        operation = (const char*)sqlite3_column_text(stmt, 4);
+                        operation = (const char*)sqlite3_column_text(stmt, 5);
                     }
-                    TransactionDebit debit = sqlite3_column_double(stmt, 5);
-                    TransactionCredit credit = sqlite3_column_double(stmt, 6);
+                    TransactionDebit debit = sqlite3_column_double(stmt, 6);
+                    TransactionCredit credit = sqlite3_column_double(stmt, 7);
                     vCallback(                                      //
                         id,                                         //
                         date != nullptr ? date : "",                //
                         description != nullptr ? description : "",  //
+                        entity != nullptr ? entity : "",            //
                         category != nullptr ? category : "",        //
                         operation != nullptr ? operation : "",      //
                         debit,                                      //
@@ -887,7 +1011,7 @@ ORDER BY t.date, t.amount;
         vAccountID);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -921,7 +1045,7 @@ AND
         vAccountID);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
-        int res = sqlite3_prepare_v2(m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
         } else {
@@ -940,6 +1064,7 @@ AND
 
 void DataBase::UpdateTransaction(  //
     const RowID& vRowID,
+    const EntityName& vEntityName,
     const OperationName& vOperationName,
     const CategoryName& vCategoryName,
     const SourceName& vSourceName,
@@ -954,6 +1079,7 @@ void DataBase::UpdateTransaction(  //
 UPDATE 
   transactions
 SET 
+  entity_id = (SELECT id FROM entities WHERE name = "%s"),
   operation_id = (SELECT id FROM operations WHERE name = "%s"),
   category_id = (SELECT id FROM categories WHERE name = "%s"),
   source_id = (SELECT id FROM sources WHERE name = "%s"),
@@ -966,6 +1092,7 @@ SET
 WHERE
   transactions.id = %u;
 )",
+        vEntityName.c_str(),
         vOperationName.c_str(),
         vCategoryName.c_str(),
         vSourceName.c_str(),
@@ -976,7 +1103,7 @@ WHERE
         vConfirmed,
         vHash.c_str(),
         vRowID);
-    if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a transaction in database : %s", m_LastErrorMsg);
     }
 }
@@ -994,7 +1121,7 @@ WHERE
         vConfirmed,
         vRowID);
     if (m_OpenDB()) {
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to confirm a transaction in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
@@ -1011,7 +1138,7 @@ WHERE
 )",
         vRowID);
     if (m_OpenDB()) {
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete a transaction in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
@@ -1021,7 +1148,7 @@ WHERE
 void DataBase::DeleteTransactions() {
     if (m_OpenDB()) {
         auto delete_query = ct::toStr(u8R"(DELETE FROM transactions;)");
-        if (sqlite3_exec(m_SqliteDB, delete_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, delete_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of transactions table in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();
@@ -1039,7 +1166,7 @@ WHERE
   transactions.id = %u;
 )",
                 row_id);
-            if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
                 LogVarError("Fail to delete a transaction in database : %s", m_LastErrorMsg);
             }
         }
@@ -1049,7 +1176,7 @@ WHERE
 
 bool DataBase::m_EnableForeignKey() {
     if (!m_SqliteDB) {
-        int res = sqlite3_exec(m_SqliteDB, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
+        int res = debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("Erreur lors de l'activation des clés étrangères : %s", sqlite3_errmsg(m_SqliteDB));
         }
@@ -1071,7 +1198,7 @@ bool DataBase::SetSettingsXMLDatas(const std::string& vXMLDatas) {
         } else {
             insert_query = "UPDATE settings SET xml = \"" + vXMLDatas + "\" WHERE rowid = 1;";
         }
-        if (sqlite3_exec(m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
 #ifdef _DEBUG
             FileHelper::Instance()->SaveStringToFile(insert_query, "insert_query.txt");
             FileHelper::Instance()->SaveStringToFile(m_LastErrorMsg, "last_error_msg.txt");
@@ -1089,7 +1216,7 @@ std::string DataBase::GetSettingsXMLDatas() {
     // SELECT at line 0
     auto select_query = u8R"(SELECT * FROM settings WHERE rowid = 1;)";
     sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(m_SqliteDB, select_query, (int)strlen(select_query), &stmt, nullptr) != SQLITE_OK) {
+    if (debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query, (int)strlen(select_query), &stmt, nullptr) != SQLITE_OK) {
         LogVarError("%s", "Fail to get xml FROM settings table of database");
     } else {
         if (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -1111,12 +1238,13 @@ BEGIN TRANSACTION;
 DELETE FROM banks;
 DELETE FROM accounts;
 DELETE FROM sources;
+DELETE FROM entities;
 DELETE FROM categories;
 DELETE FROM operations;
 DELETE FROM transactions;
 COMMIT;
 )";
-    if (sqlite3_exec(m_SqliteDB, clear_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, clear_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to clear datas tables in database : %s", m_LastErrorMsg);
     }
 }
@@ -1177,6 +1305,11 @@ CREATE TABLE sources (
     sha TEXT NOT NULL
 );
 
+CREATE TABLE entities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
 CREATE TABLE categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
@@ -1193,6 +1326,7 @@ CREATE TABLE transactions (
     account_id INTEGER NOT NULL,
     operation_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
+    entity_id INTEGER NOT NULL,
     source_id INTEGER NOT NULL,
     date DATE NOT NULL,
     description TEXT,
@@ -1203,6 +1337,7 @@ CREATE TABLE transactions (
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     FOREIGN KEY (operation_id) REFERENCES operations(id),
     FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (entity_id) REFERENCES entities(id),
     FOREIGN KEY (source_id) REFERENCES sources(id)
 );
 
@@ -1210,7 +1345,7 @@ CREATE TABLE settings (
 	xml TEXT
 );
 )";
-        if (sqlite3_exec(m_SqliteDB, create_tables, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, create_tables, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             if (m_LastErrorMsg) {
                 LogVarError("Fail to create database : %s", m_LastErrorMsg);
             } else {

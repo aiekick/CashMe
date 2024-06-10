@@ -23,7 +23,7 @@ limitations under the License.
 #include <Headers/DatasDef.h>
 
 enum class DateFormat { DAYS = 0, MONTHS, YEARS, Count };
-enum class GroupBy { DATES = 0, OPERATIONS, CATEGORIES, DESCRIPTIONS, Count };
+enum class GroupBy { DATES = 0, ENTITIES, OPERATIONS, CATEGORIES, DESCRIPTIONS, Count };
 
 class DataBaseTable {
 public:
@@ -52,6 +52,12 @@ public:
     void GetBanks(std::function<void(const BankName&, const std::string&)> vCallback);
     void UpdateBank(const RowID& vRowID, const BankName& vBankName, const std::string& vUrl);
     void DeleteBanks();
+
+    void AddEntity(const EntityName& vEntityName);
+    bool GetEntity(const EntityName& vUserName, RowID& vOutRowID);
+    void GetEntities(std::function<void(const EntityName&)> vCallback);
+    void UpdateEntity(const RowID& vRowID, const EntityName& vEntityName);
+    void DeleteEntities();
 
     void AddCategory(const CategoryName& vCategoryName);
     bool GetCategory(const CategoryName& vUserName, RowID& vOutRowID);
@@ -111,6 +117,7 @@ public:
 
     void AddTransaction(  //
         const RowID& vAccountID,
+        const EntityName& vEntityName,
         const OperationName& vOperationName,
         const CategoryName& vCategoryName,
         const SourceName& vSourceName,
@@ -126,6 +133,7 @@ public:
         const RowID& vAccountID,
         std::function<void(  //
             const RowID&,
+            const EntityName&,
             const OperationName&,
             const CategoryName&,
             const SourceName&,
@@ -143,6 +151,7 @@ public:
             const RowID&,
             const TransactionDate&,
             const TransactionDescription&,
+            const EntityName&,
             const CategoryName&,
             const OperationName&,
             const TransactionDebit&,
@@ -156,6 +165,7 @@ public:
         std::function<void(const RowID&)> vCallback);
     void UpdateTransaction(  //
         const RowID& vRowID,
+        const EntityName& vEntityName,
         const OperationName& vOperationName,
         const CategoryName& vCategoryName,
         const SourceName& vSourceName,

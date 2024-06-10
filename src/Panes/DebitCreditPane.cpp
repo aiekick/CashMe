@@ -30,6 +30,7 @@ bool DebitCreditPane::Init() {
         0,
         {
             "DATES",        //
+            "ENTITIES",   //
             "OPERATIONS",   //
             "CATEGORIES",   //
             "DESCRIPTIONS"  //
@@ -196,10 +197,11 @@ void DebitCreditPane::m_drawBuySellGraph() {
 void DebitCreditPane::m_drawBuySellList() {
     ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 30.0f);
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("##Transactions", 7, flags)) {
+    if (ImGui::BeginTable("##Transactions", 8, flags)) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Entity", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
@@ -236,6 +238,12 @@ void DebitCreditPane::m_drawBuySellList() {
                     ImGui::Selectable(t.description.c_str(), &is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
                     ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.description.c_str());
                     ImGui::PopID();
+                }
+
+                ImGui::TableNextColumn();
+                {
+                    ImGui::Text(t.entity.c_str());
+                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.entity.c_str());
                 }
 
                 ImGui::TableNextColumn();
@@ -331,6 +339,7 @@ void DebitCreditPane::m_UpdateTransactions(const RowID& vAccountID) {
             const RowID& vRowID,
             const TransactionDate& vTransactionDate,
             const TransactionDescription& vTransactionDescription,
+            const EntityName& vEntityName,
             const CategoryName& vCategoryName,
             const OperationName& vOperationName,
             const TransactionDebit& vTransactionDebit,
@@ -339,6 +348,7 @@ void DebitCreditPane::m_UpdateTransactions(const RowID& vAccountID) {
             t.id = vRowID;
             t.date = vTransactionDate;
             t.description = vTransactionDescription;
+            t.entity = vEntityName;
             t.category = vCategoryName;
             t.operation = vOperationName;
             t.debit = vTransactionDebit;

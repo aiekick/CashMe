@@ -15,6 +15,7 @@ private:
         RowID id = 0;
         TransactionDate date;
         TransactionDescription description;
+        EntityName entity;
         CategoryName category;
         OperationName operation;
         TransactionDebit debit = 0.0;

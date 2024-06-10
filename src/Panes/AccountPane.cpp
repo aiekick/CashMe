@@ -120,6 +120,7 @@ void AccountPane::Load() {
 
 void AccountPane::m_refreshDatas() {
     m_UpdateBanks();
+    m_UpdateEntities();
     m_UpdateCategories();
     m_UpdateOperations();
     m_UpdateAccounts();
@@ -143,12 +144,13 @@ void AccountPane::m_drawMenu(FrameActionSystem& vFrameActionSystem) {
 void AccountPane::m_displayTransactions() {
     ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 30.0f);
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("##Transactions", 10, flags)) {
+    if (ImGui::BeginTable("##Transactions", 11, flags)) {
         ImGui::TableSetupScrollFreeze(0, 2);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Comments", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Entity", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
@@ -226,6 +228,12 @@ void AccountPane::m_displayTransactions() {
                 {
                     ImGui::Text(t.comment.c_str());
                     ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.comment.c_str());
+                }
+
+                ImGui::TableNextColumn();
+                {
+                    ImGui::Text(t.entity.c_str());
+                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.entity.c_str());
                 }
 
                 ImGui::TableNextColumn();
@@ -364,6 +372,10 @@ void AccountPane::m_drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
                 DataBase::Instance()->DeleteAccounts();
                 m_refreshDatas();
             }
+            if (ImGui::MenuItem("Entities")) {
+                DataBase::Instance()->DeleteEntities();
+                m_refreshDatas();
+            }
             if (ImGui::MenuItem("Categories")) {
                 DataBase::Instance()->DeleteCategories();
                 m_refreshDatas();
@@ -447,6 +459,9 @@ void AccountPane::m_drawCreationMenu(FrameActionSystem& vFrameActionSystem) {
         }
         if (ImGui::MenuItem("Account")) {
             m_AccountDialog.show(DataDialogMode::MODE_CREATION);
+        }
+        if (ImGui::MenuItem("Entity")) {
+            m_EntityDialog.show(DataDialogMode::MODE_CREATION);
         }
         if (ImGui::MenuItem("Category")) {
             m_CategoryDialog.show(DataDialogMode::MODE_CREATION);
@@ -545,7 +560,8 @@ void AccountPane::m_ImportFromFiles(const std::vector<std::string> vFiles) {
                     if (DataBase::Instance()->BeginTransaction()) {
                         for (const auto& s : stmt.statements) {
                             DataBase::Instance()->AddTransaction(  //
-                                account_id,                        //
+                                account_id,
+                                s.entity,
                                 s.operation,
                                 s.category,
                                 s.source,
@@ -559,7 +575,8 @@ void AccountPane::m_ImportFromFiles(const std::vector<std::string> vFiles) {
                                 s.hash);
                         }
                         DataBase::Instance()->CommitTransaction();
-                        m_RefreshFiltering();
+                        m_refreshDatas();
+                        m_refreshFiltering();
                     }
                 } else {
                     LogVarError("Import interrupted, no account found for %s", stmt.account.number.c_str());
@@ -575,10 +592,10 @@ void AccountPane::m_ResetFiltering() {
     m_Datas.transactions_filtered_rowids = {};
     m_SearchInputTexts = {};
     m_SearchTokens = {};
-    m_RefreshFiltering();
+    m_refreshFiltering();
 }
 
-void AccountPane::m_RefreshFiltering() {
+void AccountPane::m_refreshFiltering() {
     m_Datas.transactions_filtered.clear();
     m_Datas.transactions_filtered_rowids.clear();
     bool use = false;
@@ -587,7 +604,7 @@ void AccountPane::m_RefreshFiltering() {
     m_TotalCredit = 0.0;
     for (auto tr : m_Datas.transactions) {
         use = true;
-        for (size_t idx = 0; idx < 5; ++idx) {
+        for (size_t idx = 0; idx < SearchColumns::SEARCH_COLUMN_Count; ++idx) {
             const auto& tk = m_SearchTokens.at(idx);
             if (!tk.empty()) {
                 use &= (tr.optimized.at(idx).find(tk) != std::string::npos);
@@ -663,6 +680,14 @@ void AccountPane::m_UpdateBanks() {
     DataBase::Instance()->GetBanks(                                       //
         [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
             m_Datas.bankNames.push_back(vUserName);
+        });
+}
+
+void AccountPane::m_UpdateEntities() {
+    m_Datas.entityNames.clear();
+    DataBase::Instance()->GetEntities(           //
+        [this](const EntityName& vEntityName) {  //
+            m_Datas.entityNames.push_back(vEntityName);
         });
 }
 
@@ -742,6 +767,7 @@ void AccountPane::m_UpdateTransactions(const RowID& vAccountID) {
             vAccountID,                         //
             [this, &solde, account_number](     //
                 const RowID& vTransactionID,
+                const EntityName& vEntityName,
                 const OperationName& vOperationName,
                 const CategoryName& vCategoryName,
                 const SourceName& vSourceName,
@@ -761,10 +787,12 @@ void AccountPane::m_UpdateTransactions(const RowID& vAccountID) {
                 t.optimized[1] = ct::toLower(vTransactionDescription);
                 t.comment = vTransactionComment;
                 t.optimized[2] = ct::toLower(vTransactionComment);
+                t.entity = vEntityName;
+                t.optimized[3] = ct::toLower(vEntityName);
                 t.category = vCategoryName;
-                t.optimized[3] = ct::toLower(vCategoryName);
+                t.optimized[4] = ct::toLower(vCategoryName);
                 t.operation = vOperationName;
-                t.optimized[4] = ct::toLower(vOperationName);
+                t.optimized[5] = ct::toLower(vOperationName);
                 t.hash = vHash;
                 t.source = vSourceName;
                 t.amount = vTransactionAmount;
@@ -773,7 +801,7 @@ void AccountPane::m_UpdateTransactions(const RowID& vAccountID) {
                 m_Datas.transactions.push_back(t);
             });
     }
-    m_RefreshFiltering();
+    m_refreshFiltering();
 }
 
 void AccountPane::m_drawTransactionMenu(const Transaction& vTransaction) {
@@ -826,39 +854,30 @@ void AccountPane::m_drawSearchRow() {
         reset = true;
     }
     ImGui::PopStyleVar();
-    for (size_t idx = 0; idx < 8; ++idx) {
+    for (size_t idx = 0; idx < 10; ++idx) {
         ImGui::TableNextColumn();
-        switch (idx) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4: {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-                if (m_SearchInputTexts.at(idx).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
-                    m_SearchTokens[idx] = ct::toLower(m_SearchInputTexts.at(idx).GetText());
-                    change = true;
-                }
-                ImGui::PopStyleVar();
-            } break;
-            case 5: {
-                m_drawAmount(m_TotalDebit);
-            } break;
-            case 6: {
-                m_drawAmount(m_TotalCredit);
-            } break;
-            case 7: {
-                // m_drawAmount(m_CurrentBaseSolde);
-            } break;
-            case 8: ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size()); break;
-            default: break;
+        if (idx < SearchColumns::SEARCH_COLUMN_Count) {
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            if (m_SearchInputTexts.at(idx).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
+                m_SearchTokens[idx] = ct::toLower(m_SearchInputTexts.at(idx).GetText());
+                change = true;
+            }
+            ImGui::PopStyleVar();
+        } else if (idx == 6) {
+            m_drawAmount(m_TotalDebit);
+        } else if (idx == 7) {
+            m_drawAmount(m_TotalCredit);
+        } else if (idx == 8) {
+            // m_drawAmount(m_CurrentBaseSolde);
+        } else if (idx == 9) {
+            ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size());
         }
     }
     if (reset) {
         m_ResetFiltering();
     }
     if (change) {
-        m_RefreshFiltering();
+        m_refreshFiltering();
     }
 }
 

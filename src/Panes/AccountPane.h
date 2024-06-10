@@ -11,6 +11,7 @@
 
 #include <Frontend/Dialogs/BankDialog.h>
 #include <Frontend/Dialogs/AccountDialog.h>
+#include <Frontend/Dialogs/EntityDialog.h>
 #include <Frontend/Dialogs/CategoryDialog.h>
 #include <Frontend/Dialogs/OperationDialog.h>
 #include <Frontend/Dialogs/TransactionDialog.h>
@@ -20,6 +21,7 @@ class AccountPane : public AbstractPane, public conf::ConfigAbstract {
 private:
     struct Datas {
         std::vector<BankName> bankNames;
+        std::vector<EntityName> entityNames;
         std::vector<CategoryName> categoryNames;
         std::vector<OperationName> operationNames;
         std::vector<Account> accounts;
@@ -45,6 +47,7 @@ private:
 
     BankDialog m_BankDialog;
     AccountDialog m_AccountDialog;
+    EntityDialog m_EntityDialog;
     CategoryDialog m_CategoryDialog;
     OperationDialog m_OperationDialog;
     TransactionDialog m_TransactionDialog;
@@ -53,9 +56,8 @@ private:
     TransactionAmount m_TotalDebit = 0.0;
     TransactionAmount m_TotalCredit = 0.0;
 
-    // search for date, desc, comm, cat, ope
-    std::array<ImWidgets::InputText, 5> m_SearchInputTexts;
-    std::array<std::string, 5> m_SearchTokens;
+    std::array<ImWidgets::InputText, SearchColumns::SEARCH_COLUMN_Count> m_SearchInputTexts;
+    std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> m_SearchTokens;
 
     // selection
     std::set<RowID> m_SelectedTransactions;
@@ -90,7 +92,7 @@ private:
     void m_GetAvailableDataBrokers();
     void m_ImportFromFiles(const std::vector<std::string> vFiles);
     void m_ResetFiltering();
-    void m_RefreshFiltering();
+    void m_refreshFiltering();
     void m_SelectOrDeselectRow(const Transaction& vTransaction);
     bool m_IsRowSelected(const RowID& vRowID) const;
     void m_ResetSelection();
@@ -100,6 +102,7 @@ private:
 
     void m_UpdateBanks();
     void m_UpdateAccounts();
+    void m_UpdateEntities(); 
     void m_UpdateCategories();
     void m_UpdateOperations();
     void m_UpdateTransactions(const RowID& vAccountID);

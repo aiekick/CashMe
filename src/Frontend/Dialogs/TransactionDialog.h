@@ -15,6 +15,7 @@ private:
     // widgets : Read / Write
     double m_TransactionAmountInputDouble = 0.0;
     ImWidgets::QuickStringCombo m_AccountsCombo;
+    ImWidgets::QuickStringEditCombo m_EntitiesCombo;
     ImWidgets::QuickStringEditCombo m_CategoriesCombo;
     ImWidgets::QuickStringEditCombo m_OperationsCombo;
     ImWidgets::InputText m_TransactionDateInputText;
@@ -56,6 +57,7 @@ protected:
     void m_drawContentDeletion(const ImVec2& vPos);
 
     void m_UpdateAccounts();
+    void m_UpdateEntities();
     void m_UpdateOperations();
     void m_UpdateCategories();
 };

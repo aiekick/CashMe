@@ -50,6 +50,7 @@ void TransactionDialog::m_drawContentCreation(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayCombo(width, "Account", align);
+    m_EntitiesCombo.displayCombo(width, "Entity", align);
     m_CategoriesCombo.displayCombo(width, "Category", align);
     m_OperationsCombo.displayCombo(width, "Operation", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
@@ -63,6 +64,7 @@ void TransactionDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayCombo(width, "Account", align);
+    m_EntitiesCombo.displayCombo(width, "Entity", align);
     m_CategoriesCombo.displayCombo(width, "Category", align);
     m_OperationsCombo.displayCombo(width, "Operation", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
@@ -151,6 +153,7 @@ void TransactionDialog::m_drawContentDeletion(const ImVec2& vPos) {
 
 void TransactionDialog::m_prepare() {
     m_UpdateAccounts();
+    m_UpdateEntities();
     m_UpdateOperations();
     m_UpdateCategories();
     m_TransactionConfirmedManyValues = false;
@@ -158,6 +161,9 @@ void TransactionDialog::m_prepare() {
         if (!m_TransactionsToUpdate.empty()) {
             m_TransactionToUpdate = m_TransactionsToUpdate.at(0);
             for (const auto& t : m_TransactionsToUpdate) {
+                if (m_TransactionToUpdate.entity != t.entity) {
+                    m_TransactionToUpdate.entity = "Many values";
+                }
                 if (m_TransactionToUpdate.category != t.category) {
                     m_TransactionToUpdate.category = "Many values";
                 }
@@ -181,6 +187,7 @@ void TransactionDialog::m_prepare() {
     }
     m_SourceName = m_TransactionToUpdate.source;
     m_AccountsCombo.select(m_TransactionToUpdate.account);
+    m_EntitiesCombo.setText(m_TransactionToUpdate.entity);
     m_CategoriesCombo.setText(m_TransactionToUpdate.category);
     m_OperationsCombo.setText(m_TransactionToUpdate.operation);
     m_TransactionDateInputText.SetText(m_TransactionToUpdate.date);
@@ -262,6 +269,7 @@ void TransactionDialog::m_confirmDialogCreation() {
                 m_TransactionAmountInputDouble);              // must be unique per oepration
             DataBase::Instance()->AddTransaction(             //
                 account_id,                                   //
+                m_EntitiesCombo.getText(),                    //
                 m_OperationsCombo.getText(),                  //
                 m_CategoriesCombo.getText(),                  //
                 m_SourceName,                                 //
@@ -290,10 +298,12 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
                 // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
                 m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
                 m_TransactionAmountInputDouble);  // must be unique per operation
+            DataBase::Instance()->AddEntity(m_EntitiesCombo.getText());
             DataBase::Instance()->AddOperation(m_OperationsCombo.getText());
             DataBase::Instance()->AddCategory(m_CategoriesCombo.getText());
             DataBase::Instance()->UpdateTransaction(          //
                 m_TransactionToUpdate.id,                     //
+                m_EntitiesCombo.getText(),                    //
                 m_OperationsCombo.getText(),                  //
                 m_CategoriesCombo.getText(),                  //
                 m_SourceName,                                 //
@@ -314,6 +324,10 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
         if (DataBase::Instance()->OpenDBFile()) {
             if (DataBase::Instance()->BeginTransaction()) {
                 for (auto t : m_TransactionsToUpdate) {
+                    if (m_EntitiesCombo.getText() != MULTIPLE_VALUES) {
+                        t.entity = m_EntitiesCombo.getText();
+                        DataBase::Instance()->AddEntity(t.entity);
+                    }
                     if (m_OperationsCombo.getText() != MULTIPLE_VALUES) {
                         t.operation = m_OperationsCombo.getText();
                         DataBase::Instance()->AddOperation(t.operation);
@@ -336,6 +350,7 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
                     }
                     DataBase::Instance()->UpdateTransaction(  //
                         t.id,                                 //
+                        t.entity,                             //
                         t.operation,                          //
                         t.category,                           //
                         t.source,                             //
@@ -377,6 +392,16 @@ void TransactionDialog::m_UpdateAccounts() {
             m_AccountsCombo.getArrayRef().push_back(vAccountNumber);
         });
     m_AccountsCombo.getIndexRef() = 0;
+}
+
+void TransactionDialog::m_UpdateEntities() {
+    m_EntitiesCombo.clear();
+    DataBase::Instance()->GetOperations(         //
+        [this](const EntityName& vEntityName) {  //
+            m_EntitiesCombo.getArrayRef().push_back(vEntityName);
+        });
+    m_EntitiesCombo.getIndexRef() = 0;
+    m_EntitiesCombo.finalize();
 }
 
 void TransactionDialog::m_UpdateOperations() {
