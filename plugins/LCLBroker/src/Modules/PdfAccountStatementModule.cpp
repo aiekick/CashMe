@@ -1,13 +1,19 @@
 #include <Modules/PdfAccountStatementModule.h>
-#include <ImGuiPack.h>
-#include <ctools/FileHelper.h>
-#include <ctools/Logger.h>
+
+#include <sstream>
 
 #include <memory>
 #include <vector>
 #include <array>
 #include <map>
 
+#include <ctools/FileHelper.h>
+#include <ctools/Logger.h>
+#include <ImGuiPack.h>
+
+#include <Utils/Utils.h>
+
+// the order is important
 #include <xpdf/goo/gmem.h>
 #include <xpdf/goo/gmempp.h>
 #include <xpdf/goo/parseargs.h>

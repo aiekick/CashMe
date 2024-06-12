@@ -1,9 +1,13 @@
 #include <Modules/OfcAccountStatementModule.h>
-#include <ImGuiPack.h>
-#include <ctools/FileHelper.h>
-#include <ctools/Logger.h>
+
 #include <sstream>
 #include <string>
+
+#include <ctools/FileHelper.h>
+#include <ctools/Logger.h>
+#include <ImGuiPack.h>
+
+#include <Utils/Utils.h>
 
 Cash::BankStatementModulePtr OfcAccountStatementModule::create() {
     auto res = std::make_shared<OfcAccountStatementModule>();
@@ -102,9 +106,9 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                     ct::replaceString(line, "<CHKNUM>", "");
                     trans.trans.operation = "CHEQUE";
                     trans.trans.description = "CHEQUE " + line;
+                    trans.trans.entity = "LCL";
                 }
-            }
-            
+            }            
         }
 
         for (const auto& t : transactions) {

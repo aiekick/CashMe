@@ -2,11 +2,6 @@
 
 #include <apis/CashMePluginApi.h>
 
-bool parseDescription(const std::string& vDesc,  //
-                      std::string& vOutEntity,
-                      std::string& vOutOperation,
-                      std::string& vOutDescription);
-
 class Base : public Cash::BankStatementImportModule {
 public:
     virtual ~Base() = default;

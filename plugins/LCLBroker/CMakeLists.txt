@@ -116,8 +116,8 @@ target_link_libraries(${PROJECT}
 	${XPDF_LIBRARIES}
 )
 
-# add plugin name in parent LOADED_STROCKER_PLUGINS list
-set(LOADED_CASHME_PLUGINS ${LOADED_STROCKER_PLUGINS} ${PROJECT} PARENT_SCOPE)
+# add plugin name in parent LOADED_CASHME_PLUGINS list
+set(LOADED_CASHME_PLUGINS ${LOADED_CASHME_PLUGINS} ${PROJECT} PARENT_SCOPE)
 
 ########################################################
 ################# BUILD INCREMENT TOOL #################
@@ -129,6 +129,16 @@ add_custom_command(
 	COMMAND BuildInc -prefix=${PROJECT} 1000000:10 $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/src/Headers/${PROJECT}Build.h>
 	DEPENDS ${PROJECT}
 )
+
+########################################################
+##### TESTS ############################################
+########################################################
+
+if(USE_BUILDING_OF_TESTS)
+	enable_testing()
+	add_definitions(-DTEST_ENABLED)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+endif()
 
 ########################################################
 ########################################################
