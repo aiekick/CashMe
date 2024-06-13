@@ -227,14 +227,14 @@ void AccountPane::m_displayTransactions() {
                             if (ImGui::IsKeyDown(ImGuiMod_Shift)) {
                                 m_CurrSelectedItemIdx = idx;
                             } else {
-                                m_LastSelectedItemIdx = idx; 
-                            }
-                            
-                            if (!ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
-                                m_ResetSelection();
-                            }
+                                m_LastSelectedItemIdx = idx;
 
-                            m_SelectOrDeselectRow(t);
+                                if (!ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
+                                    m_ResetSelection();
+                                }
+
+                                m_SelectOrDeselectRow(t);
+                            }
                         }
                     }
                     ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.description.c_str());
@@ -334,7 +334,7 @@ void AccountPane::m_displayTransactions() {
             int32_t min_idx = ImMin(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
             int32_t max_idx = ImMax(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
             m_ResetSelection();
-            for (int32_t nid = min_idx; nid < max_idx; ++nid) {
+            for (int32_t nid = min_idx; nid <= max_idx; ++nid) {
                 if (nid < m_Datas.transactions_filtered.size()) {
                     const auto& t = m_Datas.transactions_filtered.at(nid);
                     m_SelectOrDeselectRow(t);
