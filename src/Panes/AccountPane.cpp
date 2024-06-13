@@ -689,6 +689,7 @@ void AccountPane::m_UpdateOperations() {
 }
 
 void AccountPane::m_UpdateAccounts() {
+    m_Accounts.clear();
     m_Datas.accounts.clear();
     m_Datas.accountNumbers.clear();
     DataBase::Instance()->GetAccounts(  //
