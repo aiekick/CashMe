@@ -376,19 +376,42 @@ void AccountPane::m_drawImportMenu(FrameActionSystem& vFrameActionSystem) {
 
 void AccountPane::m_drawSelectMenu(FrameActionSystem& vFrameActionSystem) {
     if (ImGui::BeginMenu("Select")) {
-        if (ImGui::MenuItem("Current rows")) {
-            m_SelectCurrentRows();
+        if (ImGui::BeginMenu("Rows")) {
+            if (ImGui::MenuItem("All Displayed")) {
+                m_SelectCurrentRows();
+            }
+            if (ImGui::MenuItem("UnConfirmed")) {
+                m_SelectUnConfirmedTransactions();
+            }
+            if (ImGui::MenuItem("Possible Duplicate entries on Prices and Dates")) {
+                m_SelectPossibleDuplicateEntryOnPricesAndDates();
+            }
+            ImGui::EndMenu();
         }
-        if (ImGui::MenuItem("UnConfirmed entries")) {
-            m_SelectUnConfirmedTransactions();
-        }
-        if (ImGui::MenuItem("Possible Duplicate entries on Prices and Dates")) {
-            m_SelectPossibleDuplicateEntryOnPricesAndDates();
+        if (ImGui::BeginMenu("Empty")) {
+            if (ImGui::MenuItem("Comment")) {
+                m_SelectEmptyColumn(SearchColumns::SEARCH_COLUMN_COMMENT);
+            }
+            if (ImGui::MenuItem("Entity")) {
+                m_SelectEmptyColumn(SearchColumns::SEARCH_COLUMN_ENTITY);
+            }
+            if (ImGui::MenuItem("Category")) {
+                m_SelectEmptyColumn(SearchColumns::SEARCH_COLUMN_CATEGORY);
+            }
+            if (ImGui::MenuItem("Operation")) {
+                m_SelectEmptyColumn(SearchColumns::SEARCH_COLUMN_OPERATION);
+            }
+            ImGui::EndMenu();
         }
         if (!m_SelectedTransactions.empty()) {
-            ImGui::Separator();
-            if (ImGui::MenuItem("Reset Selection")) {
-                m_ResetSelection();
+            if (ImGui::BeginMenu("Selection")) {
+                if (ImGui::MenuItem("Filter")) {
+                    m_FilterSelection();
+                }
+                if (ImGui::MenuItem("Reset")) {
+                    m_ResetSelection();
+                }
+                ImGui::EndMenu();
             }
         }
         ImGui::EndMenu();
@@ -604,6 +627,8 @@ void AccountPane::m_ResetFiltering() {
     m_Datas.transactions_filtered_rowids = {};
     m_SearchInputTexts = {};
     m_SearchTokens = {};
+    m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
+    m_FilteredSelectedTransactions.clear();
     m_refreshFiltering();
 }
 
@@ -614,27 +639,37 @@ void AccountPane::m_refreshFiltering() {
     double solde = m_CurrentBaseSolde;
     m_TotalDebit = 0.0;
     m_TotalCredit = 0.0;
-    for (auto tr : m_Datas.transactions) {
+    for (auto t : m_Datas.transactions) {
         use = true;
-        for (size_t idx = 0; idx < SearchColumns::SEARCH_COLUMN_Count; ++idx) {
-            const auto& tk = m_SearchTokens.at(idx);
-            if (!tk.empty()) {
-                use &= (tr.optimized.at(idx).find(tk) != std::string::npos);
+        if (m_FilteringMode == FilteringMode::FILTERING_MODE_BY_SEARCH) {
+            for (size_t idx = 0; idx < SearchColumns::SEARCH_COLUMN_Count; ++idx) {
+                const auto& tk = m_SearchTokens.at(idx);
+                if (!tk.empty()) {
+                    use &= (t.optimized.at(idx).find(tk) != std::string::npos);
+                }
             }
+        } else if (m_FilteringMode == FilteringMode::FILTERING_MODE_BY_SELECTED_ROW_IDS) {
+            use = (m_FilteredSelectedTransactions.find(t.id) != m_FilteredSelectedTransactions.end());        
         }
         if (use) {
-            solde += tr.amount;
-            tr.solde = solde;
-            m_Datas.transactions_filtered.push_back(tr);
-            m_Datas.transactions_filtered_rowids.emplace(tr.id);
-            if (tr.amount < 0.0) {
-                m_TotalDebit += tr.amount;
+            solde += t.amount;
+            t.solde = solde;
+            m_Datas.transactions_filtered.push_back(t);
+            m_Datas.transactions_filtered_rowids.emplace(t.id);
+            if (t.amount < 0.0) {
+                m_TotalDebit += t.amount;
             }
-            if (tr.amount > 0.0) {
-                m_TotalCredit += tr.amount;
+            if (t.amount > 0.0) {
+                m_TotalCredit += t.amount;
             }
         }
     }
+}
+
+void AccountPane::m_FilterSelection() {
+    m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SELECTED_ROW_IDS;
+    m_FilteredSelectedTransactions = m_SelectedTransactions;
+    m_refreshFiltering();
 }
 
 void AccountPane::m_SelectOrDeselectRow(const Transaction& vTransaction) {
@@ -684,6 +719,29 @@ void AccountPane::m_SelectUnConfirmedTransactions() {
                     m_SelectedTransactions.emplace(vRowID);  // select row id
                 }
             });
+    }
+}
+
+void AccountPane::m_SelectEmptyColumn(const SearchColumns& vColumn) {
+    m_SelectedTransactions.clear();
+    for (const auto& t : m_Datas.transactions_filtered) {
+        if (vColumn == SearchColumns::SEARCH_COLUMN_COMMENT) {      
+            if (t.comment.empty()) {
+                m_SelectedTransactions.emplace(t.id);
+            }
+        } else if (vColumn == SearchColumns::SEARCH_COLUMN_ENTITY) {
+            if (t.entity.empty()) {
+                m_SelectedTransactions.emplace(t.id);
+            }
+        } else if (vColumn == SearchColumns::SEARCH_COLUMN_CATEGORY) {
+            if (t.category.empty()) {
+                m_SelectedTransactions.emplace(t.id);
+            }
+        } else if (vColumn == SearchColumns::SEARCH_COLUMN_OPERATION) {
+            if (t.operation.empty()) {
+                m_SelectedTransactions.emplace(t.id);
+            }
+        }  
     }
 }
 
@@ -873,6 +931,7 @@ void AccountPane::m_drawSearchRow() {
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
             if (m_SearchInputTexts.at(idx).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
                 m_SearchTokens[idx] = ct::toLower(m_SearchInputTexts.at(idx).GetText());
+                m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
                 change = true;
             }
             ImGui::PopStyleVar();
@@ -883,7 +942,10 @@ void AccountPane::m_drawSearchRow() {
         } else if (idx == 8) {
             // m_drawAmount(m_CurrentBaseSolde);
         } else if (idx == 9) {
-            ImGui::Text("[%u]", (uint32_t)m_Datas.transactions_filtered.size());
+            ImGui::Text(  //
+                "[%u/%u]",
+                (uint32_t)m_Datas.transactions_filtered.size(),
+                (uint32_t)m_Datas.transactions.size());
         }
     }
     if (reset) {

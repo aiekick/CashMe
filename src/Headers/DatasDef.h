@@ -37,6 +37,11 @@ typedef std::string DataBrokerName;
 typedef std::string DataBrokerWay;
 typedef std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> DataBrockerContainer;
 
+enum FilteringMode {  //
+    FILTERING_MODE_BY_SEARCH = 0,
+    FILTERING_MODE_BY_SELECTED_ROW_IDS
+};
+
 enum SearchColumns {  //
     SEARCH_COLUMN_DATE = 0,
     SEARCH_COLUMN_DESCRIPTION,

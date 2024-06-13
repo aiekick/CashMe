@@ -60,9 +60,11 @@ private:
 
     std::array<ImWidgets::InputText, SearchColumns::SEARCH_COLUMN_Count> m_SearchInputTexts;
     std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> m_SearchTokens;
+    FilteringMode m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
 
     // selection
     std::set<RowID> m_SelectedTransactions;
+    std::set<RowID> m_FilteredSelectedTransactions;
     int32_t m_CurrSelectedItemIdx = -1;
     int32_t m_LastSelectedItemIdx = -1;
 
@@ -102,8 +104,10 @@ private:
     bool m_IsRowSelected(const RowID& vRowID) const;
     void m_ResetSelection();
     void m_SelectCurrentRows();
+    void m_FilterSelection();
     void m_SelectPossibleDuplicateEntryOnPricesAndDates();
     void m_SelectUnConfirmedTransactions();
+    void m_SelectEmptyColumn(const SearchColumns& vColumn);
 
     void m_UpdateBanks();
     void m_UpdateAccounts();
