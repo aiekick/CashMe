@@ -174,6 +174,7 @@ void AccountPane::m_displayTransactions() {
         const float& item_h = ImGui::GetTextLineHeightWithSpacing();
         const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
         const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
+        m_CurrSelectedItemIdx = -1;
         m_TransactionsListClipper.Begin((int)m_Datas.transactions_filtered.size(), item_h);
         while (m_TransactionsListClipper.Step()) {
             max_price = 0.0;
@@ -223,6 +224,16 @@ void AccountPane::m_displayTransactions() {
                             m_TransactionDialog.setTransaction(t);
                             m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
                         } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                            if (ImGui::IsKeyDown(ImGuiMod_Shift)) {
+                                m_CurrSelectedItemIdx = idx;
+                            } else {
+                                m_LastSelectedItemIdx = idx; 
+                            }
+                            
+                            if (!ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
+                                m_ResetSelection();
+                            }
+
                             m_SelectOrDeselectRow(t);
                         }
                     }
@@ -311,6 +322,26 @@ void AccountPane::m_displayTransactions() {
             }
         }
         m_TransactionsListClipper.End();
+
+        if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
+            if (ImGui::IsKeyDown(ImGuiKey_A)) {
+                m_SelectCurrentRows();
+            }
+        }
+
+        // shift selection
+        if (ImGui::IsKeyDown(ImGuiMod_Shift) && m_LastSelectedItemIdx > -1 && m_CurrSelectedItemIdx > -1) {
+            int32_t min_idx = ImMin(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
+            int32_t max_idx = ImMax(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
+            m_ResetSelection();
+            for (int32_t nid = min_idx; nid < max_idx; ++nid) {
+                if (nid < m_Datas.transactions_filtered.size()) {
+                    const auto& t = m_Datas.transactions_filtered.at(nid);
+                    m_SelectOrDeselectRow(t);
+                }
+            }
+        }
+
         ImGui::EndTable();
     }
     ImGui::PopStyleVar();

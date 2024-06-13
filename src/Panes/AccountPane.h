@@ -63,6 +63,8 @@ private:
 
     // selection
     std::set<RowID> m_SelectedTransactions;
+    int32_t m_CurrSelectedItemIdx = -1;
+    int32_t m_LastSelectedItemIdx = -1;
 
     // accounts display
     std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
