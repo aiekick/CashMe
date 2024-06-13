@@ -56,3 +56,4 @@ endfunction()
 ## test_parseDescription
 SetTest("test_parseDescription_0")
 SetTest("test_parseDescription_1")
+SetTest("test_parseDescription_2")

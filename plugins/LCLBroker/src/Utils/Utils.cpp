@@ -9,7 +9,7 @@ bool parseDescription(const std::string& vDesc,  //
     if (!vDesc.empty()) {
         const auto& arr = ct::splitStringToVector(vDesc, ' ');
 
-        size_t found_date_pos = arr.size() - 1U;
+        size_t found_date_pos = arr.size();
         if (arr.size() > 0) {
             // search for date format : 25 03 24
             const auto date_word0 = arr.at(arr.size() - 1);

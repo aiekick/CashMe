@@ -44,6 +44,26 @@ bool test_parseDescription_1() {
     return true;
 }
 
+bool test_parseDescription_2() {
+    std::string entity;
+    std::string operation;
+    std::string description;
+    if (!parseDescription("CB TOTO VA AU ZOO", entity, operation, description)) {
+        return false;
+    }
+    if (entity != "TOTO VA AU ZOO") {
+        return false;
+    }
+    if (operation != "CB") {
+        return false;
+    }
+    if (description != "CB TOTO VA AU ZOO") {
+        return false;
+    }
+    return true;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 //// ENTRY POINT ///////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -59,5 +79,6 @@ bool test_parseDescription_1() {
 bool Test_Module(const std::string& vTest) {
     IfTestExist(test_parseDescription_0);
     else IfTestExist(test_parseDescription_1);
+    else IfTestExist(test_parseDescription_2);
     return true;
 }
