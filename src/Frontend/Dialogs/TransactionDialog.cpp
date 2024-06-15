@@ -125,18 +125,18 @@ void TransactionDialog::m_drawContentDeletion(const ImVec2& vPos) {
 
                 ImGui::TableNextColumn();
                 {
-                    if (t.amount < 0.0) {
+                    if (t.debit < 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-                        ImGui::Text("%.2f", t.amount);
+                        ImGui::Text("%.2f", t.debit);
                         ImGui::PopStyleColor();
                     }
                 }
 
                 ImGui::TableNextColumn();
                 {
-                    if (t.amount >= 0.0) {
+                    if (t.credit > 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-                        ImGui::Text("%.2f", t.amount);
+                        ImGui::Text("%.2f", t.credit);
                         ImGui::PopStyleColor();
                     }
                 }

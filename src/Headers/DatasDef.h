@@ -42,6 +42,13 @@ enum FilteringMode {  //
     FILTERING_MODE_BY_SELECTED_ROW_IDS
 };
 
+enum GroupingMode {  //
+    GROUPING_MODE_TRANSACTIONS = 0, // defaut per transation
+    GROUPING_MODE_DAYS,
+    GROUPING_MODE_MONTHS,
+    GROUPING_MODE_YEARS
+};
+
 enum SearchColumns {  //
     SEARCH_COLUMN_DATE = 0,
     SEARCH_COLUMN_DESCRIPTION,
@@ -94,6 +101,8 @@ struct Transaction {
     TransactionDate date;
     TransactionDescription description;
     TransactionComment comment;
+    TransactionDebit debit = 0.0;
+    TransactionCredit credit = 0.0;
     TransactionAmount amount = 0.0;
     TransactionSolde solde = 0.0;
     TransactionConfirmed confirmed = false;

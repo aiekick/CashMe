@@ -61,6 +61,7 @@ private:
     std::array<ImWidgets::InputText, SearchColumns::SEARCH_COLUMN_Count> m_SearchInputTexts;
     std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> m_SearchTokens;
     FilteringMode m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
+    GroupingMode m_GroupingMode = GroupingMode::GROUPING_MODE_TRANSACTIONS;
 
     // selection
     std::set<RowID> m_SelectedTransactions;
@@ -96,6 +97,8 @@ private:
     void m_drawImportMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawSelectMenu(FrameActionSystem& vFrameActionSystem);
     void m_drawDebugMenu(FrameActionSystem& vFrameActionSystem);
+    void m_drawGroupingMenu(FrameActionSystem& vFrameActionSystem);
+
     void m_Clear();
     void m_GetAvailableDataBrokers();
     void m_ResetFiltering();
@@ -108,7 +111,7 @@ private:
     void m_SelectPossibleDuplicateEntryOnPricesAndDates();
     void m_SelectUnConfirmedTransactions();
     void m_SelectEmptyColumn(const SearchColumns& vColumn);
-
+    void m_GroupTransactions(const GroupingMode& vGroupingMode);
     void m_UpdateBanks();
     void m_UpdateAccounts();
     void m_UpdateEntities(); 

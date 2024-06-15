@@ -143,6 +143,7 @@ void AccountPane::m_drawMenu(FrameActionSystem& vFrameActionSystem) {
 #ifdef _DEBUG
             m_drawDebugMenu(vFrameActionSystem);
 #endif
+            m_drawGroupingMenu(vFrameActionSystem);
             ImGui::EndMenuBar();
         }
     }
@@ -268,20 +269,20 @@ void AccountPane::m_displayTransactions() {
 
                 ImGui::TableNextColumn();
                 {
-                    if (t.amount < 0.0) {
+                    if (t.debit < 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-                        ImGui::Text("%.2f", t.amount);
-                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.amount);
+                        ImGui::Text("%.2f", t.debit);
+                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.debit);
                         ImGui::PopStyleColor();
                     }
                 }
 
                 ImGui::TableNextColumn();
                 {
-                    if (t.amount >= 0.0) {
+                    if (t.credit > 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-                        ImGui::Text("%.2f", t.amount);
-                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.amount);
+                        ImGui::Text("%.2f", t.credit);
+                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.credit);
                         ImGui::PopStyleColor();
                     }
                 }
@@ -452,6 +453,21 @@ void AccountPane::m_drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
             ImGui::EndMenu();
         }
         ImGui::EndMenu();
+    }
+}
+
+void AccountPane::m_drawGroupingMenu(FrameActionSystem& vFrameActionSystem) {
+    if (ImGui::MenuItem("I")) {
+        m_GroupTransactions(GroupingMode::GROUPING_MODE_TRANSACTIONS);
+    }
+    if (ImGui::MenuItem("D")) {
+        m_GroupTransactions(GroupingMode::GROUPING_MODE_DAYS);
+    }
+    if (ImGui::MenuItem("M")) {
+        m_GroupTransactions(GroupingMode::GROUPING_MODE_MONTHS);
+    }
+    if (ImGui::MenuItem("Y")) {
+        m_GroupTransactions(GroupingMode::GROUPING_MODE_YEARS);
     }
 }
 
@@ -652,16 +668,11 @@ void AccountPane::m_refreshFiltering() {
             use = (m_FilteredSelectedTransactions.find(t.id) != m_FilteredSelectedTransactions.end());        
         }
         if (use) {
-            solde += t.amount;
-            t.solde = solde;
+            t.solde = solde += t.debit + t.credit;
             m_Datas.transactions_filtered.push_back(t);
             m_Datas.transactions_filtered_rowids.emplace(t.id);
-            if (t.amount < 0.0) {
-                m_TotalDebit += t.amount;
-            }
-            if (t.amount > 0.0) {
-                m_TotalCredit += t.amount;
-            }
+            m_TotalDebit += t.debit;
+            m_TotalCredit += t.credit;
         }
     }
 }
@@ -742,6 +753,14 @@ void AccountPane::m_SelectEmptyColumn(const SearchColumns& vColumn) {
                 m_SelectedTransactions.emplace(t.id);
             }
         }  
+    }
+}
+
+void AccountPane::m_GroupTransactions(const GroupingMode& vGroupingMode) {
+    m_GroupingMode = vGroupingMode;
+    if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
+        m_UpdateTransactions(m_Datas.accounts.at(m_SelectedAccountIdx).id);
+        m_refreshFiltering();
     }
 }
 
@@ -834,43 +853,67 @@ void AccountPane::m_UpdateTransactions(const RowID& vAccountID) {
     if (zero_based_account_id < m_Datas.accounts.size()) {
         double solde = m_CurrentBaseSolde = m_Datas.accounts.at(zero_based_account_id).base_solde;
         const auto& account_number = m_Datas.accounts.at(zero_based_account_id).number;
-        DataBase::Instance()->GetTransactions(  //
-            vAccountID,                         //
-            [this, &solde, account_number](     //
-                const RowID& vTransactionID,
-                const EntityName& vEntityName,
-                const OperationName& vOperationName,
-                const CategoryName& vCategoryName,
-                const SourceName& vSourceName,
-                const TransactionDate& vTransactionDate,
-                const TransactionDescription& vTransactionDescription,
-                const TransactionComment& vTransactionComment,
-                const TransactionAmount& vTransactionAmount,
-                const TransactionConfirmed& vConfirmed,
-                const TransactionHash& vHash) {  //
-                solde += vTransactionAmount;
-                Transaction t;
-                t.id = vTransactionID;
-                t.account = account_number;
-                t.date = vTransactionDate;
-                t.optimized[0] = ct::toLower(vTransactionDate);
-                t.description = vTransactionDescription;
-                t.optimized[1] = ct::toLower(vTransactionDescription);
-                t.comment = vTransactionComment;
-                t.optimized[2] = ct::toLower(vTransactionComment);
-                t.entity = vEntityName;
-                t.optimized[3] = ct::toLower(vEntityName);
-                t.category = vCategoryName;
-                t.optimized[4] = ct::toLower(vCategoryName);
-                t.operation = vOperationName;
-                t.optimized[5] = ct::toLower(vOperationName);
-                t.hash = vHash;
-                t.source = vSourceName;
-                t.amount = vTransactionAmount;
-                t.confirmed = vConfirmed;
-                t.solde = solde;
-                m_Datas.transactions.push_back(t);
-            });
+        if (m_GroupingMode == GroupingMode::GROUPING_MODE_TRANSACTIONS) {
+            DataBase::Instance()->GetTransactions(  //
+                vAccountID,                         //
+                [this, &solde, account_number](     //
+                    const RowID& vTransactionID,
+                    const EntityName& vEntityName,
+                    const OperationName& vOperationName,
+                    const CategoryName& vCategoryName,
+                    const SourceName& vSourceName,
+                    const TransactionDate& vDate,
+                    const TransactionDescription& vDescription,
+                    const TransactionComment& vComment,
+                    const TransactionAmount& vAmount,
+                    const TransactionConfirmed& vConfirmed,
+                    const TransactionHash& vHash) {  //
+                    solde += vAmount;
+                    Transaction t;
+                    t.id = vTransactionID;
+                    t.account = account_number;
+                    t.optimized[0] = ct::toLower(t.date = vDate);
+                    t.optimized[1] = ct::toLower(t.description = vDescription);
+                    t.optimized[2] = ct::toLower(t.comment = vComment);
+                    t.optimized[3] = ct::toLower(t.entity = vEntityName);
+                    t.optimized[4] = ct::toLower(t.category = vCategoryName);
+                    t.optimized[5] = ct::toLower(t.operation = vOperationName);
+                    t.hash = vHash;
+                    t.source = vSourceName;
+                    t.debit = vAmount < 0.0 ? vAmount : 0.0;
+                    t.credit = vAmount > 0.0 ? vAmount : 0.0;
+                    t.amount = vAmount;
+                    t.confirmed = vConfirmed;
+                    t.solde = solde;
+                    m_Datas.transactions.push_back(t);
+                });
+        } else {
+            DataBase::Instance()->GetGroupedTransactions(  //
+                vAccountID,
+                GroupBy::DATES,
+                (DateFormat)(m_GroupingMode-1),
+                [this](                                    //
+                    const RowID& vRowID,
+                    const TransactionDate& vTransactionDate,
+                    const TransactionDescription& vTransactionDescription,
+                    const EntityName& vEntityName,
+                    const CategoryName& vCategoryName,
+                    const OperationName& vOperationName,
+                    const TransactionDebit& vTransactionDebit,
+                    const TransactionCredit& vTransactionCredit) {
+                    Transaction t;
+                    t.id = vRowID;
+                    t.date = vTransactionDate;
+                    t.description = "-- grouped --";
+                    t.entity = "-- grouped --";
+                    t.category = "-- grouped --";
+                    t.operation = "-- grouped --";
+                    t.debit = vTransactionDebit;
+                    t.credit = vTransactionCredit;
+                    t.amount = vTransactionDebit + vTransactionCredit;
+                    m_Datas.transactions.push_back(t);
+                });
+        }
     }
     m_refreshFiltering();
 }

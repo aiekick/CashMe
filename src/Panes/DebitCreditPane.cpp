@@ -103,10 +103,10 @@ void DebitCreditPane::m_drawMenu() {
             m_UpdateAccounts();
         }
         if (m_DateFormatCombo.displayCombo(200.0f, " Date format")) {
-            m_UpdateTransactions(m_Accounts.at(m_AccountsCombo.getIndex()).id);
+         //  m_UpdateTransactions(m_Accounts.at(m_AccountsCombo.getIndex()).id);
         }
         if (m_GroupByCombo.displayCombo(200.0f, " Group by")) {
-            m_UpdateTransactions(m_Accounts.at(m_AccountsCombo.getIndex()).id);
+         //   m_UpdateTransactions(m_Accounts.at(m_AccountsCombo.getIndex()).id);
         }
         if (ImGui::SliderDoubleDefaultCompact(150.0f, "Bar Width", &m_BarHalfWidthPercent, 0.0, 0.5, 0.3)) {
             m_ComptueBarsWidth();
@@ -326,38 +326,7 @@ void DebitCreditPane::m_UpdateAccounts() {
             m_Accounts.push_back(a);
             m_AccountsCombo.getArrayRef().push_back(vAccountNumber);
         });
-    m_UpdateTransactions(m_Accounts.at(m_AccountsCombo.getIndex()).id);
-}
-
-void DebitCreditPane::m_UpdateTransactions(const RowID& vAccountID) {
-    m_Transactions.clear();
-    DataBase::Instance()->GetGroupedTransactions(  //
-        vAccountID,
-        (GroupBy)m_GroupByCombo.getIndex(),        //
-        (DateFormat)m_DateFormatCombo.getIndex(),  //
-        [this](                                    //
-            const RowID& vRowID,
-            const TransactionDate& vTransactionDate,
-            const TransactionDescription& vTransactionDescription,
-            const EntityName& vEntityName,
-            const CategoryName& vCategoryName,
-            const OperationName& vOperationName,
-            const TransactionDebit& vTransactionDebit,
-            const TransactionCredit& vTransactionCredit) {
-            GroupedTransaction t;
-            t.id = vRowID;
-            t.date = vTransactionDate;
-            t.description = vTransactionDescription;
-            t.entity = vEntityName;
-            t.category = vCategoryName;
-            t.operation = vOperationName;
-            t.debit = vTransactionDebit;
-            t.credit = vTransactionCredit;
-            t.amount = vTransactionDebit + vTransactionCredit;
-            m_Transactions.push_back(t);
-        });
-    m_UpdateBarDatas();
-    LogVarDebugInfo("Count Transactions : %u", (uint32_t)m_Transactions.size());
+   // m_UpdateTransactions(m_Accounts.at(m_AccountsCombo.getIndex()).id);
 }
 
 void DebitCreditPane::m_UpdateBarDatas() {

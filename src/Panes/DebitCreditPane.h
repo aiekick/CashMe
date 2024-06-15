@@ -67,7 +67,6 @@ private:
     void m_drawBuySellGraph();
     void m_drawBuySellList();
     void m_UpdateAccounts();
-    void m_UpdateTransactions(const RowID& vAccountID);
     void m_UpdateBarDatas();
     void m_ComptueBarsWidth();
 
