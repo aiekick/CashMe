@@ -10,13 +10,8 @@
 #include <vector>
 #include <functional>
 
-struct ImportWorkerThreadDatas {
-
-};
-
 class ImportWorkerThread {
 private:
-    // static ImportWorkerThreadDatas *s_ThreadDatas;
     static std::mutex s_Mutex;
     static std::atomic<float> a_Progress;  // [0.0:1.0]
     static std::atomic<bool> a_Working;

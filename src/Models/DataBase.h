@@ -64,12 +64,24 @@ public:
     void AddCategory(const CategoryName& vCategoryName);
     bool GetCategory(const CategoryName& vUserName, RowID& vOutRowID);
     void GetCategories(std::function<void(const CategoryName&)> vCallback);
+    void GetCategoriesStats(  //
+        const RowID& vAccountID,
+        std::function<void(  //
+            const CategoryName&,
+            const TransactionDebit&,
+            const TransactionCredit&)> vCallback);
     void UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName);
     void DeleteCategories();
 
     void AddOperation(const OperationName& vOperationName);
     bool GetOperation(const OperationName& vUserName, RowID& vOutRowID);
     void GetOperations(std::function<void(const OperationName&)> vCallback);
+    void GetOperationsStats(  //
+        const RowID& vAccountID,
+        std::function<void(  //
+            const OperationName&,
+            const TransactionDebit&,
+            const TransactionCredit&)> vCallback);
     void UpdateOperation(const RowID& vRowID, const OperationName& vOperationName);
     void DeleteOperations();
 

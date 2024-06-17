@@ -25,9 +25,11 @@ limitations under the License.
 #include <Models/DataBase.h>
 
 #include <LayoutManager.h>
-#include <Panes/AccountPane.h>
 #include <Panes/StatsPane.h>
+#include <Panes/AccountPane.h>
 #include <Panes/EntitiesPane.h>
+#include <Panes/CategoriesPane.h>
+#include <Panes/OperationsPane.h>
 
 #include <Plugins/PluginManager.h>
 #include <Systems/SettingsDialog.h>
@@ -106,6 +108,8 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                     AccountPane::Instance()->Load();
                     StatsPane::Instance()->Load();
                     EntitiesPane::Instance()->Load();
+                    CategoriesPane::Instance()->Load();
+                    OperationsPane::Instance()->Load();
                     SetProjectChange(false);
                 } else {
                     Clear();

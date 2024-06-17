@@ -228,6 +228,6 @@ void ImportWorkerThread::m_worker(  //
     }
     // For the thread can be joined, the flow must quit the function
     // The vWorking atomic control boolean is the way for quit during the run
-    // in a normal case (no suer stop), the join will be called only if the atomic vWorking is false
+    // in a normal case (no user stop), the join will be called only if the atomic vWorking is false
     vWorking = false;
 }

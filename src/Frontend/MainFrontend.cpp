@@ -32,6 +32,8 @@ limitations under the License.
 #include <Panes/ConsolePane.h>
 #include <Panes/AccountPane.h>
 #include <Panes/EntitiesPane.h>
+#include <Panes/CategoriesPane.h>
+#include <Panes/OperationsPane.h>
 
 #include <Systems/SettingsDialog.h>
 
@@ -79,6 +81,8 @@ bool MainFrontend::init() {
     LayoutManager::Instance()->AddPane(StatsPane::Instance(), "Statistics", "", "CENTRAL", 0.0f, false, false);
     LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget", "", "CENTRAL", 0.0f, false, false);
     LayoutManager::Instance()->AddPane(EntitiesPane::Instance(), "Entities", "", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(CategoriesPane::Instance(), "Categories", "", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(OperationsPane::Instance(), "Operations", "", "CENTRAL", 0.0f, false, false);
     LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console", "", "BOTTOM", 0.25f, false, false);  
 
     // InitPanes is done in m_InitPanes, because a specific order is needed
