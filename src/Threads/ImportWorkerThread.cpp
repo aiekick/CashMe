@@ -192,8 +192,8 @@ void ImportWorkerThread::m_worker(  //
                                 DataBase::Instance()->AddTransaction(  //
                                     account_id,
                                     stm.entity,
-                                    stm.operation,
                                     stm.category,
+                                    stm.operation,
                                     stm.source,
                                     stm.source_type,
                                     stm.source_sha1,

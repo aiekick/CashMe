@@ -21,6 +21,10 @@ bool EntitiesPane::Init() {
 void EntitiesPane::Unit() {
 }
 
+void EntitiesPane::Load() {
+    m_EntitiesTable.load();
+}
+
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
@@ -63,8 +67,4 @@ bool EntitiesPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const
 bool EntitiesPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
-}
-
-void EntitiesPane::Load() {
-    m_EntitiesTable.load();
 }
