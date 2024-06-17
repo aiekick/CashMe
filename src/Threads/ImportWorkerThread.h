@@ -25,7 +25,6 @@ private:
 
 private:
     std::thread m_WorkerThread;
-    float m_GenerationTime = 0.0f;
     std::function<void()> m_FinishFunc;
     std::function<void()> m_CancelFunc;
     const char* m_Title = nullptr;

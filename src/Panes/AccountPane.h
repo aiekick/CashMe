@@ -119,6 +119,8 @@ private:
     void m_UpdateOperations();
     void m_UpdateTransactions(const RowID& vAccountID);
 
+    bool m_IsGroupingModeTransactions();
+
     void m_drawAccountMenu(const Account& vAccount);
     void m_drawTransactionMenu(const Transaction& vTransaction);
     void m_drawSearchRow();
@@ -134,7 +136,7 @@ public:  // singleton
 
 public:
     AccountPane();                              // Prevent construction
-    AccountPane(const AccountPane&) = default;  // Prevent construction by copying
+    AccountPane(const AccountPane&) = delete;  // Prevent construction by copying
     AccountPane& operator=(const AccountPane&) {
         return *this;
     };                       // Prevent assignment

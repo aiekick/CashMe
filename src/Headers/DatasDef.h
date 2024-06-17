@@ -9,32 +9,48 @@
 #include <apis/CashMePluginApi.h>
 
 typedef std::string DBFile;
+
 typedef uint32_t RowID;
+
 typedef std::string BankName;
 typedef std::string BankUrl;
 typedef std::string BankAgency;
+
 typedef std::string SourceName;
 typedef std::string SourceType;
 typedef std::string SourceSha;
+
 typedef std::string AccountType;
 typedef std::string AccountName;
-typedef std::string EntityName;
-typedef std::string CategoryName;
-typedef std::string OperationName;
 typedef std::string AccountNumber;
 typedef double AccounBaseSolde;
+
+typedef std::string EntityName;
+
+typedef std::string CategoryName;
+
+typedef std::string OperationName;
+
 typedef std::string TransactionDate;
 typedef std::string TransactionDescription;
 typedef std::string TransactionComment;
 typedef double TransactionAmount;
-typedef double TransactionCredit;
 typedef double TransactionDebit;
+typedef double TransactionCredit;
 typedef double TransactionSolde;
 typedef bool TransactionConfirmed;
 typedef uint32_t TransactionsCount;
 typedef std::string TransactionHash;
+
 typedef std::string DataBrokerName;
 typedef std::string DataBrokerWay;
+
+typedef std::string IncomeName;
+typedef std::string IncomeDate;
+typedef double IncomeAmount;
+typedef int32_t IncomeDelayDays;
+typedef std::string IncomeHash;
+
 typedef std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> DataBrockerContainer;
 
 enum FilteringMode {  //
@@ -65,22 +81,28 @@ struct Bank {
     BankUrl url;
 };
 
-struct Entity {
+struct AmountStats {
+    TransactionDebit debit = 0.0;
+    TransactionCredit credit = 0.0;
+    TransactionAmount amount = 0.0;
+};
+
+struct Entity : public AmountStats {
     RowID id = 0;
     EntityName name;
 };
 
-struct Category {
+struct Category : public AmountStats {
     RowID id = 0;
     CategoryName name;
 };
 
-struct Operation {
+struct Operation : public AmountStats {
     RowID id = 0;
     OperationName name;
 };
 
-struct Account {
+struct Account : public AmountStats {
     RowID id = 0;
     BankName bank;
     BankAgency agency;
@@ -91,12 +113,27 @@ struct Account {
     TransactionsCount count = 0U;
 };
 
+struct Income {
+    RowID id = 0;
+    std::set<RowID> accounts;
+    EntityName entity;
+    CategoryName category;
+    OperationName operation;
+    IncomeDate startDate;
+    IncomeDate endDate;
+    IncomeAmount minAmount = 0.0;
+    IncomeAmount maxAmount = 0.0;
+    IncomeDelayDays minDays = 0U;
+    IncomeDelayDays maxDays = 0U;
+    IncomeHash hash;
+};
+
 struct Transaction {
     RowID id = 0;
     AccountNumber account;
     EntityName entity;
-    OperationName operation;
     CategoryName category;
+    OperationName operation;
     SourceName source;
     TransactionDate date;
     TransactionDescription description;

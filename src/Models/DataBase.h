@@ -25,10 +25,6 @@ limitations under the License.
 enum class DateFormat { DAYS = 0, MONTHS, YEARS, Count };
 enum class GroupBy { DATES = 0, ENTITIES, OPERATIONS, CATEGORIES, DESCRIPTIONS, Count };
 
-class DataBaseTable {
-public:
-};
-
 struct sqlite3;
 class DataBase {
 private:
@@ -56,6 +52,12 @@ public:
     void AddEntity(const EntityName& vEntityName);
     bool GetEntity(const EntityName& vUserName, RowID& vOutRowID);
     void GetEntities(std::function<void(const EntityName&)> vCallback);
+    void GetEntitiesStats(  //
+        const RowID& vAccountID,
+        std::function<void(  //
+            const EntityName&,
+            const TransactionDebit&,
+            const TransactionCredit&)> vCallback);
     void UpdateEntity(const RowID& vRowID, const EntityName& vEntityName);
     void DeleteEntities();
 
@@ -115,11 +117,25 @@ public:
     void DeleteAccount(const RowID& vRowID);
     void DeleteAccounts();
 
+    void AddIncome(  //
+        std::set<RowID> vAccountIDs,
+        const IncomeName& vIncomeName,
+        const EntityName& vEntityName,
+        const CategoryName& vCategoryName,
+        const OperationName& vOperationName,
+        const IncomeDate& vStartDate,
+        const IncomeDate& vEndDate,
+        const IncomeAmount& vMinAmount,
+        const IncomeAmount& vMaxAmount,
+        const IncomeDelayDays& vMinDays,
+        const IncomeDelayDays& vMaxDays,
+        const IncomeHash& vHash);
+
     void AddTransaction(  //
         const RowID& vAccountID,
         const EntityName& vEntityName,
-        const OperationName& vOperationName,
         const CategoryName& vCategoryName,
+        const OperationName& vOperationName,
         const SourceName& vSourceName,
         const SourceType& vSourceType,
         const SourceSha& vSourceSha,
@@ -134,8 +150,8 @@ public:
         std::function<void(  //
             const RowID&,
             const EntityName&,
-            const OperationName&,
             const CategoryName&,
+            const OperationName&,
             const SourceName&,
             const TransactionDate&,
             const TransactionDescription&,
@@ -166,8 +182,8 @@ public:
     void UpdateTransaction(  //
         const RowID& vRowID,
         const EntityName& vEntityName,
-        const OperationName& vOperationName,
         const CategoryName& vCategoryName,
+        const OperationName& vOperationName,
         const SourceName& vSourceName,
         const TransactionDate& vDate,
         const TransactionDescription& vDescription,
@@ -193,6 +209,10 @@ private:
     bool m_CreateDB();
     void m_CreateDBTables(const bool& vPrintLogs = true);
     bool m_EnableForeignKey();
+    bool m_LinkOneIncomeWithManyAccounts(  //
+        const RowID& vIncomeID,
+        std::set<RowID> vAccountIDs
+    );
 
 public:  // singleton
     static std::shared_ptr<DataBase> Instance() {

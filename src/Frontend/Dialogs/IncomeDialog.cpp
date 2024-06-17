@@ -1,33 +1,33 @@
-#include "TransactionDialog.h"
+#include "IncomeDialog.h"
 #include <Models/DataBase.h>
 #include <ctools/cTools.h>
 
 #define MULTIPLE_VALUES "Many values"
 
-TransactionDialog::TransactionDialog() : ADataDialog("TransactionModalPopup") {
+IncomeDialog::IncomeDialog() : ADataDialog("IncomeModalPopup") {
 }
 
-bool TransactionDialog::init() {
+bool IncomeDialog::init() {
     return true;
 }
 
-void TransactionDialog::unit() {
+void IncomeDialog::unit() {
 
 }
 
-void TransactionDialog::setTransaction(const Transaction& vTransaction) {
-    m_TransactionToUpdate = vTransaction;
+void IncomeDialog::setIncome(const Income& vIncome) {
+    m_IncomeToUpdate = vIncome;
 }
 
-void TransactionDialog::setTransactionsToUpdate(const std::vector<Transaction>& vTransactions) {
-    m_TransactionsToUpdate = vTransactions;
+void IncomeDialog::setIncomesToUpdate(const std::vector<Income>& vIncomes) {
+    m_IncomesToUpdate = vIncomes;
 }
 
-void TransactionDialog::setTransactionsToDelete(const std::vector<Transaction>& vTransactions) {
-    m_TransactionsToDelete = vTransactions;
+void IncomeDialog::setIncomesToDelete(const std::vector<Income>& vIncomes) {
+    m_IncomesToDelete = vIncomes;
 }
 
-void TransactionDialog::m_drawContent(const ImVec2& vPos) {
+void IncomeDialog::m_drawContent(const ImVec2& vPos) {
     const auto& mode = getCurrentMode();
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
@@ -46,47 +46,47 @@ void TransactionDialog::m_drawContent(const ImVec2& vPos) {
     }
 }
 
-void TransactionDialog::m_drawContentCreation(const ImVec2& vPos) {
+void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayCombo(width, "Account", align);
     m_EntitiesCombo.displayCombo(width, "Entity", align);
     m_CategoriesCombo.displayCombo(width, "Category", align);
     m_OperationsCombo.displayCombo(width, "Operation", align);
-    m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
-    m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
-    m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
-    ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble); });
-    ImGui::DisplayAlignedWidget(width, "Confirmed", align, [this]() { ImGui::CheckBoxBoolDefault("##Confirmed", &m_TransactionConfirmed, false); });
+    m_IncomeDateInputText.DisplayInputText(width, "Date", "", false, align);
+    m_IncomeDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
+    m_IncomeCommentInputText.DisplayInputText(width, "Comment", "", false, align);
+    ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_IncomeAmountInputDouble); });
+    ImGui::DisplayAlignedWidget(width, "Confirmed", align, [this]() { ImGui::CheckBoxBoolDefault("##Confirmed", &m_IncomeConfirmed, false); });
 }
 
-void TransactionDialog::m_drawContentUpdate(const ImVec2& vPos) {
+void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayCombo(width, "Account", align);
     m_EntitiesCombo.displayCombo(width, "Entity", align);
     m_CategoriesCombo.displayCombo(width, "Category", align);
     m_OperationsCombo.displayCombo(width, "Operation", align);
-    m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
-    m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
-    m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
+    m_IncomeDateInputText.DisplayInputText(width, "Date", "", false, align);
+    m_IncomeDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
+    m_IncomeCommentInputText.DisplayInputText(width, "Comment", "", false, align);
     // the update all if for descriptive items buit not for amounrt
     if (getCurrentMode() != DataDialogMode::MODE_UPDATE_ALL) {
-        ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble); });
+        ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_IncomeAmountInputDouble); });
     }
     ImGui::DisplayAlignedWidget(width, "Confirmed", align, [this]() {
-        if (!m_TransactionConfirmedManyValues) {
-            ImGui::CheckBoxBoolDefault("##Confirmed", &m_TransactionConfirmed, false);
+        if (!m_IncomeConfirmedManyValues) {
+            ImGui::CheckBoxBoolDefault("##Confirmed", &m_IncomeConfirmed, false);
         } else {
             ImGui::Text("%s", "Many Values. not editable");
         }
     });
 }
 
-void TransactionDialog::m_drawContentDeletion(const ImVec2& vPos) {
-    const auto& displaySize = ImGui::GetIO().DisplaySize * 0.5f;
+void IncomeDialog::m_drawContentDeletion(const ImVec2& vPos) {
+    /*const auto& displaySize = ImGui::GetIO().DisplaySize * 0.5f;
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("##TransactionsToDelete", 5, flags, displaySize)) {
+    if (ImGui::BeginTable("##IncomesToDelete", 5, flags, displaySize)) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
@@ -99,14 +99,14 @@ void TransactionDialog::m_drawContentDeletion(const ImVec2& vPos) {
         const float& item_h = ImGui::GetTextLineHeightWithSpacing();
         const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
         const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
-        m_TransactionsDeletionListClipper.Begin((int)m_TransactionsToDelete.size(), item_h);
-        while (m_TransactionsDeletionListClipper.Step()) {
-            for (idx = m_TransactionsDeletionListClipper.DisplayStart; idx < m_TransactionsDeletionListClipper.DisplayEnd; ++idx) {
+        m_IncomesDeletionListClipper.Begin((int)m_IncomesToDelete.size(), item_h);
+        while (m_IncomesDeletionListClipper.Step()) {
+            for (idx = m_IncomesDeletionListClipper.DisplayStart; idx < m_IncomesDeletionListClipper.DisplayEnd; ++idx) {
                 if (idx < 0) {
                     continue;
                 }
 
-                const auto& t = m_TransactionsToDelete.at(idx);
+                const auto& t = m_IncomesToDelete.at(idx);
 
                 ImGui::TableNextRow();
 
@@ -118,10 +118,10 @@ void TransactionDialog::m_drawContentDeletion(const ImVec2& vPos) {
                 }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text("%s", t.date.c_str()); }
+                { ImGui::Text(t.date.c_str()); }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text("%s", t.description.c_str()); }
+                { ImGui::Text(t.description.c_str()); }
 
                 ImGui::TableNextColumn();
                 {
@@ -142,74 +142,74 @@ void TransactionDialog::m_drawContentDeletion(const ImVec2& vPos) {
                 }
             }
         }
-        m_TransactionsDeletionListClipper.End();
+        m_IncomesDeletionListClipper.End();
         ImGui::EndTable();
 
         if (idx_to_delete > -1) {
-            m_TransactionsToDelete.erase(m_TransactionsToDelete.begin() + idx_to_delete);
+            m_IncomesToDelete.erase(m_IncomesToDelete.begin() + idx_to_delete);
         }
-    }
+    }*/
 }
 
-void TransactionDialog::m_prepare() {
+void IncomeDialog::m_prepare() {
     m_UpdateAccounts();
     m_UpdateEntities();
     m_UpdateOperations();
     m_UpdateCategories();
-    m_TransactionConfirmedManyValues = false;
+    m_IncomeConfirmedManyValues = false;
     if (getCurrentMode() == DataDialogMode::MODE_UPDATE_ALL) {
-        if (!m_TransactionsToUpdate.empty()) {
-            m_TransactionToUpdate = m_TransactionsToUpdate.at(0);
-            for (const auto& t : m_TransactionsToUpdate) {
-                if (m_TransactionToUpdate.entity != t.entity) {
-                    m_TransactionToUpdate.entity = "Many values";
+        /*if (!m_IncomesToUpdate.empty()) {
+            m_IncomeToUpdate = m_IncomesToUpdate.at(0);
+            for (const auto& t : m_IncomesToUpdate) {
+                if (m_IncomeToUpdate.entity != t.entity) {
+                    m_IncomeToUpdate.entity = "Many values";
                 }
-                if (m_TransactionToUpdate.category != t.category) {
-                    m_TransactionToUpdate.category = "Many values";
+                if (m_IncomeToUpdate.category != t.category) {
+                    m_IncomeToUpdate.category = "Many values";
                 }
-                if (m_TransactionToUpdate.operation != t.operation) {
-                    m_TransactionToUpdate.operation = "Many values";
+                if (m_IncomeToUpdate.operation != t.operation) {
+                    m_IncomeToUpdate.operation = "Many values";
                 }
-                if (m_TransactionToUpdate.date != t.date) {
-                    m_TransactionToUpdate.date = "Many values";
+                if (m_IncomeToUpdate.date != t.date) {
+                    m_IncomeToUpdate.date = "Many values";
                 }
-                if (m_TransactionToUpdate.description != t.description) {
-                    m_TransactionToUpdate.description = "Many values";
+                if (m_IncomeToUpdate.description != t.description) {
+                    m_IncomeToUpdate.description = "Many values";
                 }
-                if (m_TransactionToUpdate.comment != t.comment) {
-                    m_TransactionToUpdate.comment = "Many values";
+                if (m_IncomeToUpdate.comment != t.comment) {
+                    m_IncomeToUpdate.comment = "Many values";
                 }
-                if (m_TransactionToUpdate.confirmed != t.confirmed) {
-                    m_TransactionConfirmedManyValues = true;
+                if (m_IncomeToUpdate.confirmed != t.confirmed) {
+                    m_IncomeConfirmedManyValues = true;
                 }
             }
-        }
+        }*/
     }
-    m_SourceName = m_TransactionToUpdate.source;
-    m_AccountsCombo.select(m_TransactionToUpdate.account);
-    m_EntitiesCombo.setText(m_TransactionToUpdate.entity);
-    m_CategoriesCombo.setText(m_TransactionToUpdate.category);
-    m_OperationsCombo.setText(m_TransactionToUpdate.operation);
-    m_TransactionDateInputText.SetText(m_TransactionToUpdate.date);
-    m_TransactionDescriptionInputText.SetText(m_TransactionToUpdate.description);
-    m_TransactionCommentInputText.SetText(m_TransactionToUpdate.comment);
-    m_TransactionAmountInputDouble = m_TransactionToUpdate.amount;
-    m_TransactionConfirmed = m_TransactionToUpdate.confirmed;
+    /*m_SourceName = m_IncomeToUpdate.source;
+    m_AccountsCombo.select(m_IncomeToUpdate.account);
+    m_EntitiesCombo.setText(m_IncomeToUpdate.entity);
+    m_CategoriesCombo.setText(m_IncomeToUpdate.category);
+    m_OperationsCombo.setText(m_IncomeToUpdate.operation);
+    m_IncomeDateInputText.SetText(m_IncomeToUpdate.date);
+    m_IncomeDescriptionInputText.SetText(m_IncomeToUpdate.description);
+    m_IncomeCommentInputText.SetText(m_IncomeToUpdate.comment);
+    m_IncomeAmountInputDouble = m_IncomeToUpdate.amount;
+    m_IncomeConfirmed = m_IncomeToUpdate.confirmed;*/
 }
 
-const char* TransactionDialog::m_getTitle() const {
+const char* IncomeDialog::m_getTitle() const {
     const auto& mode = getCurrentMode();
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
-            return "Transaction Creation";
+            return "Income Creation";
         } break;
         case DataDialogMode::MODE_DELETE_ONCE:
         case DataDialogMode::MODE_DELETE_ALL: {
-            return "Transaction Deletion";
+            return "Income Deletion";
         } break;
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: {
-            return "Transaction Update";
+            return "Income Update";
         } break;
         case DataDialogMode::MODE_NONE:
         default: break;
@@ -217,12 +217,12 @@ const char* TransactionDialog::m_getTitle() const {
     return "";
 }
 
-bool TransactionDialog::m_canConfirm() {
+bool IncomeDialog::m_canConfirm() {
     const auto& mode = getCurrentMode();
     switch (mode) {
         case DataDialogMode::MODE_CREATION: return true;
         case DataDialogMode::MODE_DELETE_ONCE:
-        case DataDialogMode::MODE_DELETE_ALL: return !m_TransactionsToDelete.empty();
+        case DataDialogMode::MODE_DELETE_ALL: return !m_IncomesToDelete.empty();
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: return true;
         case DataDialogMode::MODE_NONE:
@@ -231,7 +231,7 @@ bool TransactionDialog::m_canConfirm() {
     return false;
 }
 
-void TransactionDialog::m_confirmDialog() {
+void IncomeDialog::m_confirmDialog() {
     const auto& mode = getCurrentMode();
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
@@ -252,22 +252,22 @@ void TransactionDialog::m_confirmDialog() {
     }    
 }
 
-void TransactionDialog::m_cancelDialog() {
+void IncomeDialog::m_cancelDialog() {
 }
 
-void TransactionDialog::m_confirmDialogCreation() {
-    RowID account_id = 0U;
+void IncomeDialog::m_confirmDialogCreation() {
+    /*RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
             const auto hash = ct::toStr(  //
                 "%s_%s_%f",               //
-                m_TransactionDateInputText.GetText().c_str(),
+                m_IncomeDateInputText.GetText().c_str(),
                 // un fichier ofc ne peut pas avoir des labels de longueur > a 30
                 // alors on limite le hash a utiliser un label de 30
                 // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
-                m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
-                m_TransactionAmountInputDouble);              // must be unique per oepration
-            DataBase::Instance()->AddTransaction(             //
+                m_IncomeDescriptionInputText.GetText().substr(0, 30).c_str(),
+                m_IncomeAmountInputDouble);              // must be unique per oepration
+            DataBase::Instance()->AddIncome(             //
                 account_id,                                   //
                 m_EntitiesCombo.getText(),                    //
                 m_CategoriesCombo.getText(),                  //
@@ -275,55 +275,55 @@ void TransactionDialog::m_confirmDialogCreation() {
                 m_SourceName,                                 //
                 m_SourceType,                                 //
                 m_SourceSha,                                  //
-                m_TransactionDateInputText.GetText(),         //
-                m_TransactionDescriptionInputText.GetText(),  //
-                m_TransactionCommentInputText.GetText(),      //
-                m_TransactionAmountInputDouble,               //
+                m_IncomeDateInputText.GetText(),         //
+                m_IncomeDescriptionInputText.GetText(),  //
+                m_IncomeCommentInputText.GetText(),      //
+                m_IncomeAmountInputDouble,               //
                 false,                                        //
                 hash);
             DataBase::Instance()->CloseDBFile();
         }
-    }
+    }*/
 }
 
-void TransactionDialog::m_confirmDialogUpdateOnce() {
-    RowID account_id = 0U;
+void IncomeDialog::m_confirmDialogUpdateOnce() {
+    /*RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
             const auto hash = ct::toStr(  //
                 "%s_%s_%f",               //
-                m_TransactionDateInputText.GetText().c_str(),
+                m_IncomeDateInputText.GetText().c_str(),
                 // un fichier ofc ne peut pas avoir des labels de longueur > a 30
                 // alors on limite le hash a utiliser un label de 30
                 // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
-                m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
-                m_TransactionAmountInputDouble);  // must be unique per operation
+                m_IncomeDescriptionInputText.GetText().substr(0, 30).c_str(),
+                m_IncomeAmountInputDouble);  // must be unique per operation
             DataBase::Instance()->AddEntity(m_EntitiesCombo.getText());
             DataBase::Instance()->AddCategory(m_CategoriesCombo.getText());
             DataBase::Instance()->AddOperation(m_OperationsCombo.getText());
-            DataBase::Instance()->UpdateTransaction(          //
-                m_TransactionToUpdate.id,                     //
+            DataBase::Instance()->UpdateIncome(          //
+                m_IncomeToUpdate.id,                     //
                 m_EntitiesCombo.getText(),                    //
                 m_CategoriesCombo.getText(),                  //
                 m_OperationsCombo.getText(),                  //
                 m_SourceName,                                 //
-                m_TransactionDateInputText.GetText(),         //
-                m_TransactionDescriptionInputText.GetText(),  //
-                m_TransactionCommentInputText.GetText(),      //
-                m_TransactionAmountInputDouble,               //
+                m_IncomeDateInputText.GetText(),         //
+                m_IncomeDescriptionInputText.GetText(),  //
+                m_IncomeCommentInputText.GetText(),      //
+                m_IncomeAmountInputDouble,               //
                 false,                                        //
                 hash);
             DataBase::Instance()->CloseDBFile();
         }
-    }
+    }*/
 }
 
-void TransactionDialog::m_confirmDialogUpdateAll() {
-    RowID account_id = 0U;
+void IncomeDialog::m_confirmDialogUpdateAll() {
+    /*RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
-            if (DataBase::Instance()->BeginTransaction()) {
-                for (auto t : m_TransactionsToUpdate) {
+            if (DataBase::Instance()->BeginIncome()) {
+                for (auto t : m_IncomesToUpdate) {
                     if (m_EntitiesCombo.getText() != MULTIPLE_VALUES) {
                         t.entity = m_EntitiesCombo.getText();
                         DataBase::Instance()->AddEntity(t.entity);
@@ -336,19 +336,19 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
                         t.operation = m_OperationsCombo.getText();
                         DataBase::Instance()->AddOperation(t.operation);
                     }
-                    if (m_TransactionDateInputText.GetText() != MULTIPLE_VALUES) {
-                        t.date = m_TransactionDateInputText.GetText();
+                    if (m_IncomeDateInputText.GetText() != MULTIPLE_VALUES) {
+                        t.date = m_IncomeDateInputText.GetText();
                     }
-                    if (m_TransactionDescriptionInputText.GetText() != MULTIPLE_VALUES) {
-                        t.description = m_TransactionDescriptionInputText.GetText();
+                    if (m_IncomeDescriptionInputText.GetText() != MULTIPLE_VALUES) {
+                        t.description = m_IncomeDescriptionInputText.GetText();
                     }
-                    if (m_TransactionCommentInputText.GetText() != MULTIPLE_VALUES) {
-                        t.comment = m_TransactionCommentInputText.GetText();
+                    if (m_IncomeCommentInputText.GetText() != MULTIPLE_VALUES) {
+                        t.comment = m_IncomeCommentInputText.GetText();
                     }
-                    if (!m_TransactionConfirmedManyValues) {
-                        t.confirmed = m_TransactionConfirmed;
+                    if (!m_IncomeConfirmedManyValues) {
+                        t.confirmed = m_IncomeConfirmed;
                     }
-                    DataBase::Instance()->UpdateTransaction(  //
+                    DataBase::Instance()->UpdateIncome(  //
                         t.id,                                 //
                         t.entity,                             //
                         t.operation,                          //
@@ -361,25 +361,25 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
                         t.confirmed,                          //
                         t.hash);
                 }
-                DataBase::Instance()->CommitTransaction();
+                DataBase::Instance()->CommitIncome();
             }
             DataBase::Instance()->CloseDBFile();
         }
-    }
+    }*/
 }
 
-void TransactionDialog::m_confirmDialogDeletion() {
-    std::set<RowID> m_rows;
-    for (const auto& t : m_TransactionsToDelete) {
+void IncomeDialog::m_confirmDialogDeletion() {
+    /*std::set<RowID> m_rows;
+    for (const auto& t : m_IncomesToDelete) {
         m_rows.emplace(t.id);
     }
     if (!m_rows.empty()) {
-        DataBase::Instance()->DeleteTransactions(m_rows);
-    }
+        DataBase::Instance()->DeleteIncomes(m_rows);
+    }*/
 }
 
-void TransactionDialog::m_UpdateAccounts() {
-    m_AccountsCombo.clear();
+void IncomeDialog::m_UpdateAccounts() {
+    /*m_AccountsCombo.clear();
     DataBase::Instance()->GetAccounts(  //
         [this](const RowID& vRowID,
                const BankName& vBankName,
@@ -388,13 +388,13 @@ void TransactionDialog::m_UpdateAccounts() {
                const AccountName& vAccountName,
                const AccountNumber& vAccountNumber,
                const AccounBaseSolde& vAccounBaseSolde,
-               const TransactionsCount& vTransactionsCount) {  //
+               const IncomesCount& vIncomesCount) {  //
             m_AccountsCombo.getArrayRef().push_back(vAccountNumber);
         });
-    m_AccountsCombo.getIndexRef() = 0;
+    m_AccountsCombo.getIndexRef() = 0;*/
 }
 
-void TransactionDialog::m_UpdateEntities() {
+void IncomeDialog::m_UpdateEntities() {
     m_EntitiesCombo.clear();
     DataBase::Instance()->GetOperations(         //
         [this](const EntityName& vEntityName) {  //
@@ -404,7 +404,7 @@ void TransactionDialog::m_UpdateEntities() {
     m_EntitiesCombo.finalize();
 }
 
-void TransactionDialog::m_UpdateOperations() {
+void IncomeDialog::m_UpdateOperations() {
     m_OperationsCombo.clear();
     DataBase::Instance()->GetOperations(               //
         [this](const OperationName& vOperationName) {  //
@@ -414,7 +414,7 @@ void TransactionDialog::m_UpdateOperations() {
     m_OperationsCombo.finalize();
 }
 
-void TransactionDialog::m_UpdateCategories() {
+void IncomeDialog::m_UpdateCategories() {
     m_CategoriesCombo.clear();
     DataBase::Instance()->GetCategories(             //
         [this](const CategoryName& vCategoryName) {  //

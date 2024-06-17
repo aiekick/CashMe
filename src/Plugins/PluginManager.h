@@ -66,7 +66,7 @@ public:
 
 protected:
     PluginManager() = default;                      // Prevent construction
-    PluginManager(const PluginManager&) = default;  // Prevent construction by copying
+    PluginManager(const PluginManager&) = delete;  // Prevent construction by copying
     PluginManager& operator=(const PluginManager&) {
         return *this;
     };                           // Prevent assignment

@@ -135,7 +135,7 @@ void ImportWorkerThread::m_drawPhase() {
 }
 
 void ImportWorkerThread::m_drawProgressBar() {
-    ImGui::DisplayAlignedWidget(DIALOG_WIDTH_ITEM, "Progres", DIALOG_WIDTH_ALIGN, [this]() {  //
+    ImGui::DisplayAlignedWidget(DIALOG_WIDTH_ITEM, "Progres", DIALOG_WIDTH_ALIGN, [/*this*/]() {  //
         float progress = a_Progress;
         float elapsed_time = a_GenerationTime;
         const char* text;

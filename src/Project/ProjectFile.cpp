@@ -22,10 +22,13 @@ limitations under the License.
 #include <ctools/Logger.h>
 #include <ctools/FileHelper.h>
 
-#include <LayoutManager.h>
 #include <Models/DataBase.h>
+
+#include <LayoutManager.h>
 #include <Panes/AccountPane.h>
-#include <Panes/DebitCreditPane.h>
+#include <Panes/StatsPane.h>
+#include <Panes/EntitiesPane.h>
+
 #include <Plugins/PluginManager.h>
 #include <Systems/SettingsDialog.h>
 
@@ -101,7 +104,8 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                     }
                     m_IsLoaded = true;
                     AccountPane::Instance()->Load();
-                    DebitCreditPane::Instance()->Load();
+                    StatsPane::Instance()->Load();
+                    EntitiesPane::Instance()->Load();
                     SetProjectChange(false);
                 } else {
                     Clear();

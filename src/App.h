@@ -12,7 +12,7 @@ private:
     void m_InitMessaging();
 
 protected:
-    App(const App&) = default;  // Prevent construction by copying
+    App(const App&) = delete;  // Prevent construction by copying
     App& operator=(const App&) {
         return *this;
     };  // Prevent assignment

@@ -8,8 +8,9 @@
 #include <Frontend/Tables/EntitiesTable.h>
 
 class ProjectFile;
-class BudgetPane : public AbstractPane {
+class EntitiesPane : public AbstractPane {
 private:
+    EntitiesTable m_EntitiesTable;
 
 public:
     bool Init() override;
@@ -19,17 +20,19 @@ public:
     bool DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened = nullptr, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
 
+    void Load();
+
 public:  // singleton
-    static std::shared_ptr<BudgetPane> Instance() {
-        static std::shared_ptr<BudgetPane> _instance = std::make_shared<BudgetPane>();
+    static std::shared_ptr<EntitiesPane> Instance() {
+        static std::shared_ptr<EntitiesPane> _instance = std::make_shared<EntitiesPane>();
         return _instance;
     }
 
 public:
-    BudgetPane();                             // Prevent construction
-    BudgetPane(const BudgetPane&) = delete;  // Prevent construction by copying
-    BudgetPane& operator=(const BudgetPane&) {
+    EntitiesPane();                             // Prevent construction
+    EntitiesPane(const EntitiesPane&) = delete;  // Prevent construction by copying
+    EntitiesPane& operator=(const EntitiesPane&) {
         return *this;
     };                      // Prevent assignment
-    virtual ~BudgetPane();  // Prevent unwanted destruction};
+    virtual ~EntitiesPane();  // Prevent unwanted destruction};
 };

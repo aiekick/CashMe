@@ -26,7 +26,7 @@ public:  // singleton
 
 public:
     ConsolePane();                              // Prevent construction
-    ConsolePane(const ConsolePane&) = default;  // Prevent construction by copying
+    ConsolePane(const ConsolePane&) = delete;  // Prevent construction by copying
     ConsolePane& operator=(const ConsolePane&) {
         return *this;
     };                       // Prevent assignment

@@ -263,6 +263,52 @@ void DataBase::GetEntities(std::function<void(const EntityName&)> vCallback) {
     }
 }
 
+void DataBase::GetEntitiesStats(  //
+    const RowID& vAccountID,
+    std::function<void(  //
+        const EntityName&,
+        const TransactionDebit&,
+        const TransactionCredit&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    const auto& select_query = ct::toStr(
+        u8R"(
+SELECT
+  entities.name AS new_entity,
+  ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS new_debit,
+  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS new_credit
+FROM
+  transactions
+  LEFT JOIN entities ON transactions.entity_id = entities.id
+WHERE
+  account_id = %u
+GROUP BY
+  new_entity
+ORDER BY
+  new_entity;
+)",
+        vAccountID);
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get entities with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    auto name = (const char*)sqlite3_column_text(stmt, 0);
+                    auto debit = (TransactionDebit)sqlite3_column_double(stmt, 1);
+                    auto credit = (TransactionCredit)sqlite3_column_double(stmt, 2);
+                    vCallback(name != nullptr ? name : "", debit, credit);
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
 void DataBase::UpdateEntity(const RowID& vRowID, const EntityName& vEntityName) {
     auto insert_query = ct::toStr(u8R"(UPDATE entities SET name = "%s" WHERE id = %u;)", vEntityName.c_str(), vRowID);
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -721,11 +767,79 @@ void DataBase::DeleteAccounts() {
     }
 }
 
+void DataBase::AddIncome(  //
+    std::set<RowID> vAccountIDs,
+    const IncomeName& vIncomeName,
+    const EntityName& vEntityName,
+    const CategoryName& vCategoryName,
+    const OperationName& vOperationName,
+    const IncomeDate& vStartDate,
+    const IncomeDate& vEndDate,
+    const IncomeAmount& vMinAmount,
+    const IncomeAmount& vMaxAmount,
+    const IncomeDelayDays& vMinDays,
+    const IncomeDelayDays& vMaxDays,
+    const IncomeHash& vHash) {
+    if (!vAccountIDs.empty()) {
+        AddEntity(vEntityName);
+        AddOperation(vOperationName);
+        AddCategory(vCategoryName);
+        auto insert_query = ct::toStr(
+            u8R"(
+INSERT OR IGNORE INTO incomes 
+(
+    name, 
+    entity_id,  
+    category_id, 
+    operation_id,
+    start_date, 
+    end_date, 
+    min_amount, 
+    max_amount,
+    min_delay_days,
+    max_delay_days,   
+    hash
+) 
+VALUES 
+(
+    "%s", 
+    (SELECT id FROM entities WHERE entities.name = "%s"), -- entity id
+    (SELECT id FROM categories WHERE categories.name = "%s"), -- category id
+    (SELECT id FROM operations WHERE operations.name = "%s"), -- operation id
+    "%s", 
+    "%s",
+    "%.2f",
+    "%.2f",
+    "%i"
+    "%i"
+    "%s"
+);
+)",
+            vIncomeName.c_str(),
+            vEntityName.c_str(),
+            vCategoryName.c_str(),
+            vOperationName.c_str(),
+            vStartDate.c_str(),
+            vEndDate.c_str(),
+            vMinAmount,
+            vMaxAmount,
+            vMinDays,
+            vMaxDays,
+            vHash.c_str());
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
+        } else {
+            const auto last_row_id = sqlite3_last_insert_rowid(m_SqliteDB);
+            m_LinkOneIncomeWithManyAccounts(last_row_id, vAccountIDs);
+        }
+    }
+}
+
 void DataBase::AddTransaction(  //
     const RowID& vAccountID,
     const EntityName& vEntityName,
-    const OperationName& vOperationName,
     const CategoryName& vCategoryName,
+    const OperationName& vOperationName,
     const SourceName& vSourceName,
     const SourceType& vSourceType,
     const SourceSha& vSourceSha,
@@ -776,8 +890,8 @@ void DataBase::GetTransactions(  //
     std::function<void(  //
         const RowID&,
         const EntityName&,
-        const OperationName&,
         const CategoryName&,
+        const OperationName&,
         const SourceName&,
         const TransactionDate&,
         const TransactionDescription&,
@@ -792,8 +906,8 @@ void DataBase::GetTransactions(  //
 SELECT
   transactions.id AS rowid,
   entities.name AS entity,
-  operations.name AS operation,
   categories.name AS category,
+  operations.name AS operation,
   sources.name AS source,
   transactions.date,
   transactions.description,
@@ -805,8 +919,8 @@ FROM
   transactions
   LEFT JOIN accounts ON transactions.account_id = accounts.id
   LEFT JOIN entities ON transactions.entity_id = entities.id
-  LEFT JOIN operations ON transactions.operation_id = operations.id
   LEFT JOIN categories ON transactions.category_id = categories.id
+  LEFT JOIN operations ON transactions.operation_id = operations.id
   LEFT JOIN sources ON transactions.source_id = sources.id
 WHERE
   transactions.account_id = %u
@@ -825,8 +939,8 @@ ORDER BY
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
                     RowID id = sqlite3_column_int(stmt, 0);
                     auto entity = (const char*)sqlite3_column_text(stmt, 1);
-                    auto operation = (const char*)sqlite3_column_text(stmt, 2);
-                    auto category = (const char*)sqlite3_column_text(stmt, 3);
+                    auto category = (const char*)sqlite3_column_text(stmt, 2);
+                    auto operation = (const char*)sqlite3_column_text(stmt, 3);
                     auto source = (const char*)sqlite3_column_text(stmt, 4);
                     auto date = (const char*)sqlite3_column_text(stmt, 5);
                     auto description = (const char*)sqlite3_column_text(stmt, 6);
@@ -1065,8 +1179,8 @@ AND
 void DataBase::UpdateTransaction(  //
     const RowID& vRowID,
     const EntityName& vEntityName,
-    const OperationName& vOperationName,
     const CategoryName& vCategoryName,
+    const OperationName& vOperationName,
     const SourceName& vSourceName,
     const TransactionDate& vDate,
     const TransactionDescription& vDescription,
@@ -1080,8 +1194,8 @@ UPDATE
   transactions
 SET 
   entity_id = (SELECT id FROM entities WHERE name = "%s"),
-  operation_id = (SELECT id FROM operations WHERE name = "%s"),
   category_id = (SELECT id FROM categories WHERE name = "%s"),
+  operation_id = (SELECT id FROM operations WHERE name = "%s"),
   source_id = (SELECT id FROM sources WHERE name = "%s"),
   date = "%s",
   description = "%s",
@@ -1093,8 +1207,8 @@ WHERE
   transactions.id = %u;
 )",
         vEntityName.c_str(),
-        vOperationName.c_str(),
         vCategoryName.c_str(),
+        vOperationName.c_str(),
         vSourceName.c_str(),
         vDate.c_str(),
         vDescription.c_str(),
@@ -1184,6 +1298,35 @@ bool DataBase::m_EnableForeignKey() {
     return (m_SqliteDB != nullptr);
 }
 
+bool DataBase::m_LinkOneIncomeWithManyAccounts(  //
+    const RowID& vIncomeID,
+    std::set<RowID> vAccountIDs) {
+    if (!vAccountIDs.empty()) {
+        std::string insert_query =
+            u8R"(
+INSERT OR IGNORE INTO income_accounts 
+(
+    income_id, 
+    account_id
+)
+VALUES 
+(
+)";
+        for (const auto& id : vAccountIDs) {
+            insert_query += ct::toStr("\t(%u, %u)\n", vIncomeID, id);
+        }
+        insert_query += ");";
+        if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
+            return false;
+        }
+        return true;
+    } else {
+        LogVarError("The accounts ids are empty");
+    }
+    return false;
+}
+
 std::string DataBase::GetLastErrorMesg() {
     return std::string(m_LastErrorMsg);
 }
@@ -1236,12 +1379,14 @@ void DataBase::ClearDataTables() {
         u8R"(
 BEGIN TRANSACTION;
 DELETE FROM banks;
-DELETE FROM accounts;
+DELETE FROM incomes;
 DELETE FROM sources;
+DELETE FROM accounts;
 DELETE FROM entities;
 DELETE FROM categories;
 DELETE FROM operations;
 DELETE FROM transactions;
+DELETE FROM income_accounts;
 COMMIT;
 )";
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, clear_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -1321,19 +1466,49 @@ CREATE TABLE operations (
     name TEXT NOT NULL UNIQUE
 );
 
+CREATE TABLE incomes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    entity_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    operation_id INTEGER NOT NULL,
+    start_date DATE NOT NULL, -- start date
+    end_date DATE, -- end date (empty if no end)
+    min_amount REAL NOT NULL, -- min amount
+    max_amount REAL NOT NULL, -- max amount, can be the same as min
+    min_delay_days INTEGER, -- delay in days, can be zero
+    max_delay_days INTEGER, -- delay in days, can be the same as min
+    hash TEXT NOT NULL UNIQUE,
+    -- liens
+    FOREIGN KEY (entity_id) REFERENCES entities(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (operation_id) REFERENCES operations(id),
+    -- verifs
+    CHECK (max_amount >= min_amount),
+    CHECK (max_delay_days >= min_delay_days)
+);
+
+CREATE TABLE income_accounts (
+    income_id INTEGER NOT NULL,
+    account_id INTEGER NOT NULL,
+    PRIMARY KEY (income_id, account_id),
+    FOREIGN KEY (income_id) REFERENCES incomes(income_id),
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id)
+);
+
 CREATE TABLE transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_id INTEGER NOT NULL,
-    operation_id INTEGER NOT NULL,
-    category_id INTEGER NOT NULL,
     entity_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    operation_id INTEGER NOT NULL,
     source_id INTEGER NOT NULL,
     date DATE NOT NULL,
     description TEXT,
     comment TEXT,
     amount REAL NOT NULL,
     confirmed INTEGER,
-    hash NOT NULL UNIQUE,
+    hash TEXT NOT NULL UNIQUE,
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     FOREIGN KEY (operation_id) REFERENCES operations(id),
     FOREIGN KEY (category_id) REFERENCES categories(id),
