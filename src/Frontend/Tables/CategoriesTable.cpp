@@ -18,7 +18,7 @@ void CategoriesTable::unload() {
 }
 
 bool CategoriesTable::drawMenu() {
-    if (ADataTable::drawMenu()) {
+    if (m_drawAccountMenu()) {
         m_updateCategories();
         return true;
     }
@@ -36,7 +36,7 @@ RowID CategoriesTable::m_getItemRowID(const size_t& vIdx) const {
     return 0;  // the db row id cant be 0
 }
 
-double CategoriesTable::m_getItemAmount(const size_t& vIdx) const {
+double CategoriesTable::m_getItemBarAmount(const size_t& vIdx) const {
     return m_Categories.at(vIdx).amount;
 }
 
@@ -46,7 +46,7 @@ void CategoriesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxA
     m_drawColumnDebit(e.debit);
     m_drawColumnCredit(e.credit);
     m_drawColumnAmount(e.amount);
-    m_drawColumnBars(e.amount, vMaxAmount);
+    m_drawColumnBars(e.amount, vMaxAmount, 100.0f);
 }
 
 void CategoriesTable::m_setupColumns() {
@@ -63,7 +63,7 @@ void CategoriesTable::m_drawContextMenuContent() {
     CTOOL_DEBUG_BREAK;
 }
 
-void CategoriesTable::m_doActionOnDblClick() {
+void CategoriesTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
     CTOOL_DEBUG_BREAK;
 }
 

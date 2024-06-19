@@ -18,7 +18,7 @@ void EntitiesTable::unload() {
 }
 
 bool EntitiesTable::drawMenu() {
-    if (ADataTable::drawMenu()) {
+    if (m_drawAccountMenu()) {
         m_updateEntities();
         return true;
     }
@@ -36,7 +36,7 @@ RowID EntitiesTable::m_getItemRowID(const size_t& vIdx) const {
     return 0;  // the db row id cant be 0
 }
 
-double EntitiesTable::m_getItemAmount(const size_t& vIdx) const {
+double EntitiesTable::m_getItemBarAmount(const size_t& vIdx) const {
     return m_Entities.at(vIdx).amount;
 }
 
@@ -46,7 +46,7 @@ void EntitiesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmo
     m_drawColumnDebit(e.debit);
     m_drawColumnCredit(e.credit);
     m_drawColumnAmount(e.amount);
-    m_drawColumnBars(e.amount, vMaxAmount);
+    m_drawColumnBars(e.amount, vMaxAmount, 100.0f);
 }
 
 void EntitiesTable::m_setupColumns() {
@@ -63,7 +63,7 @@ void EntitiesTable::m_drawContextMenuContent() {
     CTOOL_DEBUG_BREAK;
 }
 
-void EntitiesTable::m_doActionOnDblClick() {
+void EntitiesTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
     CTOOL_DEBUG_BREAK;
 }
 

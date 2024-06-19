@@ -19,12 +19,12 @@ AccountPane::~AccountPane() {
 
 bool AccountPane::Init() {
     bool ret = true;
-    m_GetAvailableDataBrokers();
+    m_getAvailableDataBrokers();
     ret &= m_BankDialog.init();
     ret &= m_AccountDialog.init();
     ret &= m_CategoryDialog.init();
     ret &= m_OperationDialog.init();
-    ret &= m_TransactionDialog.init();
+    ret &= m_TransactionsTable.Init();
     return ret;
 }
 
@@ -33,8 +33,8 @@ void AccountPane::Unit() {
     m_AccountDialog.init();
     m_CategoryDialog.init();
     m_OperationDialog.init();
-    m_TransactionDialog.unit();
-    m_Clear();
+    m_TransactionsTable.Unit();
+    m_clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -55,8 +55,17 @@ bool AccountPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, Im
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
             if (ProjectFile::Instance()->IsProjectLoaded()) {
-                m_drawMenu(MainFrontend::Instance()->GetActionSystemRef());
-                m_displayTransactions();
+                if (ImGui::BeginMenuBar()) {
+                    auto& actionSystemRef = MainFrontend::Instance()->GetActionSystemRef();
+                    m_TransactionsTable.drawAccountsMenu(actionSystemRef);
+                    m_drawCreationMenu();
+                    m_drawImportMenu(actionSystemRef);
+                    m_TransactionsTable.drawSelectMenu(actionSystemRef);
+                    m_TransactionsTable.drawGroupingMenu(actionSystemRef);
+                    m_TransactionsTable.drawDebugMenu(actionSystemRef);
+                    ImGui::EndMenuBar();
+                }
+                m_TransactionsTable.draw(ImGui::GetContentRegionAvail());
             }
         }
 
@@ -83,12 +92,12 @@ bool AccountPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const 
     }
     ret |= m_CategoryDialog.draw(center);
     ret |= m_OperationDialog.draw(center);
-    ret |= m_TransactionDialog.draw(center);
+    ret |= m_TransactionsTable.getTransactionDialogRef().draw(center);
     
     m_ImportThread.drawDialog(center);
 
     if (ret) {
-        m_refreshDatas();
+        m_TransactionsTable.refreshDatas();
     }
 
     ImVec2 max = vRect.GetSize();
@@ -102,7 +111,7 @@ bool AccountPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const 
                 for (const auto& s : selection) {
                     files.push_back(s.second);
                 }
-                m_ImportFromFiles(files);
+                m_importFromFiles(files);
                 ret = true;
             }
         }
@@ -122,441 +131,7 @@ void AccountPane::DoBackend() {
 }
 
 void AccountPane::Load() {
-    m_refreshDatas();
-}
-
-void AccountPane::m_refreshDatas() {
-    m_UpdateBanks();
-    m_UpdateEntities();
-    m_UpdateCategories();
-    m_UpdateOperations();
-    m_UpdateAccounts();
-}
-
-void AccountPane::m_drawMenu(FrameActionSystem& vFrameActionSystem) {
-    if (ProjectFile::Instance()->IsProjectLoaded()) {
-        if (ImGui::BeginMenuBar()) {
-            m_drawAccountsMenu(vFrameActionSystem);
-            m_drawCreationMenu(vFrameActionSystem);
-            m_drawImportMenu(vFrameActionSystem);
-            m_drawSelectMenu(vFrameActionSystem);
-            m_drawGroupingMenu(vFrameActionSystem);
-            m_drawDebugMenu(vFrameActionSystem);
-            ImGui::EndMenuBar();
-        }
-    }
-}
-
-void AccountPane::m_displayTransactions() {
-    ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 30.0f);
-    static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("##Transactions", 11, flags)) {
-        ImGui::TableSetupScrollFreeze(0, 2);
-        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Comments", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Entity", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Solde", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Bars", ImGuiTableColumnFlags_WidthFixed);
-        m_drawSearchRow();
-        ImGui::TableHeadersRow();
-        int32_t idx = 0;
-        double max_price = DBL_MIN;
-        const float& bar_column_width = 100.0f;
-        auto drawListPtr = ImGui::GetWindowDrawList();
-        const float& text_h = ImGui::GetTextLineHeight();
-        const float& item_h = ImGui::GetTextLineHeightWithSpacing();
-        const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
-        const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
-        m_CurrSelectedItemIdx = -1;
-        m_TransactionsListClipper.Begin((int)m_Datas.transactions_filtered.size(), item_h);
-        while (m_TransactionsListClipper.Step()) {
-            max_price = 0.0;
-            for (idx = m_TransactionsListClipper.DisplayStart; idx < m_TransactionsListClipper.DisplayEnd; ++idx) {
-                if (idx < 0) {
-                    continue;
-                }
-                const auto& t = m_Datas.transactions_filtered.at(idx);
-                const auto& as = std::abs(t.solde);
-                if (as > max_price) {
-                    max_price = as;
-                }
-            }
-
-            for (idx = m_TransactionsListClipper.DisplayStart; idx < m_TransactionsListClipper.DisplayEnd; ++idx) {
-                if (idx < 0) {
-                    continue;
-                }
-
-                auto& t = m_Datas.transactions_filtered.at(idx);
-
-                ImGui::TableNextRow();
-
-                ImGui::TableNextColumn();
-                {
-                    if (m_IsGroupingModeTransactions()) {
-                        ImGui::PushID(t.id);
-                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-                        if (ImGui::Checkbox("##check", &t.confirmed)) {
-                            DataBase::Instance()->ConfirmTransaction(t.id, t.confirmed);
-                        }
-                        ImGui::PopStyleVar();
-                        ImGui::PopID();
-                    }
-                }
-
-                ImGui::TableNextColumn();
-                { ImGui::Text("%s", t.date.c_str()); }
-
-                ImGui::TableNextColumn();
-                {
-                    ImGui::PushID(&t);
-                    auto is_selected = m_IsRowSelected(t.id);
-                    ImGui::Selectable(t.description.c_str(), &is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
-                    if (m_IsGroupingModeTransactions()) {
-                        if (ImGui::IsItemHovered()) {
-                            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                                m_ResetSelection();
-                                m_SelectOrDeselectRow(t);
-                                m_TransactionDialog.setTransaction(t);
-                                m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
-                            } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                                if (ImGui::IsKeyDown(ImGuiMod_Shift)) {
-                                    m_CurrSelectedItemIdx = idx;
-                                } else {
-                                    m_LastSelectedItemIdx = idx;
-
-                                    if (!ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
-                                        m_ResetSelection();
-                                    }
-
-                                    m_SelectOrDeselectRow(t);
-                                }
-                            }
-                        }
-                    }
-                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.description.c_str());
-                    ImGui::PopID();
-                    m_drawTransactionMenu(t);
-                }
-
-                ImGui::TableNextColumn();
-                {
-                    ImGui::Text("%s", t.comment.c_str());
-                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.comment.c_str());
-                }
-
-                ImGui::TableNextColumn();
-                {
-                    ImGui::Text("%s", t.entity.c_str());
-                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.entity.c_str());
-                }
-
-                ImGui::TableNextColumn();
-                {
-                    ImGui::Text("%s", t.category.c_str());
-                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.category.c_str());
-                }
-
-                ImGui::TableNextColumn();
-                {
-                    ImGui::Text("%s", t.operation.c_str());
-                    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.operation.c_str());
-                }
-
-                ImGui::TableNextColumn();
-                {
-                    if (t.debit < 0.0) {
-                        ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-                        ImGui::Text("%.2f", t.debit);
-                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.debit);
-                        ImGui::PopStyleColor();
-                    }
-                }
-
-                ImGui::TableNextColumn();
-                {
-                    if (t.credit > 0.0) {
-                        ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-                        ImGui::Text("%.2f", t.credit);
-                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.credit);
-                        ImGui::PopStyleColor();
-                    }
-                }
-
-                ImGui::TableNextColumn();
-                {
-                    if (t.solde < 0.0) {
-                        ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-                        ImGui::Text("%.2f", t.solde);
-                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.solde);
-                        ImGui::PopStyleColor();
-                    } else if (t.solde > 0.0) {
-                        ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-                        ImGui::Text("%.2f", t.solde);
-                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.solde);
-                        ImGui::PopStyleColor();
-                    } else {
-                        ImGui::Text("%.2f", t.solde);
-                        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", t.solde);
-                    }
-                }
-
-                ImGui::TableNextColumn();
-                {
-                    const auto& cursor = ImGui::GetCursorScreenPos();
-                    const ImVec2 pMin(cursor.x, cursor.y + text_h * 0.1f);
-                    const ImVec2 pMax(cursor.x + bar_column_width, cursor.y + text_h * 0.9f);
-                    const float pMidX((pMin.x + pMax.x) * 0.5f);
-                    ImGui::SetCursorScreenPos(pMin);
-                    const float bw(bar_column_width * 0.5f * std::abs(t.solde) / (float)max_price);
-                    if (t.solde < 0.0) {
-                        drawListPtr->AddRectFilled(ImVec2(pMidX - bw, pMin.y), ImVec2(pMidX, pMax.y), bad_color);
-                    } else if (t.solde > 0.0) {
-                        drawListPtr->AddRectFilled(ImVec2(pMidX, pMin.y), ImVec2(pMidX + bw, pMax.y), good_color);
-                    }
-                    ImGui::SetCursorScreenPos(pMax);
-                }
-            }
-        }
-        m_TransactionsListClipper.End();
-
-        if (m_IsGroupingModeTransactions()) {
-            if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
-                if (ImGui::IsKeyDown(ImGuiKey_A)) {
-                    m_SelectCurrentRows();
-                }
-            }
-
-            // shift selection
-            if (ImGui::IsKeyDown(ImGuiMod_Shift) && m_LastSelectedItemIdx > -1 && m_CurrSelectedItemIdx > -1) {
-                int32_t min_idx = ImMin(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
-                int32_t max_idx = ImMax(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
-                m_ResetSelection();
-                for (int32_t nid = min_idx; nid <= max_idx; ++nid) {
-                    if (nid < m_Datas.transactions_filtered.size()) {
-                        const auto& t = m_Datas.transactions_filtered.at(nid);
-                        m_SelectOrDeselectRow(t);
-                    }
-                }
-            }
-        }
-
-        ImGui::EndTable();
-    }
-    ImGui::PopStyleVar();
-}
-
-void AccountPane::m_drawImportMenu(FrameActionSystem& vFrameActionSystem) {
-    if (ImGui::BeginMenu("Import")) {
-        for (const auto& broker : m_DataBrokerModules) {
-            if (ImGui::BeginMenu(broker.first.c_str())) {
-                for (const auto& way : broker.second) {
-                    if (ImGui::MenuItem(way.first.c_str())) {
-                        if (way.second != nullptr) {
-                            m_SelectedBroker = way.second;
-                            vFrameActionSystem.Clear();
-                            vFrameActionSystem.Add([&way]() {
-                                const auto& ext = way.second->getFileExt();
-                                IGFD::FileDialogConfig config;
-                                config.countSelectionMax = 0;
-                                config.flags = ImGuiFileDialogFlags_Modal;
-                                ImGuiFileDialog::Instance()->OpenDialog("Import Datas", "Import Datas from File", ext.c_str(), config);
-                                return true;
-                            });
-                        }
-                    }
-                }
-                ImGui::EndMenu();
-            }
-        }
-        ImGui::EndMenu();
-    }
-}
-
-void AccountPane::m_drawSelectMenu(FrameActionSystem& vFrameActionSystem) {
-    if (ImGui::BeginMenu("Select")) {
-        if (ImGui::BeginMenu("Rows")) {
-            if (ImGui::MenuItem("Displayed")) {
-                m_SelectCurrentRows();
-            }
-            if (ImGui::MenuItem("UnConfirmed")) {
-                m_SelectUnConfirmedTransactions();
-            }
-            if (ImGui::MenuItem("Duplicate (Date + Amount)")) {
-                m_SelectPossibleDuplicateEntryOnPricesAndDates();
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Empty")) {
-            if (ImGui::MenuItem("Comments")) {
-                m_SelectEmptyColumn(SearchColumns::SEARCH_COLUMN_COMMENT);
-            }
-            if (ImGui::MenuItem("Entities")) {
-                m_SelectEmptyColumn(SearchColumns::SEARCH_COLUMN_ENTITY);
-            }
-            if (ImGui::MenuItem("Categories")) {
-                m_SelectEmptyColumn(SearchColumns::SEARCH_COLUMN_CATEGORY);
-            }
-            if (ImGui::MenuItem("Operations")) {
-                m_SelectEmptyColumn(SearchColumns::SEARCH_COLUMN_OPERATION);
-            }
-            ImGui::EndMenu();
-        }        
-        if (!m_SelectedTransactions.empty()) {
-            if (ImGui::BeginMenu("Selection Actions")) {
-                if (ImGui::MenuItem("Do filter")) {
-                    m_FilterSelection();
-                }
-                if (ImGui::MenuItem("Do reset")) {
-                    m_ResetSelection();
-                }
-                ImGui::EndMenu();
-            }
-        }
-        ImGui::EndMenu();
-    }
-}
-
-void AccountPane::m_drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
-#ifdef _DEBUG
-    if (ImGui::BeginMenu("Debug")) {
-        if (ImGui::MenuItem("Refresh")) {
-            m_refreshDatas();
-        }
-        ImGui::Separator();
-        if (ImGui::BeginMenu("Delete Tables")) {
-            if (ImGui::MenuItem("Banks")) {
-                DataBase::Instance()->DeleteBanks();
-                m_refreshDatas();
-            }
-            if (ImGui::MenuItem("Accounts")) {
-                DataBase::Instance()->DeleteAccounts();
-                m_refreshDatas();
-            }
-            if (ImGui::MenuItem("Entities")) {
-                DataBase::Instance()->DeleteEntities();
-                m_refreshDatas();
-            }
-            if (ImGui::MenuItem("Categories")) {
-                DataBase::Instance()->DeleteCategories();
-                m_refreshDatas();
-            }
-            if (ImGui::MenuItem("Operations")) {
-                DataBase::Instance()->DeleteOperations();
-                m_refreshDatas();
-            }
-            if (ImGui::MenuItem("Transactions")) {
-                DataBase::Instance()->DeleteTransactions();
-                m_refreshDatas();
-            }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMenu();
-    }
-#endif
-}
-
-void AccountPane::m_drawGroupingMenu(FrameActionSystem& vFrameActionSystem) {
-    if (ImGui::MenuItem("T", nullptr, m_GroupingMode == GroupingMode::GROUPING_MODE_TRANSACTIONS)) {
-        m_GroupTransactions(GroupingMode::GROUPING_MODE_TRANSACTIONS);
-    }
-    if (ImGui::MenuItem("D", nullptr, m_GroupingMode == GroupingMode::GROUPING_MODE_DAYS)) {
-        m_GroupTransactions(GroupingMode::GROUPING_MODE_DAYS);
-    }
-    if (ImGui::MenuItem("M", nullptr, m_GroupingMode == GroupingMode::GROUPING_MODE_MONTHS)) {
-        m_GroupTransactions(GroupingMode::GROUPING_MODE_MONTHS);
-    }
-    if (ImGui::MenuItem("Y", nullptr, m_GroupingMode == GroupingMode::GROUPING_MODE_YEARS)) {
-        m_GroupTransactions(GroupingMode::GROUPING_MODE_YEARS);
-    }
-}
-
-void AccountPane::m_drawAccountsMenu(FrameActionSystem& vFrameActionSystem) {
-    if (ImGui::BeginMenu("Accounts")) {
-        for (const auto& bank : m_Accounts) {
-            if (ImGui::BeginMenu(bank.first.c_str())) {  // bank name
-                for (const auto& agency : bank.second) {
-                    if (ImGui::BeginMenu(agency.first.c_str())) {  // bank agency
-                        static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-                        if (ImGui::BeginTable("##MenuAccounts", 4, flags)) {
-                            ImGui::TableSetupScrollFreeze(0, 1);
-                            ImGui::TableSetupColumn("Number", ImGuiTableColumnFlags_WidthFixed);
-                            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
-                            ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthStretch);
-                            ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed);
-                            ImGui::TableHeadersRow();
-                            size_t idx = 0U;
-                            for (const auto& number : agency.second) {
-                                const auto& a = number.second;
-                                ImGui::TableNextRow();
-
-                                ImGui::PushID(a.id);
-                                {
-                                    ImGui::TableNextColumn();
-                                    ImGui::PushID(&a);
-                                    {
-                                        if (ImGui::Selectable(a.number.c_str(), m_SelectedAccountIdx == idx, ImGuiSelectableFlags_SpanAllColumns)) {
-                                            m_ResetSelection();
-                                            m_UpdateTransactions(a.id);
-                                            m_SelectedAccountIdx = idx;
-                                        }
-                                    }
-                                    ImGui::PopID();
-                                    m_drawAccountMenu(a);
-
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%s", a.name.c_str());
-
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%s", a.type.c_str());
-
-                                    ImGui::TableNextColumn();
-                                    ImGui::Text("%u", a.count);
-                                }
-                                ImGui::PopID();
-
-                                ++idx;
-                            }
-                            ImGui::EndTable();
-                        }
-                        ImGui::EndMenu();
-                    }
-                }
-                ImGui::EndMenu();
-            }
-        }
-        ImGui::EndMenu();
-    }
-}
-
-void AccountPane::m_drawCreationMenu(FrameActionSystem& vFrameActionSystem) {
-    if (ImGui::BeginMenu("Add")) {
-        if (ImGui::MenuItem("Bank")) {
-            m_BankDialog.show(DataDialogMode::MODE_CREATION);
-        }
-        if (ImGui::MenuItem("Account")) {
-            m_AccountDialog.show(DataDialogMode::MODE_CREATION);
-        }
-        if (ImGui::MenuItem("Entity")) {
-            m_EntityDialog.show(DataDialogMode::MODE_CREATION);
-        }
-        if (ImGui::MenuItem("Category")) {
-            m_CategoryDialog.show(DataDialogMode::MODE_CREATION);
-        }
-        if (ImGui::MenuItem("Operation")) {
-            m_OperationDialog.show(DataDialogMode::MODE_CREATION);
-        }
-        if (ImGui::MenuItem("Transaction")) {
-            m_TransactionDialog.show(DataDialogMode::MODE_CREATION);
-        }
-        ImGui::EndMenu();
-    }
+    m_TransactionsTable.refreshDatas();
 }
 
 std::string AccountPane::getXml(const std::string& vOffset, const std::string& vUserDatas) {
@@ -613,14 +188,71 @@ bool AccountPane::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* 
     return true;
 }
 
-void AccountPane::m_Clear() {
-    m_SelectedBroker.reset();  // must be reset before quit since point on the memroy of a plugin
-    m_DataBrokerModules.clear();
-    m_Datas.clear();
+void AccountPane::m_drawCreationMenu() {
+    if (ImGui::BeginMenu("Add")) {
+        if (ImGui::MenuItem("Bank")) {
+            m_BankDialog.show(DataDialogMode::MODE_CREATION);
+        }
+        if (ImGui::MenuItem("Account")) {
+            m_AccountDialog.show(DataDialogMode::MODE_CREATION);
+        }
+        if (ImGui::MenuItem("Entity")) {
+            m_EntityDialog.show(DataDialogMode::MODE_CREATION);
+        }
+        if (ImGui::MenuItem("Category")) {
+            m_CategoryDialog.show(DataDialogMode::MODE_CREATION);
+        }
+        if (ImGui::MenuItem("Operation")) {
+            m_OperationDialog.show(DataDialogMode::MODE_CREATION);
+        }
+        if (ImGui::MenuItem("Transaction")) {
+            m_TransactionsTable.getTransactionDialogRef().show(DataDialogMode::MODE_CREATION);
+        }
+        ImGui::EndMenu();
+    }
 }
 
-void AccountPane::m_GetAvailableDataBrokers() {
-    m_Clear();
+void AccountPane::m_drawImportMenu(FrameActionSystem& vFrameActionSystem) {
+    if (ImGui::BeginMenu("Import")) {
+        for (const auto& broker : m_DataBrokerModules) {
+            if (ImGui::BeginMenu(broker.first.c_str())) {
+                for (const auto& way : broker.second) {
+                    if (ImGui::MenuItem(way.first.c_str())) {
+                        if (way.second != nullptr) {
+                            m_SelectedBroker = way.second;
+                            vFrameActionSystem.Clear();
+                            vFrameActionSystem.Add([&way]() {
+                                const auto& ext = way.second->getFileExt();
+                                IGFD::FileDialogConfig config;
+                                config.countSelectionMax = 0;
+                                config.flags = ImGuiFileDialogFlags_Modal;
+                                ImGuiFileDialog::Instance()->OpenDialog("Import Datas", "Import Datas from File", ext.c_str(), config);
+                                return true;
+                            });
+                        }
+                    }
+                }
+                ImGui::EndMenu();
+            }
+        }
+        ImGui::EndMenu();
+    }
+}
+
+void AccountPane::m_importFromFiles(const std::vector<std::string>& vFiles) {
+    m_ImportThread.start(  //
+        "Import Datas",
+        m_SelectedBroker,
+        vFiles,
+        [this]() {
+            m_TransactionsTable.refreshDatas();
+            m_TransactionsTable.refreshFiltering();
+        },
+        nullptr);
+}
+
+void AccountPane::m_getAvailableDataBrokers() {
+    m_clear();
     auto modules = PluginManager::Instance()->GetPluginModulesInfos();
     for (const auto& mod : modules) {
         if (mod.type == Cash::PluginModuleType::DATA_BROKER) {
@@ -632,204 +264,10 @@ void AccountPane::m_GetAvailableDataBrokers() {
     }
 }
 
-void AccountPane::m_ImportFromFiles(const std::vector<std::string>& vFiles) {
-    m_ImportThread.start(  //
-        "Import Datas",
-        m_SelectedBroker,
-        vFiles,
-        [this]() {
-            m_refreshDatas();
-            m_refreshFiltering();
-        },
-        nullptr);
-}
-
-void AccountPane::m_ResetFiltering() {
-    m_Datas.transactions_filtered = m_Datas.transactions;
-    m_Datas.transactions_filtered_rowids = {};
-    m_SearchInputTexts = {};
-    m_SearchTokens = {};
-    m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
-    m_FilteredSelectedTransactions.clear();
-    m_refreshFiltering();
-}
-
-void AccountPane::m_refreshFiltering() {
-    m_Datas.transactions_filtered.clear();
-    m_Datas.transactions_filtered_rowids.clear();
-    bool use = false;
-    double solde = m_CurrentBaseSolde;
-    m_TotalDebit = 0.0;
-    m_TotalCredit = 0.0;
-    for (auto t : m_Datas.transactions) {
-        use = true;
-        if (m_FilteringMode == FilteringMode::FILTERING_MODE_BY_SEARCH) {
-            for (size_t idx = 0; idx < SearchColumns::SEARCH_COLUMN_Count; ++idx) {
-                const auto& tk = m_SearchTokens.at(idx);
-                if (!tk.empty()) {
-                    use &= (t.optimized.at(idx).find(tk) != std::string::npos);
-                }
-            }
-        } else if (m_FilteringMode == FilteringMode::FILTERING_MODE_BY_SELECTED_ROW_IDS) {
-            use = (m_FilteredSelectedTransactions.find(t.id) != m_FilteredSelectedTransactions.end());        
-        }
-        if (use) {
-            t.solde = solde += t.debit + t.credit;
-            m_Datas.transactions_filtered.push_back(t);
-            m_Datas.transactions_filtered_rowids.emplace(t.id);
-            m_TotalDebit += t.debit;
-            m_TotalCredit += t.credit;
-        }
-    }
-}
-
-void AccountPane::m_FilterSelection() {
-    m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SELECTED_ROW_IDS;
-    m_FilteredSelectedTransactions = m_SelectedTransactions;
-    m_refreshFiltering();
-}
-
-void AccountPane::m_SelectOrDeselectRow(const Transaction& vTransaction) {
-    if (m_SelectedTransactions.find(vTransaction.id) != m_SelectedTransactions.end()) {
-        m_SelectedTransactions.erase(vTransaction.id);  // deselection
-    } else {
-        m_SelectedTransactions.emplace(vTransaction.id);  // selection
-    }
-}
-
-bool AccountPane::m_IsRowSelected(const RowID& vRowID) const {
-    return (m_SelectedTransactions.find(vRowID) != m_SelectedTransactions.end());
-}
-
-void AccountPane::m_ResetSelection() {
-    m_SelectedTransactions.clear();
-}
-
-void AccountPane::m_SelectCurrentRows() {
-    m_SelectedTransactions = m_Datas.transactions_filtered_rowids;
-}
-
-void AccountPane::m_SelectPossibleDuplicateEntryOnPricesAndDates() {
-    if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
-        RowID account_id = m_Datas.accounts.at(m_SelectedAccountIdx).id;
-        m_ResetSelection();
-        DataBase::Instance()->GetDuplicateTransactionsOnDatesAndAmount(  //
-            account_id,                                                  //
-            [this](const RowID& vRowID) {
-                if (m_Datas.transactions_filtered_rowids.find(vRowID) !=  //
-                    m_Datas.transactions_filtered_rowids.end()) {
-                    m_SelectedTransactions.emplace(vRowID);  // select row id
-                }
-            });
-    }
-}
-
-void AccountPane::m_SelectUnConfirmedTransactions() {
-    if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
-        RowID account_id = m_Datas.accounts.at(m_SelectedAccountIdx).id;
-        m_ResetSelection();
-        DataBase::Instance()->GetUnConfirmedTransactions(  //
-            account_id,                                    //
-            [this](const RowID& vRowID) {
-                if (m_Datas.transactions_filtered_rowids.find(vRowID) !=  //
-                    m_Datas.transactions_filtered_rowids.end()) {
-                    m_SelectedTransactions.emplace(vRowID);  // select row id
-                }
-            });
-    }
-}
-
-void AccountPane::m_SelectEmptyColumn(const SearchColumns& vColumn) {
-    m_SelectedTransactions.clear();
-    for (const auto& t : m_Datas.transactions_filtered) {
-        if (vColumn == SearchColumns::SEARCH_COLUMN_COMMENT) {      
-            if (t.comment.empty()) {
-                m_SelectedTransactions.emplace(t.id);
-            }
-        } else if (vColumn == SearchColumns::SEARCH_COLUMN_ENTITY) {
-            if (t.entity.empty()) {
-                m_SelectedTransactions.emplace(t.id);
-            }
-        } else if (vColumn == SearchColumns::SEARCH_COLUMN_CATEGORY) {
-            if (t.category.empty()) {
-                m_SelectedTransactions.emplace(t.id);
-            }
-        } else if (vColumn == SearchColumns::SEARCH_COLUMN_OPERATION) {
-            if (t.operation.empty()) {
-                m_SelectedTransactions.emplace(t.id);
-            }
-        }  
-    }
-}
-
-void AccountPane::m_GroupTransactions(const GroupingMode& vGroupingMode) {
-    m_GroupingMode = vGroupingMode;
-    if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
-        m_UpdateTransactions(m_Datas.accounts.at(m_SelectedAccountIdx).id);
-    }
-}
-
-void AccountPane::m_UpdateBanks() {
-    m_Datas.bankNames.clear();
-    DataBase::Instance()->GetBanks(                                       //
-        [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
-            m_Datas.bankNames.push_back(vUserName);
-        });
-}
-
-void AccountPane::m_UpdateEntities() {
-    m_Datas.entityNames.clear();
-    DataBase::Instance()->GetEntities(           //
-        [this](const EntityName& vEntityName) {  //
-            m_Datas.entityNames.push_back(vEntityName);
-        });
-}
-
-void AccountPane::m_UpdateCategories() {
-    m_Datas.categoryNames.clear();
-    DataBase::Instance()->GetCategories(             //
-        [this](const CategoryName& vCategoryName) {  //
-            m_Datas.categoryNames.push_back(vCategoryName);
-        });
-}
-
-void AccountPane::m_UpdateOperations() {
-    m_Datas.operationNames.clear();
-    DataBase::Instance()->GetOperations(               //
-        [this](const OperationName& vOperationName) {  //
-            m_Datas.operationNames.push_back(vOperationName);
-        });
-}
-
-void AccountPane::m_UpdateAccounts() {
-    m_Accounts.clear();
-    m_Datas.accounts.clear();
-    m_Datas.accountNumbers.clear();
-    DataBase::Instance()->GetAccounts(  //
-        [this](const RowID& vRowID,
-               const BankName& vBankName,
-               const BankAgency& vBankAgency,
-               const AccountType& vAccountType,
-               const AccountName& vAccountName,
-               const AccountNumber& vAccountNumber,
-               const AccounBaseSolde& vBaseSolde,
-               const TransactionsCount& vCount) {  //
-            Account a;
-            a.id = vRowID;
-            a.bank = vBankName;
-            a.agency = vBankAgency;
-            a.type = vAccountType;
-            a.name = vAccountName;
-            a.number = vAccountNumber;
-            a.base_solde = vBaseSolde;
-            a.count = vCount;
-            m_Datas.accounts.push_back(a);
-            m_Datas.accountNumbers.push_back(vAccountNumber);
-            m_Accounts[vBankName + "##BankName"][vBankAgency + "##BankAgency"][vAccountNumber] = a;
-        });
-    if (m_SelectedAccountIdx < m_Datas.accounts.size()) {
-        m_UpdateTransactions(m_Datas.accounts.at(m_SelectedAccountIdx).id);
-    }
+void AccountPane::m_clear() {
+    m_SelectedBroker.reset();  // must be reset before quit since point on the memroy of a plugin
+    m_DataBrokerModules.clear();
+    m_TransactionsTable.clear();
 }
 
 void AccountPane::m_drawAccountMenu(const Account& vAccount) {
@@ -850,183 +288,4 @@ void AccountPane::m_drawAccountMenu(const Account& vAccount) {
         ImGui::EndPopup();
     }
     ImGui::PopID();
-}
-
-void AccountPane::m_UpdateTransactions(const RowID& vAccountID) {
-    m_Datas.transactions.clear();
-    const auto& zero_based_account_id = vAccountID - 1;
-    if (zero_based_account_id < m_Datas.accounts.size()) {
-        double solde = m_CurrentBaseSolde = m_Datas.accounts.at(zero_based_account_id).base_solde;
-        const auto& account_number = m_Datas.accounts.at(zero_based_account_id).number;
-        if (m_IsGroupingModeTransactions()) {
-            DataBase::Instance()->GetTransactions(  //
-                vAccountID,                         //
-                [this, &solde, account_number](     //
-                    const RowID& vTransactionID,
-                    const EntityName& vEntityName,
-                    const CategoryName& vCategoryName,
-                    const OperationName& vOperationName,
-                    const SourceName& vSourceName,
-                    const TransactionDate& vDate,
-                    const TransactionDescription& vDescription,
-                    const TransactionComment& vComment,
-                    const TransactionAmount& vAmount,
-                    const TransactionConfirmed& vConfirmed,
-                    const TransactionHash& vHash) {  //
-                    solde += vAmount;
-                    Transaction t;
-                    t.id = vTransactionID;
-                    t.account = account_number;
-                    t.optimized[0] = ct::toLower(t.date = vDate);
-                    t.optimized[1] = ct::toLower(t.description = vDescription);
-                    t.optimized[2] = ct::toLower(t.comment = vComment);
-                    t.optimized[3] = ct::toLower(t.entity = vEntityName);
-                    t.optimized[4] = ct::toLower(t.category = vCategoryName);
-                    t.optimized[5] = ct::toLower(t.operation = vOperationName);
-                    t.hash = vHash;
-                    t.source = vSourceName;
-                    t.debit = vAmount < 0.0 ? vAmount : 0.0;
-                    t.credit = vAmount > 0.0 ? vAmount : 0.0;
-                    t.amount = vAmount;
-                    t.confirmed = vConfirmed;
-                    t.solde = solde;
-                    m_Datas.transactions.push_back(t);
-                });
-        } else {
-            DataBase::Instance()->GetGroupedTransactions(  //
-                vAccountID,
-                GroupBy::DATES,
-                (DateFormat)(m_GroupingMode-1),
-                [this](                                    //
-                    const RowID& vRowID,
-                    const TransactionDate& vTransactionDate,
-                    const TransactionDescription& vTransactionDescription,
-                    const EntityName& vEntityName,
-                    const CategoryName& vCategoryName,
-                    const OperationName& vOperationName,
-                    const TransactionDebit& vTransactionDebit,
-                    const TransactionCredit& vTransactionCredit) {
-                    Transaction t;
-                    t.id = vRowID;
-                    t.date = vTransactionDate;
-                    t.description = "-- grouped --";
-                    t.entity = "-- grouped --";
-                    t.category = "-- grouped --";
-                    t.operation = "-- grouped --";
-                    t.debit = vTransactionDebit;
-                    t.credit = vTransactionCredit;
-                    t.amount = vTransactionDebit + vTransactionCredit;
-                    m_Datas.transactions.push_back(t);
-                });
-        }
-    }
-    m_refreshFiltering();
-}
-
-bool AccountPane::m_IsGroupingModeTransactions() {
-    return (m_GroupingMode == GroupingMode::GROUPING_MODE_TRANSACTIONS);
-}
-
-void AccountPane::m_drawTransactionMenu(const Transaction& vTransaction) {
-    if (!m_SelectedTransactions.empty()) {
-        const auto* ptr = &vTransaction;
-        ImGui::PushID(ptr);
-        if (ImGui::BeginPopupContextItem(               //
-                NULL,                                   //
-                ImGuiPopupFlags_NoOpenOverItems |       //
-                    ImGuiPopupFlags_MouseButtonRight |  //
-                    ImGuiPopupFlags_NoOpenOverExistingPopup)) {
-            if (ImGui::MenuItem("Update selection")) {
-                std::vector<Transaction> transactions_to_update;
-                for (const auto& trans : m_Datas.transactions_filtered) {
-                    if (m_SelectedTransactions.find(trans.id) != m_SelectedTransactions.end()) {
-                        transactions_to_update.push_back(trans);
-                    }
-                }
-                if (transactions_to_update.size() > 1U) {
-                    m_TransactionDialog.setTransactionsToUpdate(transactions_to_update);
-                    m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ALL);
-                } else if (transactions_to_update.size() == 1U) {
-                    m_TransactionDialog.setTransaction(transactions_to_update.front());
-                    m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
-                }
-            }
-            if (ImGui::MenuItem("Delete selection")) {
-                std::vector<Transaction> transactions_to_delete;
-                for (const auto& trans : m_Datas.transactions_filtered) {
-                    if (m_SelectedTransactions.find(trans.id) != m_SelectedTransactions.end()) {
-                        transactions_to_delete.push_back(trans);
-                    }
-                }
-                m_TransactionDialog.setTransactionsToDelete(transactions_to_delete);
-                m_TransactionDialog.show(DataDialogMode::MODE_DELETE_ALL);
-            }
-            ImGui::EndPopup();
-        }
-        ImGui::PopID();
-    }
-}
-
-void AccountPane::m_drawSearchRow() {
-    bool change = false;
-    bool reset = false;
-    ImGui::TableNextRow();
-    ImGui::TableNextColumn();
-    if (m_IsGroupingModeTransactions()) {
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-        if (ImGui::ContrastedButton("R", nullptr, nullptr, ImGui::GetColumnWidth(0))) {
-            reset = true;
-        }
-        ImGui::PopStyleVar();
-    }
-    for (size_t idx = 0; idx < 10; ++idx) {
-        ImGui::TableNextColumn();
-        if (idx < SearchColumns::SEARCH_COLUMN_Count) {
-            if (m_IsGroupingModeTransactions()) {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-                if (m_SearchInputTexts.at(idx).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
-                    m_SearchTokens[idx] = ct::toLower(m_SearchInputTexts.at(idx).GetText());
-                    m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
-                    change = true;
-                }
-                ImGui::PopStyleVar();
-            }
-        } else if (idx == 6) {
-            m_drawAmount(m_TotalDebit);
-        } else if (idx == 7) {
-            m_drawAmount(m_TotalCredit);
-        } else if (idx == 8) {
-            // m_drawAmount(m_CurrentBaseSolde);
-        } else if (idx == 9) {
-            ImGui::Text(  //
-                "[%u/%u]",
-                (uint32_t)m_Datas.transactions_filtered.size(),
-                (uint32_t)m_Datas.transactions.size());
-        }
-    }
-    if (reset) {
-        m_ResetFiltering();
-    }
-    if (change) {
-        m_refreshFiltering();
-    }
-}
-
-void AccountPane::m_drawAmount(const double& vAmount) {
-    if (vAmount < 0.0) {
-        const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
-        ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-        ImGui::Text("%.2f", vAmount);
-        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
-        ImGui::PopStyleColor();
-    } else if (vAmount > 0.0) {
-        const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
-        ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-        ImGui::Text("%.2f", vAmount);
-        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
-        ImGui::PopStyleColor();
-    } else {
-        ImGui::Text("%.2f", vAmount);
-        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
-    }
 }

@@ -20,37 +20,42 @@ private:
 public:
     explicit ADataTable(const char* vTableName, const int32_t& vCloumnsCount);
     virtual ~ADataTable() = default;
+
+    virtual bool Init();
+    virtual void Unit();
     virtual bool load();
     virtual void unload();
-    virtual bool drawMenu();
+    virtual bool drawMenu() = 0;
     void draw(const ImVec2& vSize);
 
 protected:
     virtual size_t m_getItemsCount() const = 0;
     virtual RowID m_getItemRowID(const size_t& vIdx) const = 0;
-    virtual double m_getItemAmount(const size_t& vIdx) const = 0;
+    virtual double m_getItemBarAmount(const size_t& vIdx) const = 0;
     virtual void m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) = 0;
     virtual void m_setupColumns() = 0;
     virtual void m_drawContextMenuContent() = 0;
-    virtual void m_doActionOnDblClick() = 0;
+    virtual void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) = 0;
 
 protected:
     RowID m_getAccountID();
     void m_updateAccounts();
+    bool m_drawAccountMenu();
     void m_drawColumnSelectable(const size_t& vIdx, const RowID& vRowID, const std::string& vText);
     void m_drawColumnText(const std::string& vText);
     void m_drawColumnDebit(const double& vDebit);
     void m_drawColumnCredit(const double& vCredit);
     void m_drawColumnAmount(const double& vAmount);
-    void m_drawColumnBars(const double vAmount, const double vMaxAmount);
+    void m_drawColumnBars(const double vAmount, const double vMaxAmount, const float vColumNWidth = -1.0f);
     const std::set<RowID>& m_getSelectedRows();
     void m_selectRows(const size_t& vStartIdx, const size_t& vEndIdx);
+    ImWidgets::QuickStringCombo& m_getAccountComboRef();
+    void m_ResetSelection();
+    void m_SelectRow(const RowID& vRowID);
+    bool m_IsRowSelected(const RowID& vRowID) const;
 
 private:
-    bool m_IsRowSelected(const RowID& vRowID) const;
-    void m_SelectRow(const RowID& vRowID);
     void m_SelectOrDeselectRow(const RowID& vRowID);
-    void m_ResetSelection();
     double m_computeMaxPrice();
     void m_showContextMenu(const size_t& vIdx);
 };

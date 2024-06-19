@@ -2,8 +2,14 @@
 #include <Systems/SettingsDialog.h>
 #include <Models/DataBase.h>
 
-ADataTable::ADataTable(const char* vTableName, const int32_t& vColummCount) 
-    : m_TableName(vTableName), m_ColummCount(vColummCount) {
+ADataTable::ADataTable(const char* vTableName, const int32_t& vColummCount) : m_TableName(vTableName), m_ColummCount(vColummCount) {
+}
+
+bool ADataTable::Init() {
+    return true;
+}
+
+void ADataTable::Unit() {
 }
 
 bool ADataTable::load() {
@@ -12,10 +18,9 @@ bool ADataTable::load() {
 }
 
 void ADataTable::unload() {
-
 }
 
-bool ADataTable::drawMenu() {
+bool ADataTable::m_drawAccountMenu() {
     const auto align = 100.0f;
     const auto width = 10;
     return m_AccountsCombo.displayCombo(width, "Account", align);
@@ -62,6 +67,10 @@ void ADataTable::draw(const ImVec2& vSize) {
     ImGui::PopStyleVar();
 }
 
+ImWidgets::QuickStringCombo& ADataTable::m_getAccountComboRef() {
+    return m_AccountsCombo;
+}
+
 void ADataTable::m_updateAccounts() {
     m_Accounts.clear();
     m_AccountsCombo.clear();
@@ -95,7 +104,7 @@ double ADataTable::m_computeMaxPrice() {
         if (idx < 0) {
             continue;
         }
-        const auto& as = std::abs(m_getItemAmount(idx));
+        const auto& as = std::abs(m_getItemBarAmount(idx));
         if (as > max_price) {
             max_price = as;
         }
@@ -132,7 +141,9 @@ void ADataTable::m_drawColumnSelectable(const size_t& vIdx, const RowID& vRowID,
     ImGui::Selectable(vText.c_str(), &is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
     if (ImGui::IsItemHovered()) {
         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-            m_doActionOnDblClick();
+            m_ResetSelection();
+            m_SelectRow(vRowID);
+            m_doActionOnDblClick(vIdx, vRowID);
         } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
             if (ImGui::IsKeyDown(ImGuiMod_Shift)) {
                 m_CurrSelectedItemIdx = vIdx;
@@ -214,14 +225,17 @@ void ADataTable::m_drawColumnAmount(const double& vAmount) {
     }
 }
 
-void ADataTable::m_drawColumnBars(const double vAmount, const double vMaxAmount) {
+void ADataTable::m_drawColumnBars(const double vAmount, const double vMaxAmount, const float vColumNWidth) {
     ImGui::TableNextColumn();
     auto drawListPtr = ImGui::GetWindowDrawList();
     const auto& cursor = ImGui::GetCursorScreenPos();
     ImGuiContext& g = *GImGui;
     ImGuiTable* table = g.CurrentTable;
     const auto& table_column = table->Columns[table->CurrentColumn];
-    const auto column_width = table_column.MaxX - table_column.MinX;
+    auto column_width = vColumNWidth;
+    if (column_width < 0.0f) {
+        column_width = table_column.MaxX - table_column.MinX;
+    }
     const ImVec2 pMin(cursor.x, cursor.y + m_TextHeight * 0.1f);
     const ImVec2 pMax(cursor.x + column_width, cursor.y + m_TextHeight * 0.9f);
     const float pMidX((pMin.x + pMax.x) * 0.5f);
