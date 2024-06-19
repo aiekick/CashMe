@@ -2,13 +2,13 @@
 
 #include <Frontend/Tables/abstract/ADataTable.h>
 
-class EntitiesTable : public ADataTable {
+class TransactionsTable : public ADataTable {
 private:
-    std::vector<Entity> m_Entities;
+    std::vector<Transaction> m_Transactions;
 
 public:
-    EntitiesTable();
-    ~EntitiesTable();
+    TransactionsTable();
+    ~TransactionsTable();
 
     bool load();
     void unload();
@@ -24,5 +24,5 @@ protected:
     void m_doActionOnDblClick() final;
 
 private:
-    void m_updateEntities();
+    void m_updateTransactions();
 };

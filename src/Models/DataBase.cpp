@@ -266,6 +266,7 @@ void DataBase::GetEntities(std::function<void(const EntityName&)> vCallback) {
 void DataBase::GetEntitiesStats(  //
     const RowID& vAccountID,
     std::function<void(  //
+        const RowID&,
         const EntityName&,
         const TransactionDebit&,
         const TransactionCredit&)> vCallback) {
@@ -274,18 +275,19 @@ void DataBase::GetEntitiesStats(  //
     const auto& select_query = ct::toStr(
         u8R"(
 SELECT
-  entities.name AS new_entity,
-  ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS new_debit,
-  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS new_credit
+  entities.id,
+  entities.name,
+  ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS debit,
+  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS credit
 FROM
   transactions
   LEFT JOIN entities ON transactions.entity_id = entities.id
 WHERE
   account_id = %u
 GROUP BY
-  new_entity
+  entities.name
 ORDER BY
-  new_entity;
+  entities.name;
 )",
         vAccountID);
     if (m_OpenDB()) {
@@ -297,10 +299,11 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    auto name = (const char*)sqlite3_column_text(stmt, 0);
-                    auto debit = (TransactionDebit)sqlite3_column_double(stmt, 1);
-                    auto credit = (TransactionCredit)sqlite3_column_double(stmt, 2);
-                    vCallback(name != nullptr ? name : "", debit, credit);
+                    auto row_id = sqlite3_column_int(stmt, 0);
+                    auto name = (const char*)sqlite3_column_text(stmt, 1);
+                    auto debit = (TransactionDebit)sqlite3_column_double(stmt, 2);
+                    auto credit = (TransactionCredit)sqlite3_column_double(stmt, 3);
+                    vCallback(row_id, name != nullptr ? name : "", debit, credit);
                 }
             }
         }
@@ -382,6 +385,7 @@ void DataBase::GetCategories(std::function<void(const CategoryName&)> vCallback)
 void DataBase::GetCategoriesStats(  //
     const RowID& vAccountID,
     std::function<void(  //
+        const RowID&,
         const CategoryName&,
         const TransactionDebit&,
         const TransactionCredit&)> vCallback) {
@@ -390,18 +394,19 @@ void DataBase::GetCategoriesStats(  //
     const auto& select_query = ct::toStr(
         u8R"(
 SELECT
-  categories.name AS new_category,
-  ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS new_debit,
-  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS new_credit
+  categories.id,
+  categories.name,
+  ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS debit,
+  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS credit
 FROM
   transactions
   LEFT JOIN categories ON transactions.category_id = categories.id
 WHERE
   account_id = %u
 GROUP BY
-  new_category
+  categories.name
 ORDER BY
-  new_category;
+  categories.name;
 )",
         vAccountID);
     if (m_OpenDB()) {
@@ -413,10 +418,11 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    auto name = (const char*)sqlite3_column_text(stmt, 0);
-                    auto debit = (TransactionDebit)sqlite3_column_double(stmt, 1);
-                    auto credit = (TransactionCredit)sqlite3_column_double(stmt, 2);
-                    vCallback(name != nullptr ? name : "", debit, credit);
+                    auto row_id = sqlite3_column_int(stmt, 0);
+                    auto name = (const char*)sqlite3_column_text(stmt, 1);
+                    auto debit = (TransactionDebit)sqlite3_column_double(stmt, 2);
+                    auto credit = (TransactionCredit)sqlite3_column_double(stmt, 3);
+                    vCallback(row_id, name != nullptr ? name : "", debit, credit);
                 }
             }
         }
@@ -498,6 +504,7 @@ void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback
 void DataBase::GetOperationsStats(  //
     const RowID& vAccountID,
     std::function<void(  //
+        const RowID&,
         const OperationName&,
         const TransactionDebit&,
         const TransactionCredit&)> vCallback) {
@@ -506,18 +513,19 @@ void DataBase::GetOperationsStats(  //
     const auto& select_query = ct::toStr(
         u8R"(
 SELECT
-  operations.name AS new_operation,
-  ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS new_debit,
-  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS new_credit
+  operations.id,
+  operations.name,
+  ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS debit,
+  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS credit
 FROM
   transactions
   LEFT JOIN operations ON transactions.operation_id = operations.id
 WHERE
   account_id = %u
 GROUP BY
-  new_operation
+  operations.name
 ORDER BY
-  new_operation;
+  operations.name;
 )",
         vAccountID);
     if (m_OpenDB()) {
@@ -529,10 +537,11 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    auto name = (const char*)sqlite3_column_text(stmt, 0);
-                    auto debit = (TransactionDebit)sqlite3_column_double(stmt, 1);
-                    auto credit = (TransactionCredit)sqlite3_column_double(stmt, 2);
-                    vCallback(name != nullptr ? name : "", debit, credit);
+                    auto row_id = sqlite3_column_int(stmt, 0);
+                    auto name = (const char*)sqlite3_column_text(stmt, 1);
+                    auto debit = (TransactionDebit)sqlite3_column_double(stmt, 2);
+                    auto credit = (TransactionCredit)sqlite3_column_double(stmt, 3);
+                    vCallback(row_id, name != nullptr ? name : "", debit, credit);
                 }
             }
         }

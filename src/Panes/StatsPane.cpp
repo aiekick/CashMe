@@ -124,10 +124,12 @@ void StatsPane::m_updateEntities() {
         m_Entities.clear();
         DataBase::Instance()->GetEntitiesStats(  //
             account_id,
-            [this](const EntityName& vEntityName,
+            [this](const RowID& vRowID,
+                   const EntityName& vEntityName,
                    const TransactionDebit& vTransactionDebit,
                    const TransactionCredit& vTransactionCredit) {  //
                 Entity e;
+                e.id = vRowID;
                 e.name = vEntityName;
                 e.debit = vTransactionDebit;
                 e.credit = vTransactionCredit;

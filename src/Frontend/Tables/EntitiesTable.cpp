@@ -25,22 +25,28 @@ bool EntitiesTable::drawMenu() {
     return false;
 }
 
-double EntitiesTable::m_getAmount(const size_t& vIdx) {
+size_t EntitiesTable::m_getItemsCount() const {
+    return m_Entities.size();
+}
+
+RowID EntitiesTable::m_getItemRowID(const size_t& vIdx) const {
+    if (vIdx < m_Entities.size()) {
+        return m_Entities.at(vIdx).id;
+    }
+    return 0;  // the db row id cant be 0
+}
+
+double EntitiesTable::m_getItemAmount(const size_t& vIdx) const {
     return m_Entities.at(vIdx).amount;
 }
 
-void EntitiesTable::m_drawContent(const size_t& vIdx, const double& vMaxAmount) {
+void EntitiesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) {
     const auto& e = m_Entities.at(vIdx);
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", e.name.c_str()); 
+    m_drawColumnSelectable(vIdx, e.id, e.name);
     m_drawColumnDebit(e.debit);
     m_drawColumnCredit(e.credit);
     m_drawColumnAmount(e.amount);
     m_drawColumnBars(e.amount, vMaxAmount);
-}
-
-size_t EntitiesTable::m_getItemsCount() {
-    return m_Entities.size();
 }
 
 void EntitiesTable::m_setupColumns() {
@@ -53,16 +59,26 @@ void EntitiesTable::m_setupColumns() {
     ImGui::TableHeadersRow();
 }
 
+void EntitiesTable::m_drawContextMenuContent() {
+    CTOOL_DEBUG_BREAK;
+}
+
+void EntitiesTable::m_doActionOnDblClick() {
+    CTOOL_DEBUG_BREAK;
+}
+
 void EntitiesTable::m_updateEntities() {
     const auto account_id = m_getAccountID();
     if (account_id > 0) {
         m_Entities.clear();
         DataBase::Instance()->GetEntitiesStats(  //
             account_id,
-            [this](const EntityName& vEntityName,
+            [this](const RowID& vRowID,
+                   const EntityName& vEntityName,
                    const TransactionDebit& vTransactionDebit,
                    const TransactionCredit& vTransactionCredit) {  //
                 Entity e;
+                e.id = vRowID;
                 e.name = vEntityName;
                 e.debit = vTransactionDebit;
                 e.credit = vTransactionCredit;

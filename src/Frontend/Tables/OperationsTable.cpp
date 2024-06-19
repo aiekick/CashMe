@@ -25,22 +25,28 @@ bool OperationsTable::drawMenu() {
     return false;
 }
 
-double OperationsTable::m_getAmount(const size_t& vIdx) {
+size_t OperationsTable::m_getItemsCount() const {
+    return m_Operations.size();
+}
+
+RowID OperationsTable::m_getItemRowID(const size_t& vIdx) const {
+    if (vIdx < m_Operations.size()) {
+        return m_Operations.at(vIdx).id;
+    }
+    return 0;  // the db row id cant be 0
+}
+
+double OperationsTable::m_getItemAmount(const size_t& vIdx) const {
     return m_Operations.at(vIdx).amount;
 }
 
-void OperationsTable::m_drawContent(const size_t& vIdx, const double& vMaxAmount) {
+void OperationsTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) {
     const auto& e = m_Operations.at(vIdx);
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", e.name.c_str()); 
+    m_drawColumnSelectable(vIdx, e.id, e.name);
     m_drawColumnDebit(e.debit);
     m_drawColumnCredit(e.credit);
     m_drawColumnAmount(e.amount);
     m_drawColumnBars(e.amount, vMaxAmount);
-}
-
-size_t OperationsTable::m_getItemsCount() {
-    return m_Operations.size();
 }
 
 void OperationsTable::m_setupColumns() {
@@ -53,16 +59,26 @@ void OperationsTable::m_setupColumns() {
     ImGui::TableHeadersRow();
 }
 
+void OperationsTable::m_drawContextMenuContent() {
+    CTOOL_DEBUG_BREAK;
+}
+
+void OperationsTable::m_doActionOnDblClick() {
+    CTOOL_DEBUG_BREAK;
+}
+
 void OperationsTable::m_updateOperations() {
     const auto account_id = m_getAccountID();
     if (account_id > 0) {
         m_Operations.clear();
         DataBase::Instance()->GetOperationsStats(  //
             account_id,
-            [this](const OperationName& vOperationName,
+            [this](const RowID& vRowID,
+                   const OperationName& vOperationName,
                    const TransactionDebit& vTransactionDebit,
                    const TransactionCredit& vTransactionCredit) {  //
                 Operation e;
+                e.id = vRowID;
                 e.name = vOperationName;
                 e.debit = vTransactionDebit;
                 e.credit = vTransactionCredit;

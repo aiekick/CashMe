@@ -24,7 +24,7 @@ bool ADataTable::drawMenu() {
 void ADataTable::draw(const ImVec2& vSize) {
     ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 30.0f);
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable(m_TableName, m_ColummCount, flags, vSize)) { 
+    if (ImGui::BeginTable(m_TableName, m_ColummCount, flags, vSize)) {
         m_setupColumns();
         int32_t idx = 0;
         double max_amount = DBL_MIN;
@@ -37,10 +37,26 @@ void ADataTable::draw(const ImVec2& vSize) {
                 if (idx < 0) {
                     continue;
                 }
-                m_drawContent((size_t)idx, max_amount);
+                ImGui::TableNextRow();
+                m_drawTableContent((size_t)idx, max_amount);
             }
         }
         m_ListClipper.End();
+
+        if (ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
+            if (ImGui::IsKeyDown(ImGuiKey_A)) {
+                m_selectRows(0, m_getItemsCount());
+            }
+        }
+
+        // shift selection
+        if (ImGui::IsKeyDown(ImGuiMod_Shift) && m_LastSelectedItemIdx > -1 && m_CurrSelectedItemIdx > -1) {
+            int32_t min_idx = ImMin(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
+            int32_t max_idx = ImMax(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
+            m_ResetSelection();
+            m_selectRows(min_idx, max_idx);
+        }
+
         ImGui::EndTable();
     }
     ImGui::PopStyleVar();
@@ -79,7 +95,7 @@ double ADataTable::m_computeMaxPrice() {
         if (idx < 0) {
             continue;
         }
-        const auto& as = std::abs(m_getAmount(idx));
+        const auto& as = std::abs(m_getItemAmount(idx));
         if (as > max_price) {
             max_price = as;
         }
@@ -87,11 +103,77 @@ double ADataTable::m_computeMaxPrice() {
     return max_price;
 }
 
+void ADataTable::m_showContextMenu(const size_t& vIdx) {
+    if (!m_SelectedItems.empty()) {
+        ImGui::PushID(vIdx);
+        if (ImGui::BeginPopupContextItem(               //
+                NULL,                                   //
+                ImGuiPopupFlags_NoOpenOverItems |       //
+                    ImGuiPopupFlags_MouseButtonRight |  //
+                    ImGuiPopupFlags_NoOpenOverExistingPopup)) {
+            m_drawContextMenuContent();
+            ImGui::EndPopup();
+        }
+        ImGui::PopID();
+    }
+}
+
 RowID ADataTable::m_getAccountID() {
     if (m_AccountsCombo.getIndex() < m_Accounts.size()) {
         return m_Accounts.at(m_AccountsCombo.getIndex()).id;
     }
     return 0U;
+}
+
+void ADataTable::m_drawColumnSelectable(const size_t& vIdx, const RowID& vRowID, const std::string& vText) {
+    ImGui::TableNextColumn();
+    ImGui::PushID(vRowID);
+    auto is_selected = m_IsRowSelected(vRowID);
+    ImGui::Selectable(vText.c_str(), &is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+    if (ImGui::IsItemHovered()) {
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            m_doActionOnDblClick();
+        } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+            if (ImGui::IsKeyDown(ImGuiMod_Shift)) {
+                m_CurrSelectedItemIdx = vIdx;
+            } else {
+                m_LastSelectedItemIdx = vIdx;
+                if (!ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
+                    m_ResetSelection();
+                }
+                m_SelectOrDeselectRow(vRowID);
+            }
+        } 
+    }
+    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", vText.c_str());
+    ImGui::PopID();
+    m_showContextMenu(vIdx);
+}
+
+void ADataTable::m_drawColumnText(const std::string& vText) {
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", vText.c_str());
+    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", vText.c_str());
+}
+
+void ADataTable::m_SelectRow(const RowID& vRowID) {
+    m_SelectedItems.emplace(vRowID);  // selection
+}
+
+void ADataTable::m_SelectOrDeselectRow(const RowID& vRowID) {
+    if (m_SelectedItems.find(vRowID) != m_SelectedItems.end()) {
+        m_SelectedItems.erase(vRowID);  // deselection
+    } else {
+        m_SelectedItems.emplace(vRowID);  // selection
+    }
+}
+
+void ADataTable::m_ResetSelection() {
+    m_SelectedItems.clear();
+}
+
+bool ADataTable::m_IsRowSelected(const RowID& vRowID) const {
+    return (m_SelectedItems.find(vRowID) != m_SelectedItems.end());
 }
 
 void ADataTable::m_drawColumnDebit(const double& vDebit) {
@@ -151,4 +233,14 @@ void ADataTable::m_drawColumnBars(const double vAmount, const double vMaxAmount)
         drawListPtr->AddRectFilled(ImVec2(pMidX, pMin.y), ImVec2(pMidX + bw, pMax.y), ImGui::GetColorU32(m_GoodColor));
     }
     ImGui::SetCursorScreenPos(pMax);
+}
+
+const std::set<RowID>& ADataTable::m_getSelectedRows() {
+    return m_SelectedItems;
+}
+
+void ADataTable::m_selectRows(const size_t& vStartIdx, const size_t& vEndIdx) {
+    for (size_t idx = vStartIdx; idx < vEndIdx; ++idx) {
+        m_SelectRow(m_getItemRowID(idx));
+    }
 }

@@ -15,10 +15,13 @@ public:
     bool drawMenu();
 
 protected:
-    double m_getAmount(const size_t& vIdx) final;
-    void m_drawContent(const size_t& vIdx, const double& vMaxAmount) final;
-    size_t m_getItemsCount() final;
+    size_t m_getItemsCount() const final;
+    RowID m_getItemRowID(const size_t& vIdx) const final;
+    double m_getItemAmount(const size_t& vIdx) const final;
+    void m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) final;
     void m_setupColumns() final;
+    void m_drawContextMenuContent() final;
+    void m_doActionOnDblClick() final;
 
 private:
     void m_updateCategories();

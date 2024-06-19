@@ -55,6 +55,7 @@ public:
     void GetEntitiesStats(  //
         const RowID& vAccountID,
         std::function<void(  //
+            const RowID&,
             const EntityName&,
             const TransactionDebit&,
             const TransactionCredit&)> vCallback);
@@ -67,6 +68,7 @@ public:
     void GetCategoriesStats(  //
         const RowID& vAccountID,
         std::function<void(  //
+            const RowID&,
             const CategoryName&,
             const TransactionDebit&,
             const TransactionCredit&)> vCallback);
@@ -79,6 +81,7 @@ public:
     void GetOperationsStats(  //
         const RowID& vAccountID,
         std::function<void(  //
+            const RowID&,
             const OperationName&,
             const TransactionDebit&,
             const TransactionCredit&)> vCallback);
