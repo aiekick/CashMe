@@ -44,11 +44,7 @@ private:
     GroupingMode m_GroupingMode = GroupingMode::GROUPING_MODE_TRANSACTIONS;
 
     // accounts display
-    std::map<BankName,                         //
-             std::map<BankAgency,              //
-                      std::map<AccountNumber,  //
-                               Account>>>
-        m_Accounts;
+    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
 
 public:
     TransactionsTable();
