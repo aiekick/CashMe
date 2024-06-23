@@ -1580,7 +1580,7 @@ CREATE TABLE incomes (
     min_delay_days INTEGER, -- delay in days, can be zero
     max_delay_days INTEGER, -- delay in days, can be the same as min
     hash TEXT NOT NULL UNIQUE,
-    -- liens
+    -- links
     FOREIGN KEY (entity_id) REFERENCES entities(id),
     FOREIGN KEY (category_id) REFERENCES categories(id),
     FOREIGN KEY (operation_id) REFERENCES operations(id),

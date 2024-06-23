@@ -29,6 +29,7 @@ void TransactionDialog::setTransactionsToDelete(const std::vector<Transaction>& 
 
 void TransactionDialog::m_drawContent(const ImVec2& vPos) {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_drawContentCreation(vPos);
@@ -41,6 +42,7 @@ void TransactionDialog::m_drawContent(const ImVec2& vPos) {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_drawContentUpdate(vPos);
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -199,6 +201,7 @@ void TransactionDialog::m_prepare() {
 
 const char* TransactionDialog::m_getTitle() const {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             return "Transaction Creation";
@@ -211,6 +214,7 @@ const char* TransactionDialog::m_getTitle() const {
         case DataDialogMode::MODE_UPDATE_ALL: {
             return "Transaction Update";
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -219,12 +223,14 @@ const char* TransactionDialog::m_getTitle() const {
 
 bool TransactionDialog::m_canConfirm() {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: return true;
         case DataDialogMode::MODE_DELETE_ONCE:
         case DataDialogMode::MODE_DELETE_ALL: return !m_TransactionsToDelete.empty();
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: return true;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -233,6 +239,7 @@ bool TransactionDialog::m_canConfirm() {
 
 void TransactionDialog::m_confirmDialog() {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_confirmDialogCreation();
@@ -247,6 +254,7 @@ void TransactionDialog::m_confirmDialog() {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_confirmDialogUpdateAll();
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }    

@@ -25,6 +25,7 @@ void CategoryDialog::m_drawContent(const ImVec2& vPos) {
         case DataDialogMode::MODE_DELETE_ALL: m_drawContentDeletion(vPos); break;
         case DataDialogMode::MODE_UPDATE_ONCE: m_drawContentUpdate(vPos); break;
         case DataDialogMode::MODE_UPDATE_ALL: m_drawContentUpdate(vPos); break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -43,6 +44,7 @@ void CategoryDialog::m_prepare() {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_CategoryNameInputText.SetText(m_Category.name);
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -56,6 +58,7 @@ const char* CategoryDialog::m_getTitle() const {
         case DataDialogMode::MODE_DELETE_ALL: return "Categorys Deletion"; break;
         case DataDialogMode::MODE_UPDATE_ONCE: return "Category Update"; break;
         case DataDialogMode::MODE_UPDATE_ALL: return "Categorys Update"; break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -80,6 +83,7 @@ void CategoryDialog::m_confirmDialog() {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_confirmDialogUpdate();
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }

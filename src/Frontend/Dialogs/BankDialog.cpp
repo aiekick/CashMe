@@ -19,12 +19,14 @@ void BankDialog::setBank(const Bank& vBank) {
 
 void BankDialog::m_drawContent(const ImVec2& vPos) {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: m_drawContentCreation(vPos); break;
         case DataDialogMode::MODE_DELETE_ONCE: m_drawContentDeletion(vPos); break;
         case DataDialogMode::MODE_DELETE_ALL: m_drawContentDeletion(vPos); break;
         case DataDialogMode::MODE_UPDATE_ONCE: m_drawContentUpdate(vPos); break;
         case DataDialogMode::MODE_UPDATE_ALL: m_drawContentUpdate(vPos); break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -32,6 +34,7 @@ void BankDialog::m_drawContent(const ImVec2& vPos) {
 
 void BankDialog::m_prepare() {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_BankNameInputText.Clear();
@@ -45,6 +48,7 @@ void BankDialog::m_prepare() {
             m_BankNameInputText.SetText(m_Bank.name);
             m_BankUrlInputText.SetText(m_Bank.url);
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -52,12 +56,14 @@ void BankDialog::m_prepare() {
 
 const char* BankDialog::m_getTitle() const {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: return "Bank Creation"; break;
         case DataDialogMode::MODE_DELETE_ONCE: return "Bank Deletion"; break;
         case DataDialogMode::MODE_DELETE_ALL: return "Banks Deletion"; break;
         case DataDialogMode::MODE_UPDATE_ONCE: return "Bank Update"; break;
         case DataDialogMode::MODE_UPDATE_ALL: return "Banks Update"; break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -70,6 +76,7 @@ bool BankDialog::m_canConfirm() {
 
 void BankDialog::m_confirmDialog() {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_confirmDialogCreation();
@@ -82,6 +89,7 @@ void BankDialog::m_confirmDialog() {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_confirmDialogUpdate();
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }

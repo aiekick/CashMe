@@ -1,66 +1,69 @@
-#include <Frontend/Tables/TransactionsTable.h>
+/*#include <Frontend/Tables/BudgetTable.h>
 #include <Frontend/MainFrontend.h>
 #include <Models/DataBase.h>
 #include <Systems/SettingsDialog.h>
 
-TransactionsTable::TransactionsTable() : ADataBarsTable("TransactionsTable", 11) {
+BudgetTable::BudgetTable() : ADataTable("BudgetTable", 11) {
 }
 
-bool TransactionsTable::init() {
-    return m_TransactionDialog.init();
+BudgetTable::~BudgetTable() {
 }
 
-void TransactionsTable::unit() {
-    m_TransactionDialog.unit();
+bool BudgetTable::Init() {
+    return m_BudgetDialog.init();
+}
+
+void BudgetTable::Unit() {
+    m_BudgetDialog.unit();
     clear();
 }
 
-bool TransactionsTable::load() {
-    if (ADataBarsTable::load()) {
+bool BudgetTable::load() {
+    if (ADataTable::load()) {
         refreshDatas();
         return true;
     }
     return false;
 }
 
-void TransactionsTable::unload() {
-    ADataBarsTable::unload();
+void BudgetTable::unload() {
+    ADataTable::unload();
     clear();
 }
 
-bool TransactionsTable::drawMenu() {
+bool BudgetTable::drawMenu() {
     return false;
 }
 
-TransactionDialog& TransactionsTable::getTransactionDialogRef() {
-    return m_TransactionDialog;
+BudgetDialog& BudgetTable::getBudgetDialogRef() {
+    return m_BudgetDialog;
 }
 
-size_t TransactionsTable::m_getItemsCount() const {
+size_t BudgetTable::m_getItemsCount() const {
     return m_Datas.transactions_filtered.size();
 }
 
-RowID TransactionsTable::m_getItemRowID(const size_t& vIdx) const {
+RowID BudgetTable::m_getItemRowID(const size_t& vIdx) const {
     if (vIdx < m_Datas.transactions_filtered.size()) {
         return m_Datas.transactions_filtered.at(vIdx).id;
     }
     return 0;  // the db row id cant be 0
 }
 
-double TransactionsTable::m_getItemBarAmount(const size_t& vIdx) const {
+double BudgetTable::m_getItemBarAmount(const size_t& vIdx) const {
     return m_Datas.transactions_filtered.at(vIdx).solde;
 }
 
-void TransactionsTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) {
+void BudgetTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) {
     auto& t = m_Datas.transactions_filtered.at(vIdx);
 
     ImGui::TableNextColumn();
     {
-        if (m_IsGroupingModeTransactions()) {
+        if (m_IsGroupingModeBudget()) {
             ImGui::PushID(t.id);
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
             if (ImGui::Checkbox("##check", &t.confirmed)) {
-                DataBase::Instance()->ConfirmTransaction(t.id, t.confirmed);
+                DataBase::Instance()->ConfirmBudget(t.id, t.confirmed);
             }
             ImGui::PopStyleVar();
             ImGui::PopID();
@@ -105,7 +108,7 @@ void TransactionsTable::m_drawTableContent(const size_t& vIdx, const double& vMa
     m_drawColumnBars(t.solde, vMaxAmount, 100.0f);
 }
 
-void TransactionsTable::m_setupColumns() {
+void BudgetTable::m_setupColumns() {
     ImGui::TableSetupScrollFreeze(0, 2);
     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
@@ -122,42 +125,42 @@ void TransactionsTable::m_setupColumns() {
     ImGui::TableHeadersRow();
 }
 
-void TransactionsTable::m_drawContextMenuContent() {
+void BudgetTable::m_drawContextMenuContent() {
     if (!m_getSelectedRows().empty()) {
         if (ImGui::MenuItem("Update selection")) {
-            std::vector<Transaction> transactions_to_update;
+            std::vector<Budget> transactions_to_update;
             for (const auto& trans : m_Datas.transactions_filtered) {
                 if (m_IsRowSelected(trans.id)) {
                     transactions_to_update.push_back(trans);
                 }
             }
             if (transactions_to_update.size() > 1U) {
-                m_TransactionDialog.setTransactionsToUpdate(transactions_to_update);
-                m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ALL);
+                m_BudgetDialog.setBudgetToUpdate(transactions_to_update);
+                m_BudgetDialog.show(DataDialogMode::MODE_UPDATE_ALL);
             } else if (transactions_to_update.size() == 1U) {
-                m_TransactionDialog.setTransaction(transactions_to_update.front());
-                m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
+                m_BudgetDialog.setBudget(transactions_to_update.front());
+                m_BudgetDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
             }
         }
         if (ImGui::MenuItem("Delete selection")) {
-            std::vector<Transaction> transactions_to_delete;
+            std::vector<Budget> transactions_to_delete;
             for (const auto& trans : m_Datas.transactions_filtered) {
                 if (m_IsRowSelected(trans.id)) {
                     transactions_to_delete.push_back(trans);
                 }
             }
-            m_TransactionDialog.setTransactionsToDelete(transactions_to_delete);
-            m_TransactionDialog.show(DataDialogMode::MODE_DELETE_ALL);
+            m_BudgetDialog.setBudgetToDelete(transactions_to_delete);
+            m_BudgetDialog.show(DataDialogMode::MODE_DELETE_ALL);
         }
     }
 }
 
-void TransactionsTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-    m_TransactionDialog.setTransaction(m_Datas.transactions_filtered.at(vIdx));
-    m_TransactionDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
+void BudgetTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
+    m_BudgetDialog.setBudget(m_Datas.transactions_filtered.at(vIdx));
+    m_BudgetDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
 }
 
-void TransactionsTable::refreshDatas() {
+void BudgetTable::refreshDatas() {
     m_UpdateBanks();
     m_UpdateEntities();
     m_UpdateCategories();
@@ -165,16 +168,16 @@ void TransactionsTable::refreshDatas() {
     m_UpdateAccounts();
 }
 
-bool TransactionsTable::m_isGroupingModeTransactions() {
+bool BudgetTable::m_isGroupingModeBudget() {
     return (m_GroupingMode == GroupingMode::GROUPING_MODE_TRANSACTIONS);
 }
 
-void TransactionsTable::m_drawSearchRow() {
+void BudgetTable::m_drawSearchRow() {
     bool change = false;
     bool reset = false;
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
-    if (m_IsGroupingModeTransactions()) {
+    if (m_IsGroupingModeBudget()) {
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         if (ImGui::ContrastedButton("R", nullptr, nullptr, ImGui::GetColumnWidth(0))) {
             reset = true;
@@ -184,7 +187,7 @@ void TransactionsTable::m_drawSearchRow() {
     for (size_t idx = 0; idx < 10; ++idx) {
         ImGui::TableNextColumn();
         if (idx < SearchColumns::SEARCH_COLUMN_Count) {
-            if (m_IsGroupingModeTransactions()) {
+            if (m_IsGroupingModeBudget()) {
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
                 if (m_SearchInputTexts.at(idx).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
                     m_SearchTokens[idx] = ct::toLower(m_SearchInputTexts.at(idx).GetText());
@@ -214,14 +217,14 @@ void TransactionsTable::m_drawSearchRow() {
     }
 }
 
-void TransactionsTable::drawSelectMenu(FrameActionSystem& vFrameActionSystem) {
+void BudgetTable::drawSelectMenu(FrameActionSystem& vFrameActionSystem) {
     if (ImGui::BeginMenu("Select")) {
         if (ImGui::BeginMenu("Rows")) {
             if (ImGui::MenuItem("Displayed")) {
                 m_selectRows(0, m_getItemsCount());
             }
             if (ImGui::MenuItem("UnConfirmed")) {
-                m_SelectUnConfirmedTransactions();
+                m_SelectUnConfirmedBudget();
             }
             if (ImGui::MenuItem("Duplicate (Date + Amount)")) {
                 m_SelectPossibleDuplicateEntryOnPricesAndDates();
@@ -258,7 +261,7 @@ void TransactionsTable::drawSelectMenu(FrameActionSystem& vFrameActionSystem) {
     }
 }
 
-void TransactionsTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
+void BudgetTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
 #ifdef _DEBUG
     if (ImGui::BeginMenu("Debug")) {
         if (ImGui::MenuItem("Refresh")) {
@@ -286,8 +289,8 @@ void TransactionsTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
                 DataBase::Instance()->DeleteOperations();
                 refreshDatas();
             }
-            if (ImGui::MenuItem("Transactions")) {
-                DataBase::Instance()->DeleteTransactions();
+            if (ImGui::MenuItem("Budget")) {
+                DataBase::Instance()->DeleteBudget();
                 refreshDatas();
             }
             ImGui::EndMenu();
@@ -297,22 +300,22 @@ void TransactionsTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
 #endif
 }
 
-void TransactionsTable::drawGroupingMenu(FrameActionSystem& vFrameActionSystem) {
+void BudgetTable::drawGroupingMenu(FrameActionSystem& vFrameActionSystem) {
     if (ImGui::MenuItem("T", nullptr, m_GroupingMode == GroupingMode::GROUPING_MODE_TRANSACTIONS)) {
-        m_GroupTransactions(GroupingMode::GROUPING_MODE_TRANSACTIONS);
+        m_GroupBudget(GroupingMode::GROUPING_MODE_TRANSACTIONS);
     }
     if (ImGui::MenuItem("D", nullptr, m_GroupingMode == GroupingMode::GROUPING_MODE_DAYS)) {
-        m_GroupTransactions(GroupingMode::GROUPING_MODE_DAYS);
+        m_GroupBudget(GroupingMode::GROUPING_MODE_DAYS);
     }
     if (ImGui::MenuItem("M", nullptr, m_GroupingMode == GroupingMode::GROUPING_MODE_MONTHS)) {
-        m_GroupTransactions(GroupingMode::GROUPING_MODE_MONTHS);
+        m_GroupBudget(GroupingMode::GROUPING_MODE_MONTHS);
     }
     if (ImGui::MenuItem("Y", nullptr, m_GroupingMode == GroupingMode::GROUPING_MODE_YEARS)) {
-        m_GroupTransactions(GroupingMode::GROUPING_MODE_YEARS);
+        m_GroupBudget(GroupingMode::GROUPING_MODE_YEARS);
     }
 }
 
-void TransactionsTable::drawAccountsMenu(FrameActionSystem& vFrameActionSystem) {
+void BudgetTable::drawAccountsMenu(FrameActionSystem& vFrameActionSystem) {
     if (ImGui::BeginMenu("Accounts")) {
         for (const auto& bank : m_Accounts) {
             if (ImGui::BeginMenu(bank.first.c_str())) {  // bank name
@@ -338,7 +341,7 @@ void TransactionsTable::drawAccountsMenu(FrameActionSystem& vFrameActionSystem) 
                                     {
                                         if (ImGui::Selectable(a.number.c_str(), m_getAccountComboRef().getIndex() == idx, ImGuiSelectableFlags_SpanAllColumns)) {
                                             m_ResetSelection();
-                                            m_UpdateTransactions(a.id);
+                                            m_UpdateBudget(a.id);
                                             m_getAccountComboRef().getIndexRef() = idx;
                                         }
                                     }
@@ -369,11 +372,11 @@ void TransactionsTable::drawAccountsMenu(FrameActionSystem& vFrameActionSystem) 
     }
 }
 
-void TransactionsTable::clear() {
+void BudgetTable::clear() {
     m_Datas.clear();
 }
 
-void TransactionsTable::resetFiltering() {
+void BudgetTable::resetFiltering() {
     m_Datas.transactions_filtered = m_Datas.transactions;
     m_Datas.transactions_filtered_rowids = {};
     m_SearchInputTexts = {};
@@ -383,7 +386,7 @@ void TransactionsTable::resetFiltering() {
     refreshFiltering();
 }
 
-void TransactionsTable::refreshFiltering() {
+void BudgetTable::refreshFiltering() {
     m_Datas.transactions_filtered.clear();
     m_Datas.transactions_filtered_rowids.clear();
     bool use = false;
@@ -412,17 +415,17 @@ void TransactionsTable::refreshFiltering() {
     }
 }
 
-void TransactionsTable::m_FilterSelection() {
+void BudgetTable::m_FilterSelection() {
     m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SELECTED_ROW_IDS;
     m_Datas.filtered_selected_transactions = m_getSelectedRows();
     refreshFiltering();
 }
 
-void TransactionsTable::m_SelectPossibleDuplicateEntryOnPricesAndDates() {
+void BudgetTable::m_SelectPossibleDuplicateEntryOnPricesAndDates() {
     if (m_getAccountComboRef().getIndex() < m_Datas.accounts.size()) {
         RowID account_id = m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id;
         m_ResetSelection();
-        DataBase::Instance()->GetDuplicateTransactionsOnDatesAndAmount(  //
+        DataBase::Instance()->GetDuplicateBudgetOnDatesAndAmount(  //
             account_id,                                                  //
             [this](const RowID& vRowID) {
                 if (m_Datas.transactions_filtered_rowids.find(vRowID) !=  //
@@ -433,11 +436,11 @@ void TransactionsTable::m_SelectPossibleDuplicateEntryOnPricesAndDates() {
     }
 }
 
-void TransactionsTable::m_SelectUnConfirmedTransactions() {
+void BudgetTable::m_SelectUnConfirmedBudget() {
     if (m_getAccountComboRef().getIndex() < m_Datas.accounts.size()) {
         RowID account_id = m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id;
         m_ResetSelection();
-        DataBase::Instance()->GetUnConfirmedTransactions(  //
+        DataBase::Instance()->GetUnConfirmedBudget(  //
             account_id,                                    //
             [this](const RowID& vRowID) {
                 if (m_Datas.transactions_filtered_rowids.find(vRowID) !=  //
@@ -448,7 +451,7 @@ void TransactionsTable::m_SelectUnConfirmedTransactions() {
     }
 }
 
-void TransactionsTable::m_SelectEmptyColumn(const SearchColumns& vColumn) {
+void BudgetTable::m_SelectEmptyColumn(const SearchColumns& vColumn) {
     m_ResetSelection();
     for (const auto& t : m_Datas.transactions_filtered) {
         if (vColumn == SearchColumns::SEARCH_COLUMN_COMMENT) {
@@ -471,22 +474,22 @@ void TransactionsTable::m_SelectEmptyColumn(const SearchColumns& vColumn) {
     }
 }
 
-void TransactionsTable::m_GroupTransactions(const GroupingMode& vGroupingMode) {
+void BudgetTable::m_GroupBudget(const GroupingMode& vGroupingMode) {
     m_GroupingMode = vGroupingMode;
     if (m_getAccountComboRef().getIndex() < m_Datas.accounts.size()) {
-        m_UpdateTransactions(m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id);
+        m_UpdateBudget(m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id);
     }
 }
 
-void TransactionsTable::m_UpdateBanks() {
+void BudgetTable::m_UpdateBanks() {
     m_Datas.bankNames.clear();
     DataBase::Instance()->GetBanks(                                       //
-        [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
-            m_Datas.bankNames.push_back(vUserName);
-        });
+        [this](const BankName& vUserName, const std::string& /*vUrl) {  //
+    m_Datas.bankNames.push_back(vUserName);
+});
 }
 
-void TransactionsTable::m_UpdateEntities() {
+void BudgetTable::m_UpdateEntities() {
     m_Datas.entityNames.clear();
     DataBase::Instance()->GetEntities(           //
         [this](const EntityName& vEntityName) {  //
@@ -494,7 +497,7 @@ void TransactionsTable::m_UpdateEntities() {
         });
 }
 
-void TransactionsTable::m_UpdateCategories() {
+void BudgetTable::m_UpdateCategories() {
     m_Datas.categoryNames.clear();
     DataBase::Instance()->GetCategories(             //
         [this](const CategoryName& vCategoryName) {  //
@@ -502,7 +505,7 @@ void TransactionsTable::m_UpdateCategories() {
         });
 }
 
-void TransactionsTable::m_UpdateOperations() {
+void BudgetTable::m_UpdateOperations() {
     m_Datas.operationNames.clear();
     DataBase::Instance()->GetOperations(               //
         [this](const OperationName& vOperationName) {  //
@@ -510,7 +513,7 @@ void TransactionsTable::m_UpdateOperations() {
         });
 }
 
-void TransactionsTable::m_UpdateAccounts() {
+void BudgetTable::m_UpdateAccounts() {
     m_Accounts.clear();
     m_Datas.accounts.clear();
     m_Datas.accountNumbers.clear();
@@ -522,7 +525,7 @@ void TransactionsTable::m_UpdateAccounts() {
                const AccountName& vAccountName,
                const AccountNumber& vAccountNumber,
                const AccounBaseSolde& vBaseSolde,
-               const TransactionsCount& vCount) {  //
+               const BudgetCount& vCount) {  //
             Account a;
             a.id = vRowID;
             a.bank = vBankName;
@@ -537,34 +540,34 @@ void TransactionsTable::m_UpdateAccounts() {
             m_Accounts[vBankName + "##BankName"][vBankAgency + "##BankAgency"][vAccountNumber] = a;
         });
     if (m_getAccountComboRef().getIndex() < m_Datas.accounts.size()) {
-        m_UpdateTransactions(m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id);
+        m_UpdateBudget(m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id);
     }
 }
 
-void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
+void BudgetTable::m_UpdateBudget(const RowID& vAccountID) {
     m_Datas.transactions.clear();
     const auto& zero_based_account_id = vAccountID - 1;
     if (zero_based_account_id < m_Datas.accounts.size()) {
         double solde = m_CurrentBaseSolde = m_Datas.accounts.at(zero_based_account_id).base_solde;
         const auto& account_number = m_Datas.accounts.at(zero_based_account_id).number;
-        if (m_IsGroupingModeTransactions()) {
-            DataBase::Instance()->GetTransactions(  //
-                vAccountID,                         //
-                [this, &solde, account_number](     //
-                    const RowID& vTransactionID,
+        if (m_IsGroupingModeBudget()) {
+            DataBase::Instance()->GetBudget(     //
+                vAccountID,                      //
+                [this, &solde, account_number](  //
+                    const RowID& vBudgetID,
                     const EntityName& vEntityName,
                     const CategoryName& vCategoryName,
                     const OperationName& vOperationName,
                     const SourceName& vSourceName,
-                    const TransactionDate& vDate,
-                    const TransactionDescription& vDescription,
-                    const TransactionComment& vComment,
-                    const TransactionAmount& vAmount,
-                    const TransactionConfirmed& vConfirmed,
-                    const TransactionHash& vHash) {  //
+                    const BudgetDate& vDate,
+                    const BudgetDescription& vDescription,
+                    const BudgetComment& vComment,
+                    const BudgetAmount& vAmount,
+                    const BudgetConfirmed& vConfirmed,
+                    const BudgetHash& vHash) {  //
                     solde += vAmount;
-                    Transaction t;
-                    t.id = vTransactionID;
+                    Budget t;
+                    t.id = vBudgetID;
                     t.account = account_number;
                     t.optimized[0] = ct::toLower(t.date = vDate);
                     t.optimized[1] = ct::toLower(t.description = vDescription);
@@ -582,29 +585,29 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                     m_Datas.transactions.push_back(t);
                 });
         } else {
-            DataBase::Instance()->GetGroupedTransactions(  //
+            DataBase::Instance()->GetGroupedBudget(  //
                 vAccountID,
                 GroupBy::DATES,
                 (DateFormat)(m_GroupingMode - 1),
                 [this](  //
                     const RowID& vRowID,
-                    const TransactionDate& vTransactionDate,
-                    const TransactionDescription& vTransactionDescription,
+                    const BudgetDate& vBudgetDate,
+                    const BudgetDescription& vBudgetDescription,
                     const EntityName& vEntityName,
                     const CategoryName& vCategoryName,
                     const OperationName& vOperationName,
-                    const TransactionDebit& vTransactionDebit,
-                    const TransactionCredit& vTransactionCredit) {
-                    Transaction t;
+                    const BudgetDebit& vBudgetDebit,
+                    const BudgetCredit& vBudgetCredit) {
+                    Budget t;
                     t.id = vRowID;
-                    t.date = vTransactionDate;
+                    t.date = vBudgetDate;
                     t.description = "-- grouped --";
                     t.entity = "-- grouped --";
                     t.category = "-- grouped --";
                     t.operation = "-- grouped --";
-                    t.debit = vTransactionDebit;
-                    t.credit = vTransactionCredit;
-                    t.amount = vTransactionDebit + vTransactionCredit;
+                    t.debit = vBudgetDebit;
+                    t.credit = vBudgetCredit;
+                    t.amount = vBudgetDebit + vBudgetCredit;
                     m_Datas.transactions.push_back(t);
                 });
         }
@@ -612,19 +615,19 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
     refreshFiltering();
 }
 
-bool TransactionsTable::m_IsGroupingModeTransactions() {
+bool BudgetTable::m_IsGroupingModeBudget() {
     return (m_GroupingMode == GroupingMode::GROUPING_MODE_TRANSACTIONS);
 }
 
-void TransactionsTable::m_drawAmount(const double& vAmount) {
+void BudgetTable::m_drawAmount(const double& vAmount) {
     if (vAmount < 0.0) {
-        const auto& bad_color = ImGui::GetColorU32(ImGui::CustomStyle::BadColor);
+        const auto& bad_color = ImGui::GetColorU32(ImVec4(1, 0, 0, 1));
         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
         ImGui::Text("%.2f", vAmount);
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
         ImGui::PopStyleColor();
     } else if (vAmount > 0.0) {
-        const auto& good_color = ImGui::GetColorU32(ImGui::CustomStyle::GoodColor);
+        const auto& good_color = ImGui::GetColorU32(ImVec4(0, 1, 0, 1));
         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
         ImGui::Text("%.2f", vAmount);
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
@@ -634,3 +637,4 @@ void TransactionsTable::m_drawAmount(const double& vAmount) {
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
     }
 }
+*/

@@ -29,6 +29,7 @@ void IncomeDialog::setIncomesToDelete(const std::vector<Income>& vIncomes) {
 
 void IncomeDialog::m_drawContent(const ImVec2& vPos) {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_drawContentCreation(vPos);
@@ -41,6 +42,7 @@ void IncomeDialog::m_drawContent(const ImVec2& vPos) {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_drawContentUpdate(vPos);
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -199,6 +201,7 @@ void IncomeDialog::m_prepare() {
 
 const char* IncomeDialog::m_getTitle() const {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             return "Income Creation";
@@ -211,6 +214,7 @@ const char* IncomeDialog::m_getTitle() const {
         case DataDialogMode::MODE_UPDATE_ALL: {
             return "Income Update";
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -219,12 +223,14 @@ const char* IncomeDialog::m_getTitle() const {
 
 bool IncomeDialog::m_canConfirm() {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: return true;
         case DataDialogMode::MODE_DELETE_ONCE:
         case DataDialogMode::MODE_DELETE_ALL: return !m_IncomesToDelete.empty();
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: return true;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -233,6 +239,7 @@ bool IncomeDialog::m_canConfirm() {
 
 void IncomeDialog::m_confirmDialog() {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_confirmDialogCreation();
@@ -247,6 +254,7 @@ void IncomeDialog::m_confirmDialog() {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_confirmDialogUpdateAll();
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }    

@@ -1,14 +1,14 @@
-#pragma once
+/*#pragma once
 
-#include <Frontend/Tables/abstract/ADataBarsTable.h>
+#include <Frontend/Tables/abstract/ADataTable.h>
 
 #include <Systems/FrameActionSystem.h>
 
 #include <Threads/ImportWorkerThread.h>
 
-#include <Frontend/Dialogs/TransactionDialog.h>
+#include <Frontend/Dialogs/BudgetDialog.h>
 
-class TransactionsTable : public ADataBarsTable {
+class BudgetTable : public ADataTable {
 private:
     struct Datas {
         std::vector<BankName> bankNames;
@@ -17,8 +17,8 @@ private:
         std::vector<OperationName> operationNames;
         std::vector<Account> accounts;
         std::vector<AccountNumber> accountNumbers;
-        std::vector<Transaction> transactions;
-        std::vector<Transaction> transactions_filtered;
+        std::vector<Budget> transactions;
+        std::vector<Budget> transactions_filtered;
         std::set<RowID> transactions_filtered_rowids;
         std::set<RowID> filtered_selected_transactions;
         void clear() {
@@ -32,7 +32,7 @@ private:
         }
     } m_Datas;
 
-    TransactionDialog m_TransactionDialog;
+    BudgetDialog m_BudgetDialog;
 
     double m_CurrentBaseSolde = 0.0;
     double m_TotalDebit = 0.0;
@@ -47,17 +47,17 @@ private:
     std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
 
 public:
-    TransactionsTable();
-    ~TransactionsTable() = default;
+    BudgetTable();
+    ~BudgetTable();
 
-    bool init();
-    void unit();
+    bool Init();
+    void Unit();
 
     bool load() final;
     void unload() final;
     bool drawMenu() final;
 
-    TransactionDialog& getTransactionDialogRef();
+    BudgetDialog& getBudgetDialogRef();
 
     void clear();    
     void refreshDatas();
@@ -79,19 +79,20 @@ protected:
     void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) final;
 
 private:
-    bool m_isGroupingModeTransactions();
+    bool m_isGroupingModeBudget();
     void m_drawSearchRow();
     void m_FilterSelection();
     void m_SelectPossibleDuplicateEntryOnPricesAndDates();
-    void m_SelectUnConfirmedTransactions();
+    void m_SelectUnConfirmedBudget();
     void m_SelectEmptyColumn(const SearchColumns& vColumn);
-    void m_GroupTransactions(const GroupingMode& vGroupingMode);
+    void m_GroupBudget(const GroupingMode& vGroupingMode);
     void m_UpdateBanks();
     void m_UpdateAccounts();
     void m_UpdateEntities();
     void m_UpdateCategories();
     void m_UpdateOperations();
-    void m_UpdateTransactions(const RowID& vAccountID);
-    bool m_IsGroupingModeTransactions();
+    void m_UpdateBudget(const RowID& vAccountID);
+    bool m_IsGroupingModeBudget();
     void m_drawAmount(const double& vAmount);
 };
+*/

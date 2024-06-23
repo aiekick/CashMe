@@ -1,20 +1,17 @@
 #include <Frontend/Tables/OperationsTable.h>
 #include <Models/DataBase.h>
 
-OperationsTable::OperationsTable() : ADataTable("OperationsTable", 5) {
-}
-
-OperationsTable::~OperationsTable() {
+OperationsTable::OperationsTable() : ADataBarsTable("OperationsTable", 5) {
 }
 
 bool OperationsTable::load() {
-    ADataTable::load();
+    ADataBarsTable::load();
     m_updateOperations();
     return true;
 }
 
 void OperationsTable::unload() {
-    ADataTable::unload();
+    ADataBarsTable::unload();
 }
 
 bool OperationsTable::drawMenu() {

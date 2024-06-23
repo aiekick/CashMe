@@ -1,20 +1,17 @@
 #include <Frontend/Tables/CategoriesTable.h>
 #include <Models/DataBase.h>
 
-CategoriesTable::CategoriesTable() : ADataTable("CategoriesTable", 5) {
-}
-
-CategoriesTable::~CategoriesTable() {
+CategoriesTable::CategoriesTable() : ADataBarsTable("CategoriesTable", 5) {
 }
 
 bool CategoriesTable::load() {
-    ADataTable::load();
+    ADataBarsTable::load();
     m_updateCategories();
     return true;
 }
 
 void CategoriesTable::unload() {
-    ADataTable::unload();
+    ADataBarsTable::unload();
 }
 
 bool CategoriesTable::drawMenu() {

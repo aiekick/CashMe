@@ -5,11 +5,11 @@
 ADataTable::ADataTable(const char* vTableName, const int32_t& vColummCount) : m_TableName(vTableName), m_ColummCount(vColummCount) {
 }
 
-bool ADataTable::Init() {
+bool ADataTable::init() {
     return true;
 }
 
-void ADataTable::Unit() {
+void ADataTable::unit() {
 }
 
 bool ADataTable::load() {
@@ -32,12 +32,11 @@ void ADataTable::draw(const ImVec2& vSize) {
     if (ImGui::BeginTable(m_TableName, m_ColummCount, flags, vSize)) {
         m_setupColumns();
         int32_t idx = 0;
-        double max_amount = DBL_MIN;
         m_TextHeight = ImGui::GetTextLineHeight();
         const float& item_h = ImGui::GetTextLineHeightWithSpacing();
         m_ListClipper.Begin((int32_t)m_getItemsCount(), item_h);
         while (m_ListClipper.Step()) {
-            max_amount = m_computeMaxPrice();
+            double max_amount = m_computeMaxPrice();
             for (idx = m_ListClipper.DisplayStart; idx < m_ListClipper.DisplayEnd; ++idx) {
                 if (idx < 0) {
                     continue;
@@ -99,17 +98,7 @@ void ADataTable::m_updateAccounts() {
 }
 
 double ADataTable::m_computeMaxPrice() {
-    double max_price = 0.0;
-    for (int32_t idx = m_ListClipper.DisplayStart; idx < m_ListClipper.DisplayEnd; ++idx) {
-        if (idx < 0) {
-            continue;
-        }
-        const auto& as = std::abs(m_getItemBarAmount(idx));
-        if (as > max_price) {
-            max_price = as;
-        }
-    }
-    return max_price;
+    return DBL_MIN;
 }
 
 void ADataTable::m_showContextMenu(const size_t& vIdx) {
@@ -187,10 +176,18 @@ bool ADataTable::m_IsRowSelected(const RowID& vRowID) const {
     return (m_SelectedItems.find(vRowID) != m_SelectedItems.end());
 }
 
+const ImGuiListClipper& ADataTable::m_GetListClipper() const {
+    return m_ListClipper;
+}
+
+float ADataTable::m_GetTextHeight() const {
+    return m_TextHeight;
+}
+
 void ADataTable::m_drawColumnDebit(const double& vDebit) {
     ImGui::TableNextColumn();
     if (vDebit < 0.0) {
-        ImGui::PushStyleColor(ImGuiCol_Text, m_BadColor);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::CustomStyle::BadColor);
         ImGui::Text("%.2f", vDebit);
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vDebit);
         ImGui::PopStyleColor();
@@ -200,7 +197,7 @@ void ADataTable::m_drawColumnDebit(const double& vDebit) {
 void ADataTable::m_drawColumnCredit(const double& vCredit) {
     ImGui::TableNextColumn();
     if (vCredit > 0.0) {
-        ImGui::PushStyleColor(ImGuiCol_Text, m_GoodColor);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::CustomStyle::GoodColor);
         ImGui::Text("%.2f", vCredit);
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vCredit);
         ImGui::PopStyleColor();
@@ -210,12 +207,12 @@ void ADataTable::m_drawColumnCredit(const double& vCredit) {
 void ADataTable::m_drawColumnAmount(const double& vAmount) {
     ImGui::TableNextColumn();
     if (vAmount < 0.0) {
-        ImGui::PushStyleColor(ImGuiCol_Text, m_BadColor);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::CustomStyle::BadColor);
         ImGui::Text("%.2f", vAmount);
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
         ImGui::PopStyleColor();
     } else if (vAmount > 0.0) {
-        ImGui::PushStyleColor(ImGuiCol_Text, m_GoodColor);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::CustomStyle::GoodColor);
         ImGui::Text("%.2f", vAmount);
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%.2f", vAmount);
         ImGui::PopStyleColor();
@@ -225,28 +222,12 @@ void ADataTable::m_drawColumnAmount(const double& vAmount) {
     }
 }
 
-void ADataTable::m_drawColumnBars(const double vAmount, const double vMaxAmount, const float vColumNWidth) {
+void ADataTable::m_drawColumnInt(const int32_t& vValue) {
     ImGui::TableNextColumn();
-    auto drawListPtr = ImGui::GetWindowDrawList();
-    const auto& cursor = ImGui::GetCursorScreenPos();
-    ImGuiContext& g = *GImGui;
-    ImGuiTable* table = g.CurrentTable;
-    const auto& table_column = table->Columns[table->CurrentColumn];
-    auto column_width = vColumNWidth;
-    if (column_width < 0.0f) {
-        column_width = table_column.MaxX - table_column.MinX;
+    {
+        ImGui::Text("%i", vValue);
+        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%i", vValue);
     }
-    const ImVec2 pMin(cursor.x, cursor.y + m_TextHeight * 0.1f);
-    const ImVec2 pMax(cursor.x + column_width, cursor.y + m_TextHeight * 0.9f);
-    const float pMidX((pMin.x + pMax.x) * 0.5f);
-    ImGui::SetCursorScreenPos(pMin);
-    const float bw(column_width * 0.5f * std::abs((float)vAmount) / (float)vMaxAmount);
-    if (vAmount < 0.0) {
-        drawListPtr->AddRectFilled(ImVec2(pMidX - bw, pMin.y), ImVec2(pMidX, pMax.y), ImGui::GetColorU32(m_BadColor));
-    } else if (vAmount > 0.0) {
-        drawListPtr->AddRectFilled(ImVec2(pMidX, pMin.y), ImVec2(pMidX + bw, pMax.y), ImGui::GetColorU32(m_GoodColor));
-    }
-    ImGui::SetCursorScreenPos(pMax);
 }
 
 const std::set<RowID>& ADataTable::m_getSelectedRows() {

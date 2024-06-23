@@ -24,6 +24,7 @@ void OperationDialog::m_drawContent(const ImVec2& vPos) {
         case DataDialogMode::MODE_DELETE_ALL: m_drawContentDeletion(vPos); break;
         case DataDialogMode::MODE_UPDATE_ONCE: m_drawContentUpdate(vPos); break;
         case DataDialogMode::MODE_UPDATE_ALL: m_drawContentUpdate(vPos); break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -42,6 +43,7 @@ void OperationDialog::m_prepare() {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_OperationNameInputText.SetText(m_Operation.name);
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -55,6 +57,7 @@ const char* OperationDialog::m_getTitle() const {
         case DataDialogMode::MODE_DELETE_ALL: return "Operations Deletion"; break;
         case DataDialogMode::MODE_UPDATE_ONCE: return "Operation Update"; break;
         case DataDialogMode::MODE_UPDATE_ALL: return "Operations Update"; break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -79,6 +82,7 @@ void OperationDialog::m_confirmDialog() {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_confirmDialogUpdate();
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }

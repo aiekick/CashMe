@@ -31,6 +31,7 @@ limitations under the License.
 #include <Panes/BudgetPane.h>
 #include <Panes/ConsolePane.h>
 #include <Panes/AccountPane.h>
+#include <Panes/IncomesPane.h>
 #include <Panes/EntitiesPane.h>
 #include <Panes/CategoriesPane.h>
 #include <Panes/OperationsPane.h>
@@ -63,7 +64,6 @@ bool MainFrontend::sCentralWindowHovered = false;
 //// PUBLIC //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-
 MainFrontend::~MainFrontend() = default;
 
 bool MainFrontend::init() {
@@ -77,14 +77,19 @@ bool MainFrontend::init() {
     LayoutManager::Instance()->SetPaneDisposalRatio("RIGHT", 0.25f);
     LayoutManager::Instance()->SetPaneDisposalRatio("BOTTOM", 0.25f);
 
-    LayoutManager::Instance()->AddPane(AccountPane::Instance(), "Account Statement", "", "CENTRAL", 0.0f, true, true);
-    LayoutManager::Instance()->AddPane(StatsPane::Instance(), "Statistics", "", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget", "", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(EntitiesPane::Instance(), "Entities", "", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(CategoriesPane::Instance(), "Categories", "", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(OperationsPane::Instance(), "Operations", "", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console", "", "BOTTOM", 0.25f, false, false);  
+    LayoutManager::Instance()->AddPane(AccountPane::Instance(), "Statements", "Views", "CENTRAL", 0.0f, true, true);
 
+    // Views
+    LayoutManager::Instance()->AddPane(StatsPane::Instance(), "Statistics", "Views", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget", "Views", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console", "Panes", "BOTTOM", 0.25f, false, false);
+    
+    // Maintenance
+    //LayoutManager::Instance()->AddPane(EntitiesPane::Instance(), "Entities", "Maintenance", "CENTRAL", 0.0f, false, false);
+    //LayoutManager::Instance()->AddPane(CategoriesPane::Instance(), "Categories", "Maintenance", "CENTRAL", 0.0f, false, false);
+    //LayoutManager::Instance()->AddPane(OperationsPane::Instance(), "Operations", "Maintenance", "CENTRAL", 0.0f, false, false);
+    //LayoutManager::Instance()->AddPane(IncomesPane::Instance(), "Incomes", "Maintenance", "CENTRAL", 0.25f, false, false);
+    
     // InitPanes is done in m_InitPanes, because a specific order is needed
 
     return m_build();
@@ -92,8 +97,8 @@ bool MainFrontend::init() {
 
 void MainFrontend::unit() {
     LayoutManager::Instance()->UnitPanes();
-    auto pluginPanes = PluginManager::Instance()->GetPluginPanes();
-    for (auto& pluginPane : pluginPanes) {
+    const auto& pluginPanes = PluginManager::Instance()->GetPluginPanes();
+    for (const auto& pluginPane : pluginPanes) {
         if (!pluginPane.pane.expired()) {
             LayoutManager::Instance()->RemovePane(pluginPane.name);
         }

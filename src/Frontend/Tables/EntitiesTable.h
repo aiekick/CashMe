@@ -1,14 +1,16 @@
 #pragma once
 
-#include <Frontend/Tables/abstract/ADataTable.h>
+#include <Frontend/Tables/abstract/ADataBarsTable.h>
+#include <Frontend/Dialogs/EntityDialog.h>
 
-class EntitiesTable : public ADataTable {
+class EntitiesTable : public ADataBarsTable {
 private:
     std::vector<Entity> m_Entities;
+    EntityDialog m_EntityDialog;
 
 public:
     EntitiesTable();
-    ~EntitiesTable();
+    ~EntitiesTable() = default;
 
     bool load() final;
     void unload() final;

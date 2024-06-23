@@ -19,6 +19,7 @@ void AccountDialog::setAccount(const Account& vAccount) {
 
 void AccountDialog::m_drawContent(const ImVec2& vPos) {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL); // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_drawContentCreation(vPos);
@@ -31,6 +32,7 @@ void AccountDialog::m_drawContent(const ImVec2& vPos) {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_drawContentUpdate(vPos);
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -39,6 +41,7 @@ void AccountDialog::m_drawContent(const ImVec2& vPos) {
 void AccountDialog::m_prepare() {
     m_UpdateBanks();
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_BankAgencyInputText.Clear();
@@ -59,6 +62,7 @@ void AccountDialog::m_prepare() {
             m_AccountNumberInputText.SetText(m_Account.number);
             m_AccountBaseSoldeInputDouble = m_Account.base_solde;
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -66,12 +70,14 @@ void AccountDialog::m_prepare() {
 
 const char* AccountDialog::m_getTitle() const {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: return "Account Creation"; break;
         case DataDialogMode::MODE_DELETE_ONCE: return "Account Deletion"; break;
         case DataDialogMode::MODE_DELETE_ALL: return "Accounts Deletion"; break;
         case DataDialogMode::MODE_UPDATE_ONCE: return "Account Update"; break;
         case DataDialogMode::MODE_UPDATE_ALL: return "Accounts Update"; break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -87,6 +93,7 @@ bool AccountDialog::m_canConfirm() {
 
 void AccountDialog::m_confirmDialog() {
     const auto& mode = getCurrentMode();
+    assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             m_confirmDialogCreation();
@@ -99,6 +106,7 @@ void AccountDialog::m_confirmDialog() {
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_confirmDialogUpdate();
         } break;
+        case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
     }

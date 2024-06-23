@@ -17,6 +17,18 @@ void EntityDialog::setEntity(const Entity& vEntity) {
     m_Entity = vEntity;
 }
 
+void EntityDialog::setEntitiesToMerge(const std::vector<Entity>& vEntities) {
+    m_EntitiesToMerge = vEntities;
+}
+
+void EntityDialog::setEntitiesToUpdate(const std::vector<Entity>& vEntities) {
+    m_EntitiesToUpdate = vEntities;
+}
+
+void EntityDialog::setEntitiesToDelete(const std::vector<Entity>& vEntities) {
+    m_EntitiesToDelete = vEntities;
+}
+
 void EntityDialog::m_drawContent(const ImVec2& vPos) {
     const auto& mode = getCurrentMode();
     switch (mode) {
@@ -25,6 +37,7 @@ void EntityDialog::m_drawContent(const ImVec2& vPos) {
         case DataDialogMode::MODE_DELETE_ALL: m_drawContentDeletion(vPos); break;
         case DataDialogMode::MODE_UPDATE_ONCE: m_drawContentUpdate(vPos); break;
         case DataDialogMode::MODE_UPDATE_ALL: m_drawContentUpdate(vPos); break;
+        case DataDialogMode::MODE_MERGE_ALL: m_drawContentMerging(vPos); break;
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -40,9 +53,10 @@ void EntityDialog::m_prepare() {
         case DataDialogMode::MODE_DELETE_ALL: {
         } break;
         case DataDialogMode::MODE_UPDATE_ONCE:
-        case DataDialogMode::MODE_UPDATE_ALL: {
+        case DataDialogMode::MODE_UPDATE_ALL:
+        case DataDialogMode::MODE_MERGE_ALL: {
             m_EntityNameInputText.SetText(m_Entity.name);
-        } break;
+        } break; 
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -51,11 +65,12 @@ void EntityDialog::m_prepare() {
 const char* EntityDialog::m_getTitle() const {
     const auto& mode = getCurrentMode();
     switch (mode) {
-        case DataDialogMode::MODE_CREATION: return "Entity Creation"; break;
-        case DataDialogMode::MODE_DELETE_ONCE: return "Entity Deletion"; break;
-        case DataDialogMode::MODE_DELETE_ALL: return "Entitys Deletion"; break;
-        case DataDialogMode::MODE_UPDATE_ONCE: return "Entity Update"; break;
-        case DataDialogMode::MODE_UPDATE_ALL: return "Entitys Update"; break;
+        case DataDialogMode::MODE_CREATION: return "Entities Creation"; break;
+        case DataDialogMode::MODE_DELETE_ONCE: return "Entities Deletion"; break;
+        case DataDialogMode::MODE_DELETE_ALL: return "Entities Deletion"; break;
+        case DataDialogMode::MODE_UPDATE_ONCE: return "Entities Update"; break;
+        case DataDialogMode::MODE_UPDATE_ALL: return "Entities Update"; break;
+        case DataDialogMode::MODE_MERGE_ALL: return "Entities Merging"; break;
         case DataDialogMode::MODE_NONE:
         default: break;
     }
@@ -79,6 +94,9 @@ void EntityDialog::m_confirmDialog() {
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: {
             m_confirmDialogUpdate();
+        } break;
+        case DataDialogMode::MODE_MERGE_ALL: {
+            m_confirmDialogMerging();
         } break;
         case DataDialogMode::MODE_NONE:
         default: break;
@@ -115,6 +133,22 @@ void EntityDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
     m_EntityNameInputText.DisplayInputText(width, "Entity Name", "", false, align, true);
+}
+
+void EntityDialog::m_drawContentMerging(const ImVec2& vPos) {
+    const float& align = 125.0f;
+    const auto& width = 400.0f;
+    m_EntityNameInputText.DisplayInputText(width, "Entity Name", "", false, align, true);
+}
+
+void EntityDialog::m_confirmDialogMerging() {
+    CTOOL_DEBUG_BREAK;
+    if (DataBase::Instance()->OpenDBFile()) {
+        /*DataBase::Instance()->MergeEntities(  //
+            m_Entity.id,                      //
+            m_EntityNameInputText.GetText());*/
+        DataBase::Instance()->CloseDBFile();
+    }
 }
 
 void EntityDialog::m_confirmDialogDeletion() {

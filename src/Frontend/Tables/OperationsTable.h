@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Frontend/Tables/abstract/ADataTable.h>
+#include <Frontend/Tables/abstract/ADataBarsTable.h>
 
-class OperationsTable : public ADataTable {
+class OperationsTable : public ADataBarsTable {
 private:
     std::vector<Operation> m_Operations;
 
 public:
     OperationsTable();
-    ~OperationsTable();
+    ~OperationsTable() = default;
 
     bool load() final;
     void unload() final;

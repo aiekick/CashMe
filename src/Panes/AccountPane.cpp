@@ -21,19 +21,21 @@ bool AccountPane::Init() {
     bool ret = true;
     m_getAvailableDataBrokers();
     ret &= m_BankDialog.init();
+    ret &= m_EntityDialog.init();
     ret &= m_AccountDialog.init();
     ret &= m_CategoryDialog.init();
     ret &= m_OperationDialog.init();
-    ret &= m_TransactionsTable.Init();
+    ret &= m_TransactionsTable.init();
     return ret;
 }
 
 void AccountPane::Unit() {
-    m_BankDialog.init();
-    m_AccountDialog.init();
-    m_CategoryDialog.init();
-    m_OperationDialog.init();
-    m_TransactionsTable.Unit();
+    m_BankDialog.unit();
+    m_EntityDialog.unit();
+    m_AccountDialog.unit();
+    m_CategoryDialog.unit();
+    m_OperationDialog.unit();
+    m_TransactionsTable.unit();
     m_clear();
 }
 
@@ -90,6 +92,7 @@ bool AccountPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const 
         StatsPane::Instance()->Load();
         ret = true;
     }
+    ret |= m_EntityDialog.draw(center);
     ret |= m_CategoryDialog.draw(center);
     ret |= m_OperationDialog.draw(center);
     ret |= m_TransactionsTable.getTransactionDialogRef().draw(center);

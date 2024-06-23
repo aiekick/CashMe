@@ -119,6 +119,7 @@ struct Income {
     EntityName entity;
     CategoryName category;
     OperationName operation;
+    IncomeName name;
     IncomeDate startDate;
     IncomeDate endDate;
     IncomeAmount minAmount = 0.0;

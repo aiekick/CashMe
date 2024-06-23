@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Frontend/Tables/abstract/ADataTable.h>
+#include <Frontend/Tables/abstract/ADataBarsTable.h>
 
-class CategoriesTable : public ADataTable {
+class CategoriesTable : public ADataBarsTable {
 private:
     std::vector<Category> m_Categories;
 
 public:
     CategoriesTable();
-    ~CategoriesTable();
+    ~CategoriesTable() = default;
 
     bool load() final;
     void unload() final;

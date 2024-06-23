@@ -64,8 +64,8 @@ ImGuiTheme GetOrangeBlueTheme() {
     res.style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
     res.style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-    res.goodColor = ImVec4(0.00f, 0.35f, 0.00f, 1.00f);
-    res.badColor = ImVec4(0.35f, 0.00f, 0.00f, 1.00f);
+    res.goodColor = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+    res.badColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
 
     // Main
     res.style.WindowPadding = ImVec2(4.00f, 4.00f);
@@ -110,7 +110,6 @@ ImGuiTheme GetOrangeBlueTheme() {
 
 bool MainFrontend::m_build_themes() {
     ImGuiThemeHelper::Instance()->AddTheme("Orange/Blue", GetOrangeBlueTheme());
-
     ImGuiThemeHelper::Instance()->SetDefaultTheme("Orange/Blue");
     ImGuiThemeHelper::Instance()->ApplyDefaultTheme();
     return true;

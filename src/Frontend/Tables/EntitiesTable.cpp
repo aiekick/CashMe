@@ -1,20 +1,17 @@
 #include <Frontend/Tables/EntitiesTable.h>
 #include <Models/DataBase.h>
 
-EntitiesTable::EntitiesTable() : ADataTable("EntitiesTable", 5) {
-}
-
-EntitiesTable::~EntitiesTable() {
+EntitiesTable::EntitiesTable() : ADataBarsTable("EntitiesTable", 5) {
 }
 
 bool EntitiesTable::load() {
-    ADataTable::load();
+    ADataBarsTable::load();
     m_updateEntities();
     return true;
 }
 
 void EntitiesTable::unload() {
-    ADataTable::unload();
+    ADataBarsTable::unload();
 }
 
 bool EntitiesTable::drawMenu() {
@@ -60,7 +57,45 @@ void EntitiesTable::m_setupColumns() {
 }
 
 void EntitiesTable::m_drawContextMenuContent() {
-    CTOOL_DEBUG_BREAK;
+    if (!m_getSelectedRows().empty()) {
+        if (ImGui::MenuItem("Update")) {
+            std::vector<Entity> entities_to_update;
+            for (const auto& e : m_Entities) {
+                if (m_IsRowSelected(e.id)) {
+                    entities_to_update.push_back(e);
+                }
+            }
+            if (entities_to_update.size() > 1U) {
+                m_EntityDialog.setEntitiesToMerge(entities_to_update);
+                m_EntityDialog.show(DataDialogMode::MODE_UPDATE_ALL);
+            } else if (entities_to_update.size() == 1U) {
+                m_EntityDialog.setEntity(entities_to_update.front());
+                m_EntityDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
+            }
+        }
+        if (m_getSelectedRows().size() > 1U) {
+            if (ImGui::MenuItem("Merge")) {
+                std::vector<Entity> entities_to_merge;
+                for (const auto& e : m_Entities) {
+                    if (m_IsRowSelected(e.id)) {
+                        entities_to_merge.push_back(e);
+                    }
+                }
+                m_EntityDialog.setEntitiesToMerge(entities_to_merge);
+                m_EntityDialog.show(DataDialogMode::MODE_MERGE_ALL);
+            }
+        }
+        if (ImGui::MenuItem("Delete")) {
+            std::vector<Entity> entities_to_delete;
+            for (const auto& e : m_Entities) {
+                if (m_IsRowSelected(e.id)) {
+                    entities_to_delete.push_back(e);
+                }
+            }
+            m_EntityDialog.setEntitiesToDelete(entities_to_delete);
+            m_EntityDialog.show(DataDialogMode::MODE_DELETE_ALL);
+        }
+    }
 }
 
 void EntitiesTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {

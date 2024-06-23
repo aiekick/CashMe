@@ -11,6 +11,7 @@ enum class DataDialogMode {
     MODE_UPDATE_ALL,   //
     MODE_DELETE_ONCE,  //
     MODE_DELETE_ALL,   //
+    MODE_MERGE_ALL,    //
     MODE_Count         //
 };
 
