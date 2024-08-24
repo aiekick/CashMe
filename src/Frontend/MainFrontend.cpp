@@ -123,7 +123,6 @@ void MainFrontend::Display(const uint32_t& vCurrentFrame, const ImRect& vRect) {
         MainFrontend::sCentralWindowHovered = (ImGui::GetCurrentContext()->HoveredWindow == nullptr);
         ImGui::CustomStyle::ResetCustomId();
 
-        // m_drawLeftButtonBar();
         m_drawMainMenuBar();
         m_drawMainStatusBar();
 
@@ -698,7 +697,7 @@ bool MainFrontend::m_build() {
         return true;
     }*/
 
-    return true;
+    return LayoutManager::Instance()->InitPanes();
 }
 
 ///////////////////////////////////////////////////////
