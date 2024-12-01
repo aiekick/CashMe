@@ -1052,8 +1052,8 @@ ORDER BY
                     vCallback(                                      //
                         id,                                         //
                         entity != nullptr ? entity : "",            //
-                        operation != nullptr ? operation : "",      //
                         category != nullptr ? category : "",        //
+                        operation != nullptr ? operation : "",      //
                         source != nullptr ? source : "",            //
                         date != nullptr ? date : "",                //
                         description != nullptr ? description : "",  //

@@ -30,7 +30,7 @@ limitations under the License.
 #include <Panes/StatsPane.h>
 #include <Panes/BudgetPane.h>
 #include <Panes/ConsolePane.h>
-#include <Panes/AccountPane.h>
+#include <Panes/StatementsPane.h>
 #include <Panes/IncomesPane.h>
 #include <Panes/EntitiesPane.h>
 #include <Panes/CategoriesPane.h>
@@ -77,18 +77,17 @@ bool MainFrontend::init() {
     LayoutManager::Instance()->SetPaneDisposalRatio("RIGHT", 0.25f);
     LayoutManager::Instance()->SetPaneDisposalRatio("BOTTOM", 0.25f);
 
-    LayoutManager::Instance()->AddPane(AccountPane::Instance(), "Statements", "Views", "CENTRAL", 0.0f, true, true);
-
     // Views
+    LayoutManager::Instance()->AddPane(StatementsPane::Instance(), "Statements", "Views", "CENTRAL", 0.0f, true, true);
     LayoutManager::Instance()->AddPane(StatsPane::Instance(), "Statistics", "Views", "CENTRAL", 0.0f, false, false);
     LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget", "Views", "CENTRAL", 0.0f, false, false);
     LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console", "Panes", "BOTTOM", 0.25f, false, false);
     
     // Maintenance
-    //LayoutManager::Instance()->AddPane(EntitiesPane::Instance(), "Entities", "Maintenance", "CENTRAL", 0.0f, false, false);
-    //LayoutManager::Instance()->AddPane(CategoriesPane::Instance(), "Categories", "Maintenance", "CENTRAL", 0.0f, false, false);
-    //LayoutManager::Instance()->AddPane(OperationsPane::Instance(), "Operations", "Maintenance", "CENTRAL", 0.0f, false, false);
-    //LayoutManager::Instance()->AddPane(IncomesPane::Instance(), "Incomes", "Maintenance", "CENTRAL", 0.25f, false, false);
+    LayoutManager::Instance()->AddPane(EntitiesPane::Instance(), "Entities", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(CategoriesPane::Instance(), "Categories", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(OperationsPane::Instance(), "Operations", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(IncomesPane::Instance(), "Incomes", "Maintenance", "CENTRAL", 0.25f, false, false);
     
     // InitPanes is done in m_InitPanes, because a specific order is needed
 

@@ -26,7 +26,7 @@ limitations under the License.
 
 #include <LayoutManager.h>
 #include <Panes/StatsPane.h>
-#include <Panes/AccountPane.h>
+#include <Panes/StatementsPane.h>
 #include <Panes/EntitiesPane.h>
 #include <Panes/CategoriesPane.h>
 #include <Panes/OperationsPane.h>
@@ -105,7 +105,7 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                         m_ProjectFilePath = ps.path;
                     }
                     m_IsLoaded = true;
-                    AccountPane::Instance()->Load();
+                    StatementsPane::Instance()->Load();
                     StatsPane::Instance()->Load();
                     EntitiesPane::Instance()->Load();
                     CategoriesPane::Instance()->Load();
@@ -211,7 +211,7 @@ std::string ProjectFile::getXml(const std::string& vOffset, const std::string& /
     str += vOffset + "<project>\n";
     const std::string& project_tag = "project";
     str += LayoutManager::Instance()->getXml(vOffset + "\t", project_tag);
-    str += AccountPane::Instance()->getXml(vOffset + "\t", project_tag);
+    str += StatementsPane::Instance()->getXml(vOffset + "\t", project_tag);
     str += SettingsDialog::Instance()->getXml(vOffset + "\t", project_tag);
     str += vOffset + "</project>\n";
     return str;
@@ -233,7 +233,7 @@ bool ProjectFile::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* 
     } else if (strName == "project") {
         const std::string& project_tag = "project";
         LayoutManager::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
-        AccountPane::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
+        StatementsPane::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
         SettingsDialog::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
     }
 
