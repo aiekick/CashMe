@@ -15,6 +15,10 @@ void IncomeDialog::unit() {
 
 }
 
+void IncomeDialog::setTransactions(const std::vector<Transaction>& vTransactions) {
+    m_TransactionToAddAsIncomes = vTransactions;
+}
+
 void IncomeDialog::setIncome(const Income& vIncome) {
     m_IncomeToUpdate = vIncome;
 }
@@ -55,15 +59,18 @@ void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
     m_EntitiesCombo.displayCombo(width, "Entity", align);
     m_CategoriesCombo.displayCombo(width, "Category", align);
     m_OperationsCombo.displayCombo(width, "Operation", align);
-    m_IncomeDateInputText.DisplayInputText(width, "Date", "", false, align);
+    m_IncomeStartDateInputText.DisplayInputText(width, "Start date", "", false, align);
+    m_IncomeEndDateInputText.DisplayInputText(width, "End date", "", false, align);
+    ImGui::DisplayAlignedWidget(width, "Min amount", align, [this]() { ImGui::InputDouble("##MinAmount", &m_IncomeMinAmountInputDouble); });
+    ImGui::DisplayAlignedWidget(width, "Max amount", align, [this]() { ImGui::InputDouble("##MaxAmount", &m_IncomeMaxAmountInputDouble); });
+    ImGui::DisplayAlignedWidget(width, "Min day", align, [this]() { ImGui::InputInt("##MinDay", &m_IncomeMinDayInputInt32); });
+    ImGui::DisplayAlignedWidget(width, "Max day", align, [this]() { ImGui::InputInt("##MaxDay", &m_IncomeMaxDayInputInt32); });
     m_IncomeDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
     m_IncomeCommentInputText.DisplayInputText(width, "Comment", "", false, align);
-    ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_IncomeAmountInputDouble); });
-    ImGui::DisplayAlignedWidget(width, "Confirmed", align, [this]() { ImGui::CheckBoxBoolDefault("##Confirmed", &m_IncomeConfirmed, false); });
 }
 
 void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
-    const auto align = 125.0f;
+    /*const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayCombo(width, "Account", align);
     m_EntitiesCombo.displayCombo(width, "Entity", align);
@@ -75,14 +82,7 @@ void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
     // the update all if for descriptive items buit not for amounrt
     if (getCurrentMode() != DataDialogMode::MODE_UPDATE_ALL) {
         ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_IncomeAmountInputDouble); });
-    }
-    ImGui::DisplayAlignedWidget(width, "Confirmed", align, [this]() {
-        if (!m_IncomeConfirmedManyValues) {
-            ImGui::CheckBoxBoolDefault("##Confirmed", &m_IncomeConfirmed, false);
-        } else {
-            ImGui::Text("%s", "Many Values. not editable");
-        }
-    });
+    }*/
 }
 
 void IncomeDialog::m_drawContentDeletion(const ImVec2& vPos) {
@@ -154,15 +154,20 @@ void IncomeDialog::m_drawContentDeletion(const ImVec2& vPos) {
 }
 
 void IncomeDialog::m_prepare() {
-    m_UpdateAccounts();
-    m_UpdateEntities();
-    m_UpdateOperations();
-    m_UpdateCategories();
-    m_IncomeConfirmedManyValues = false;
-    if (getCurrentMode() == DataDialogMode::MODE_UPDATE_ALL) {
-        /*if (!m_IncomesToUpdate.empty()) {
-            m_IncomeToUpdate = m_IncomesToUpdate.at(0);
-            for (const auto& t : m_IncomesToUpdate) {
+    if (getCurrentMode() == DataDialogMode::MODE_CREATION) {
+        if (!m_TransactionToAddAsIncomes.empty()) {
+            const auto& trans = m_TransactionToAddAsIncomes.at(0);
+            m_IncomeToUpdate.account = trans.account;
+            m_IncomeToUpdate.category = trans.category;
+            m_IncomeToUpdate.entity = trans.entity;
+            m_IncomeToUpdate.operation = trans.operation;
+            m_IncomeToUpdate.description = trans.description;
+            m_IncomeToUpdate.comment = trans.comment;
+            m_IncomeToUpdate.maxAmount = trans.amount;
+            m_IncomeToUpdate.minAmount = trans.amount;
+            m_IncomeToUpdate.startDate = trans.date;
+            m_IncomeToUpdate.endDate = trans.date;
+            for (const auto& t : m_TransactionToAddAsIncomes) {
                 if (m_IncomeToUpdate.entity != t.entity) {
                     m_IncomeToUpdate.entity = "Many values";
                 }
@@ -172,31 +177,44 @@ void IncomeDialog::m_prepare() {
                 if (m_IncomeToUpdate.operation != t.operation) {
                     m_IncomeToUpdate.operation = "Many values";
                 }
-                if (m_IncomeToUpdate.date != t.date) {
-                    m_IncomeToUpdate.date = "Many values";
-                }
                 if (m_IncomeToUpdate.description != t.description) {
                     m_IncomeToUpdate.description = "Many values";
                 }
                 if (m_IncomeToUpdate.comment != t.comment) {
                     m_IncomeToUpdate.comment = "Many values";
                 }
-                if (m_IncomeToUpdate.confirmed != t.confirmed) {
-                    m_IncomeConfirmedManyValues = true;
+                if (t.amount < m_IncomeToUpdate.minAmount) {
+                    m_IncomeToUpdate.minAmount = t.amount;
                 }
+                if (t.amount > m_IncomeToUpdate.maxAmount) {
+                    m_IncomeToUpdate.maxAmount = t.amount;
+                }
+                // cette simple conversion n'est pas viable
+                // il va falloir convertir en epoch
+                if (t.date < m_IncomeToUpdate.startDate) {
+                    m_IncomeToUpdate.startDate = t.date;
+                }
+                if (t.date > m_IncomeToUpdate.endDate) {
+                    m_IncomeToUpdate.endDate = t.date;
+                }
+                // et aussi extraire le numero du jour dans le mois
+                m_IncomeToUpdate.minDay = 0;
+                m_IncomeToUpdate.maxDay = 0;
             }
-        }*/
+        }
     }
-    /*m_SourceName = m_IncomeToUpdate.source;
     m_AccountsCombo.select(m_IncomeToUpdate.account);
     m_EntitiesCombo.setText(m_IncomeToUpdate.entity);
     m_CategoriesCombo.setText(m_IncomeToUpdate.category);
     m_OperationsCombo.setText(m_IncomeToUpdate.operation);
-    m_IncomeDateInputText.SetText(m_IncomeToUpdate.date);
+    m_IncomeStartDateInputText.SetText(m_IncomeToUpdate.startDate);
+    m_IncomeEndDateInputText.SetText(m_IncomeToUpdate.endDate);
+    m_IncomeMinDayInputInt32 = m_IncomeToUpdate.minDay;
+    m_IncomeMaxDayInputInt32 = m_IncomeToUpdate.maxDay;
+    m_IncomeMinAmountInputDouble = m_IncomeToUpdate.minAmount;
+    m_IncomeMaxAmountInputDouble = m_IncomeToUpdate.maxAmount;
     m_IncomeDescriptionInputText.SetText(m_IncomeToUpdate.description);
     m_IncomeCommentInputText.SetText(m_IncomeToUpdate.comment);
-    m_IncomeAmountInputDouble = m_IncomeToUpdate.amount;
-    m_IncomeConfirmed = m_IncomeToUpdate.confirmed;*/
 }
 
 const char* IncomeDialog::m_getTitle() const {

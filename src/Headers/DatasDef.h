@@ -49,6 +49,8 @@ typedef std::string IncomeName;
 typedef std::string IncomeDate;
 typedef double IncomeAmount;
 typedef int32_t IncomeDelayDays;
+typedef std::string IncomeDescription;
+typedef std::string IncomeComment;
 typedef std::string IncomeHash;
 
 typedef std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> DataBrockerContainer;
@@ -115,7 +117,7 @@ struct Account : public AmountStats {
 
 struct Income {
     RowID id = 0;
-    std::set<RowID> accounts;
+    AccountNumber account;
     EntityName entity;
     CategoryName category;
     OperationName operation;
@@ -124,8 +126,10 @@ struct Income {
     IncomeDate endDate;
     IncomeAmount minAmount = 0.0;
     IncomeAmount maxAmount = 0.0;
-    IncomeDelayDays minDays = 0U;
-    IncomeDelayDays maxDays = 0U;
+    IncomeDelayDays minDay = 0U;
+    IncomeDelayDays maxDay = 0U;
+    IncomeDescription description;
+    IncomeComment comment;
     IncomeHash hash;
 };
 

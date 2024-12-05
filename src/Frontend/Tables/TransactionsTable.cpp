@@ -7,10 +7,14 @@ TransactionsTable::TransactionsTable() : ADataBarsTable("TransactionsTable", 11)
 }
 
 bool TransactionsTable::init() {
-    return m_TransactionDialog.init();
+    bool ret = true;
+    ret &= m_TransactionDialog.init();
+    ret &= m_IncomeDialog.init();
+    return ret;
 }
 
 void TransactionsTable::unit() {
+    m_IncomeDialog.unit();
     m_TransactionDialog.unit();
     clear();
 }
@@ -34,6 +38,10 @@ bool TransactionsTable::drawMenu() {
 
 TransactionDialog& TransactionsTable::getTransactionDialogRef() {
     return m_TransactionDialog;
+}
+
+IncomeDialog& TransactionsTable::getIncomeDialogRef() {
+    return m_IncomeDialog;
 }
 
 size_t TransactionsTable::m_getItemsCount() const {
@@ -148,6 +156,16 @@ void TransactionsTable::m_drawContextMenuContent() {
             }
             m_TransactionDialog.setTransactionsToDelete(transactions_to_delete);
             m_TransactionDialog.show(DataDialogMode::MODE_DELETE_ALL);
+        }
+        if (ImGui::MenuItem("Add as income")) {
+            std::vector<Transaction> transactions_to_add_as_incomes;
+            for (const auto& trans : m_Datas.transactions_filtered) {
+                if (m_IsRowSelected(trans.id)) {
+                    transactions_to_add_as_incomes.push_back(trans);
+                }
+            }
+            m_IncomeDialog.setTransactions(transactions_to_add_as_incomes);
+            m_IncomeDialog.show(DataDialogMode::MODE_CREATION);
         }
     }
 }

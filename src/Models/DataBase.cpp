@@ -1603,7 +1603,7 @@ CREATE TABLE transactions (
     entity_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
     operation_id INTEGER NOT NULL,
-    source_id INTEGER NOT NULL,
+    source_id INTEGER NOT NULL
     date DATE NOT NULL,
     description TEXT,
     comment TEXT,

@@ -1,12 +1,10 @@
 #pragma once
 
 #include <Frontend/Tables/abstract/ADataBarsTable.h>
-
 #include <Systems/FrameActionSystem.h>
-
 #include <Threads/ImportWorkerThread.h>
-
 #include <Frontend/Dialogs/TransactionDialog.h>
+#include <Frontend/Dialogs/IncomeDialog.h>
 
 class TransactionsTable : public ADataBarsTable {
 private:
@@ -33,6 +31,7 @@ private:
     } m_Datas;
 
     TransactionDialog m_TransactionDialog;
+    IncomeDialog m_IncomeDialog;
 
     double m_CurrentBaseSolde = 0.0;
     double m_TotalDebit = 0.0;
@@ -58,6 +57,7 @@ public:
     bool drawMenu() final;
 
     TransactionDialog& getTransactionDialogRef();
+    IncomeDialog& getIncomeDialogRef();
 
     void clear();    
     void refreshDatas();

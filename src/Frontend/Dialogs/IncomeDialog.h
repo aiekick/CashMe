@@ -13,16 +13,21 @@ private:
     SourceSha m_SourceSha;
 
     // widgets : Read / Write
-    double m_IncomeAmountInputDouble = 0.0;
+    double m_IncomeMinAmountInputDouble = 0.0;
+    double m_IncomeMaxAmountInputDouble = 0.0;
     ImWidgets::QuickStringCombo m_AccountsCombo;
     ImWidgets::QuickStringEditCombo m_EntitiesCombo;
     ImWidgets::QuickStringEditCombo m_CategoriesCombo;
     ImWidgets::QuickStringEditCombo m_OperationsCombo;
-    ImWidgets::InputText m_IncomeDateInputText;
+    ImWidgets::InputText m_IncomeStartDateInputText;
+    ImWidgets::InputText m_IncomeEndDateInputText;
+    int32_t m_IncomeMinDayInputInt32 = 0;
+    int32_t m_IncomeMaxDayInputInt32 = 0;
     ImWidgets::InputText m_IncomeDescriptionInputText;
     ImWidgets::InputText m_IncomeCommentInputText;
-    bool m_IncomeConfirmed = false; // need to have a three state checkbox
-    bool m_IncomeConfirmedManyValues = false;
+
+    // transactions to add as incomes
+    std::vector<Transaction> m_TransactionToAddAsIncomes;
 
     // transactions to update / delete
     std::vector<Income> m_IncomesToUpdate;
@@ -34,6 +39,7 @@ public:
     bool init() override;
     void unit() override;
 
+    void setTransactions(const std::vector<Transaction>& vTransactions);
     void setIncome(const Income& vIncome);
     void setIncomesToUpdate(const std::vector<Income>& vIncomes);
     void setIncomesToDelete(const std::vector<Income>& vIncomes);

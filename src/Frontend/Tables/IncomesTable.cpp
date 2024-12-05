@@ -57,8 +57,8 @@ void IncomesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmou
     m_drawColumnText(t.operation);
     m_drawColumnAmount(t.minAmount);
     m_drawColumnAmount(t.maxAmount);
-    m_drawColumnInt(t.minDays);
-    m_drawColumnInt(t.maxDays);
+    m_drawColumnInt(t.minDay);
+    m_drawColumnInt(t.maxDay);
 }
 
 void IncomesTable::m_setupColumns() {
