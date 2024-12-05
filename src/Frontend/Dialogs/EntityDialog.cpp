@@ -1,6 +1,6 @@
 #include "EntityDialog.h"
 #include <Models/DataBase.h>
-#include <ctools/cTools.h>
+#include <ezlibs/ezTools.hpp>
 
 EntityDialog::EntityDialog() : ADataDialog("EntityModalPopup") {
 }
@@ -142,7 +142,7 @@ void EntityDialog::m_drawContentMerging(const ImVec2& vPos) {
 }
 
 void EntityDialog::m_confirmDialogMerging() {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
     if (DataBase::Instance()->OpenDBFile()) {
         /*DataBase::Instance()->MergeEntities(  //
             m_Entity.id,                      //
@@ -152,9 +152,9 @@ void EntityDialog::m_confirmDialogMerging() {
 }
 
 void EntityDialog::m_confirmDialogDeletion() {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void EntityDialog::m_drawContentDeletion(const ImVec2& vPos) {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }

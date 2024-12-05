@@ -1,9 +1,9 @@
 #pragma once
 
-#include <ctools/ConfigAbstract.h>
+#include <ezlibs/ezXmlConfig.hpp>
 #include <apis/CashMePluginApi.h>
 
-class SettingsDialog : public conf::ConfigAbstract {
+class SettingsDialog : public ez::xml::Config {
 private:
     std::map<Cash::SettingsCategoryPath, Cash::ISettingsWeak> m_SettingsPerCategoryPath;
     bool m_ShowDialog = false;
@@ -19,8 +19,8 @@ public:
 
     bool Draw();
 
-    std::string getXml(const std::string& vOffset, const std::string& vUserDatas = "") override;
-    bool setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas = "") override;
+    ez::xml::Nodes getXmlNodes(const std::string& vUserDatas = "") override;
+    bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
     const bool& isHiddenMode();
 

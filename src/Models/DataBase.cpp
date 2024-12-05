@@ -22,9 +22,9 @@ limitations under the License.
 #include <vector>
 #include <sstream>
 #include <string.h>
-#include <ctools/cTools.h>
-#include <ctools/Logger.h>
-#include <ctools/FileHelper.h>
+#include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezLog.hpp>
+#include <ezlibs/ezFile.hpp>
 #include <sqlite3.hpp>
 #include <fstream>
 
@@ -37,11 +37,11 @@ static int debug_sqlite3_exec(  //
     char** errmsg) {                             /* Error msg written here */
 #ifdef _DEBUG
     std::string func_name = vDebugLabel;
-    ct::replaceString(func_name, "DataBase::", "");
-    FileHelper::Instance()->SaveStringToFile(                     //
+    ez::str::replaceString(func_name, "DataBase::", "");
+    ez::file::saveStringToFile(                     //
         sql_query,                                                //
-        FileHelper::Instance()->CorrectSlashTypeForFilePathName(  //
-            ct::toStr("sqlite3/%s.sql", func_name.c_str())));
+        ez::file::correctSlashTypeForFilePathName(  //
+            ez::str::toStr("sqlite3/%s.sql", func_name.c_str())));
 #endif
     return sqlite3_exec(db, sql_query, callback, arg1, errmsg);
 }
@@ -55,11 +55,11 @@ static int debug_sqlite3_prepare_v2(  //
     const char** pzTail) { /* OUT: End of parsed string */
 #ifdef _DEBUG
     std::string func_name = vDebugLabel;
-    ct::replaceString(func_name, "DataBase::", "");
-    FileHelper::Instance()->SaveStringToFile(  //
+    ez::str::replaceString(func_name, "DataBase::", "");
+    ez::file::saveStringToFile(  //
         sql_query,                             //
-        FileHelper::Instance()->CorrectSlashTypeForFilePathName(//
-            ct::toStr("sqlite3/%s.sql", func_name.c_str())));
+        ez::file::correctSlashTypeForFilePathName(//
+            ez::str::toStr("sqlite3/%s.sql", func_name.c_str())));
 #endif
     return sqlite3_prepare_v2(db, sql_query, nBytes, ppStmt, pzTail);
 }
@@ -138,7 +138,7 @@ void DataBase::RollbackTransaction() {
 }
 
 void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO banks (name, url) VALUES("%s", "%s");)", vBankName.c_str(), vUrl.c_str());
+    auto insert_query = ez::str::toStr(u8R"(INSERT OR IGNORE INTO banks (name, url) VALUES("%s", "%s");)", vBankName.c_str(), vUrl.c_str());
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a bank in database : %s", m_LastErrorMsg);
     }
@@ -146,7 +146,7 @@ void DataBase::AddBank(const BankName& vBankName, const std::string& vUrl) {
 
 bool DataBase::GetBank(const BankName& vBankName, RowID& vOutRowID) {
     bool ret = false;
-    auto select_query = ct::toStr(u8R"(SELECT id FROM banks WHERE name = "%s";)", vBankName.c_str());
+    auto select_query = ez::str::toStr(u8R"(SELECT id FROM banks WHERE name = "%s";)", vBankName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -170,7 +170,7 @@ bool DataBase::GetBank(const BankName& vBankName, RowID& vOutRowID) {
 void DataBase::GetBanks(std::function<void(const BankName&, const std::string&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto& select_query = ct::toStr(u8R"(SELECT name, url FROM banks GROUP BY name;)");
+    const auto& select_query = ez::str::toStr(u8R"(SELECT name, url FROM banks GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -194,7 +194,7 @@ void DataBase::GetBanks(std::function<void(const BankName&, const std::string&)>
 }
 
 void DataBase::UpdateBank(const RowID& vRowID, const BankName& vBankName, const std::string& vUrl) {
-    auto insert_query = ct::toStr(u8R"(UPDATE banks SET name = "%s", url = "%s" WHERE id = %u;)", vBankName.c_str(), vUrl.c_str(), vRowID);
+    auto insert_query = ez::str::toStr(u8R"(UPDATE banks SET name = "%s", url = "%s" WHERE id = %u;)", vBankName.c_str(), vUrl.c_str(), vRowID);
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a bank in database : %s", m_LastErrorMsg);
     }
@@ -202,7 +202,7 @@ void DataBase::UpdateBank(const RowID& vRowID, const BankName& vBankName, const 
 
 void DataBase::DeleteBanks() {
     if (m_OpenDB()) {
-        auto insert_query = ct::toStr(u8R"(DELETE FROM banks;)");
+        auto insert_query = ez::str::toStr(u8R"(DELETE FROM banks;)");
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of banks table in database : %s", m_LastErrorMsg);
         }
@@ -211,7 +211,7 @@ void DataBase::DeleteBanks() {
 }
 
 void DataBase::AddEntity(const EntityName& vEntityName) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO entities (name) VALUES("%s");)", vEntityName.c_str());
+    auto insert_query = ez::str::toStr(u8R"(INSERT OR IGNORE INTO entities (name) VALUES("%s");)", vEntityName.c_str());
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a entity in database : %s", m_LastErrorMsg);
     }
@@ -219,7 +219,7 @@ void DataBase::AddEntity(const EntityName& vEntityName) {
 
 bool DataBase::GetEntity(const EntityName& vUserName, RowID& vOutRowID) {
     bool ret = false;
-    auto select_query = ct::toStr(u8R"(SELECT id FROM entities WHERE name = "%s";)", vUserName.c_str());
+    auto select_query = ez::str::toStr(u8R"(SELECT id FROM entities WHERE name = "%s";)", vUserName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -243,7 +243,7 @@ bool DataBase::GetEntity(const EntityName& vUserName, RowID& vOutRowID) {
 void DataBase::GetEntities(std::function<void(const EntityName&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto& select_query = ct::toStr(u8R"(SELECT name FROM entities GROUP BY name;)");
+    const auto& select_query = ez::str::toStr(u8R"(SELECT name FROM entities GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -272,7 +272,7 @@ void DataBase::GetEntitiesStats(  //
         const TransactionCredit&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto& select_query = ct::toStr(
+    const auto& select_query = ez::str::toStr(
         u8R"(
 SELECT
   entities.id,
@@ -313,7 +313,7 @@ ORDER BY
 }
 
 void DataBase::UpdateEntity(const RowID& vRowID, const EntityName& vEntityName) {
-    auto insert_query = ct::toStr(u8R"(UPDATE entities SET name = "%s" WHERE id = %u;)", vEntityName.c_str(), vRowID);
+    auto insert_query = ez::str::toStr(u8R"(UPDATE entities SET name = "%s" WHERE id = %u;)", vEntityName.c_str(), vRowID);
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a entity in database : %s", m_LastErrorMsg);
     }
@@ -321,7 +321,7 @@ void DataBase::UpdateEntity(const RowID& vRowID, const EntityName& vEntityName) 
 
 void DataBase::DeleteEntities() {
     if (m_OpenDB()) {
-        auto insert_query = ct::toStr(u8R"(DELETE FROM entities;)");
+        auto insert_query = ez::str::toStr(u8R"(DELETE FROM entities;)");
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of entities table in database : %s", m_LastErrorMsg);
         }
@@ -330,7 +330,7 @@ void DataBase::DeleteEntities() {
 }
 
 void DataBase::AddCategory(const CategoryName& vCategoryName) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO categories (name) VALUES("%s");)", vCategoryName.c_str());
+    auto insert_query = ez::str::toStr(u8R"(INSERT OR IGNORE INTO categories (name) VALUES("%s");)", vCategoryName.c_str());
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a category in database : %s", m_LastErrorMsg);
     }
@@ -338,7 +338,7 @@ void DataBase::AddCategory(const CategoryName& vCategoryName) {
 
 bool DataBase::GetCategory(const CategoryName& vUserName, RowID& vOutRowID) {
     bool ret = false;
-    auto select_query = ct::toStr(u8R"(SELECT id FROM categories WHERE name = "%s";)", vUserName.c_str());
+    auto select_query = ez::str::toStr(u8R"(SELECT id FROM categories WHERE name = "%s";)", vUserName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -362,7 +362,7 @@ bool DataBase::GetCategory(const CategoryName& vUserName, RowID& vOutRowID) {
 void DataBase::GetCategories(std::function<void(const CategoryName&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto& select_query = ct::toStr(u8R"(SELECT name FROM categories GROUP BY name;)");
+    const auto& select_query = ez::str::toStr(u8R"(SELECT name FROM categories GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -391,7 +391,7 @@ void DataBase::GetCategoriesStats(  //
         const TransactionCredit&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto& select_query = ct::toStr(
+    const auto& select_query = ez::str::toStr(
         u8R"(
 SELECT
   categories.id,
@@ -432,7 +432,7 @@ ORDER BY
 }
 
 void DataBase::UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName) {
-    auto insert_query = ct::toStr(u8R"(UPDATE categories SET name = "%s" WHERE id = %u;)", vCategoryName.c_str(), vRowID);
+    auto insert_query = ez::str::toStr(u8R"(UPDATE categories SET name = "%s" WHERE id = %u;)", vCategoryName.c_str(), vRowID);
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a category in database : %s", m_LastErrorMsg);
     }
@@ -440,7 +440,7 @@ void DataBase::UpdateCategory(const RowID& vRowID, const CategoryName& vCategory
 
 void DataBase::DeleteCategories() {
     if (m_OpenDB()) {
-        auto insert_query = ct::toStr(u8R"(DELETE FROM categories;)");
+        auto insert_query = ez::str::toStr(u8R"(DELETE FROM categories;)");
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of categories table in database : %s", m_LastErrorMsg);
         }
@@ -449,7 +449,7 @@ void DataBase::DeleteCategories() {
 }
 
 void DataBase::AddOperation(const OperationName& vOperationName) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO operations (name) VALUES("%s");)", vOperationName.c_str());
+    auto insert_query = ez::str::toStr(u8R"(INSERT OR IGNORE INTO operations (name) VALUES("%s");)", vOperationName.c_str());
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a operation in database : %s", m_LastErrorMsg);
     }
@@ -457,7 +457,7 @@ void DataBase::AddOperation(const OperationName& vOperationName) {
 
 bool DataBase::GetOperation(const OperationName& vOperationName, RowID& vOutRowID) {
     bool ret = false;
-    auto select_query = ct::toStr(u8R"(SELECT id FROM operations WHERE name = "%s";)", vOperationName.c_str());
+    auto select_query = ez::str::toStr(u8R"(SELECT id FROM operations WHERE name = "%s";)", vOperationName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -481,7 +481,7 @@ bool DataBase::GetOperation(const OperationName& vOperationName, RowID& vOutRowI
 void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto& select_query = ct::toStr(u8R"(SELECT name FROM operations GROUP BY name;)");
+    const auto& select_query = ez::str::toStr(u8R"(SELECT name FROM operations GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -510,7 +510,7 @@ void DataBase::GetOperationsStats(  //
         const TransactionCredit&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto& select_query = ct::toStr(
+    const auto& select_query = ez::str::toStr(
         u8R"(
 SELECT
   operations.id,
@@ -551,7 +551,7 @@ ORDER BY
 }
 
 void DataBase::UpdateOperation(const RowID& vRowID, const OperationName& vOperationName) {
-    auto insert_query = ct::toStr(u8R"(UPDATE operations SET name = "%s" WHERE id = %u;)", vOperationName.c_str(), vRowID);
+    auto insert_query = ez::str::toStr(u8R"(UPDATE operations SET name = "%s" WHERE id = %u;)", vOperationName.c_str(), vRowID);
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a operation in database : %s", m_LastErrorMsg);
     }
@@ -559,7 +559,7 @@ void DataBase::UpdateOperation(const RowID& vRowID, const OperationName& vOperat
 
 void DataBase::DeleteOperations() {
     if (m_OpenDB()) {
-        auto insert_query = ct::toStr(u8R"(DELETE FROM operations;)");
+        auto insert_query = ez::str::toStr(u8R"(DELETE FROM operations;)");
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of operations table in database : %s", m_LastErrorMsg);
         }
@@ -568,7 +568,7 @@ void DataBase::DeleteOperations() {
 }
 
 void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha& vSourceSha) {
-    auto insert_query = ct::toStr(u8R"(INSERT OR IGNORE INTO sources (name, type, sha) VALUES("%s", "%s", "%s");)",  //
+    auto insert_query = ez::str::toStr(u8R"(INSERT OR IGNORE INTO sources (name, type, sha) VALUES("%s", "%s", "%s");)",  //
                                   vSourceName.c_str(),
                                   vSourceType.c_str(),
                                   vSourceSha.c_str());
@@ -579,7 +579,7 @@ void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourc
 
 bool DataBase::GetSource(const SourceName& vSourceName, RowID& vOutRowID) {
     bool ret = false;
-    auto select_query = ct::toStr(u8R"(SELECT id FROM sources WHERE name = "%s";)", vSourceName.c_str());
+    auto select_query = ez::str::toStr(u8R"(SELECT id FROM sources WHERE name = "%s";)", vSourceName.c_str());
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -603,7 +603,7 @@ bool DataBase::GetSource(const SourceName& vSourceName, RowID& vOutRowID) {
 void DataBase::GetSources(std::function<void(const SourceName&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto& select_query = ct::toStr(u8R"(SELECT name FROM sources GROUP BY name;)");
+    const auto& select_query = ez::str::toStr(u8R"(SELECT name FROM sources GROUP BY name;)");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -624,7 +624,7 @@ void DataBase::GetSources(std::function<void(const SourceName&)> vCallback) {
 }
 
 void DataBase::UpdateSource(const RowID& vRowID, const SourceName& vSourceName) {
-    auto insert_query = ct::toStr(u8R"(UPDATE sources SET name = "%s" WHERE id = %u;)", vSourceName.c_str(), vRowID);
+    auto insert_query = ez::str::toStr(u8R"(UPDATE sources SET name = "%s" WHERE id = %u;)", vSourceName.c_str(), vRowID);
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a source in database : %s", m_LastErrorMsg);
     }
@@ -632,7 +632,7 @@ void DataBase::UpdateSource(const RowID& vRowID, const SourceName& vSourceName) 
 
 void DataBase::DeleteSources() {
     if (m_OpenDB()) {
-        auto insert_query = ct::toStr(u8R"(DELETE FROM sources;)");
+        auto insert_query = ez::str::toStr(u8R"(DELETE FROM sources;)");
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of sources table in database : %s", m_LastErrorMsg);
         }
@@ -647,7 +647,7 @@ void DataBase::AddAccount(const BankName& vBankName,
                           const AccountNumber& vAccountNumber,
                           const AccounBaseSolde& vBaseSolde) {
     AddBank(vBankName);
-    auto insert_query = ct::toStr(
+    auto insert_query = ez::str::toStr(
         u8R"(
 INSERT OR IGNORE INTO accounts 
     (bank_id, bank_agency, type, name, number, base_solde) VALUES(
@@ -671,7 +671,7 @@ INSERT OR IGNORE INTO accounts
 
 bool DataBase::GetAccount(const AccountNumber& vAccountNumber, RowID& vOutRowID) {
     bool ret = false;
-    auto select_query = ct::toStr(
+    auto select_query = ez::str::toStr(
         u8R"(
 SELECT 
   id 
@@ -708,7 +708,7 @@ bool DataBase::GetAccount(const BankName& vBankName,
                           const AccountNumber& vAccountNumber,
                           RowID& vOutRowID) {
     bool ret = false;
-    auto select_query = ct::toStr(
+    auto select_query = ez::str::toStr(
         u8R"(
 SELECT 
   id 
@@ -817,7 +817,7 @@ void DataBase::UpdateAccount(const RowID& vRowID,
                              const AccountName& vAccountName,
                              const AccountNumber& vAccountNumber,
                              const AccounBaseSolde& vBaseSolde) {
-    auto insert_query = ct::toStr(
+    auto insert_query = ez::str::toStr(
         u8R"(
 UPDATE 
   accounts
@@ -842,7 +842,7 @@ WHERE
 }
 
 void DataBase::DeleteAccount(const RowID& vRowID) {
-    auto insert_query = ct::toStr(
+    auto insert_query = ez::str::toStr(
         u8R"(
 DELETE FROM 
   accounts
@@ -860,7 +860,7 @@ WHERE
 
 void DataBase::DeleteAccounts() {
     if (m_OpenDB()) {
-        auto insert_query = ct::toStr(u8R"(DELETE FROM accounts;)");
+        auto insert_query = ez::str::toStr(u8R"(DELETE FROM accounts;)");
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of accounts table in database : %s", m_LastErrorMsg);
         }
@@ -885,7 +885,7 @@ void DataBase::AddIncome(  //
         AddEntity(vEntityName);
         AddOperation(vOperationName);
         AddCategory(vCategoryName);
-        auto insert_query = ct::toStr(
+        auto insert_query = ez::str::toStr(
             u8R"(
 INSERT OR IGNORE INTO incomes 
 (
@@ -954,7 +954,7 @@ void DataBase::AddTransaction(  //
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
     AddSource(vSourceName, vSourceType, vSourceSha);
-    auto insert_query = ct::toStr(
+    auto insert_query = ez::str::toStr(
         u8R"(
 INSERT OR IGNORE INTO transactions 
     (account_id, entity_id, operation_id, category_id, source_id, date, description, comment, amount, confirmed, hash) VALUES(
@@ -1002,7 +1002,7 @@ void DataBase::GetTransactions(  //
         const TransactionHash&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    auto select_query = ct::toStr(
+    auto select_query = ez::str::toStr(
         u8R"(
 SELECT
   transactions.id AS rowid,
@@ -1128,7 +1128,7 @@ void DataBase::GetGroupedTransactions(  //
         case GroupBy::Count:
         default: break;
     }
-    auto select_query = ct::toStr(
+    auto select_query = ez::str::toStr(
         u8R"(
 SELECT
   transactions.id,
@@ -1207,7 +1207,7 @@ ORDER BY
 void DataBase::GetDuplicateTransactionsOnDatesAndAmount(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    auto select_query = ct::toStr(
+    auto select_query = ez::str::toStr(
         u8R"(
 SELECT t.id
 FROM transactions t
@@ -1246,7 +1246,7 @@ ORDER BY t.date, t.amount;
 void DataBase::GetUnConfirmedTransactions(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    auto select_query = ct::toStr(
+    auto select_query = ez::str::toStr(
         u8R"(
 SELECT 
   id
@@ -1289,7 +1289,7 @@ void DataBase::UpdateTransaction(  //
     const TransactionAmount& vAmount,
     const TransactionConfirmed& vConfirmed,
     const TransactionHash& vHash) {
-    auto insert_query = ct::toStr(
+    auto insert_query = ez::str::toStr(
         u8R"(
 UPDATE 
   transactions
@@ -1324,7 +1324,7 @@ WHERE
 }
 
 void DataBase::ConfirmTransaction(const RowID& vRowID, const TransactionConfirmed& vConfirmed) {
-    auto insert_query = ct::toStr(
+    auto insert_query = ez::str::toStr(
         u8R"(
 UPDATE 
   transactions
@@ -1344,7 +1344,7 @@ WHERE
 }
 
 void DataBase::DeleteTransaction(const RowID& vRowID) {
-    auto insert_query = ct::toStr(
+    auto insert_query = ez::str::toStr(
         u8R"(
 DELETE FROM 
   transactions
@@ -1362,7 +1362,7 @@ WHERE
 
 void DataBase::DeleteTransactions() {
     if (m_OpenDB()) {
-        auto delete_query = ct::toStr(u8R"(DELETE FROM transactions;)");
+        auto delete_query = ez::str::toStr(u8R"(DELETE FROM transactions;)");
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, delete_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of transactions table in database : %s", m_LastErrorMsg);
         }
@@ -1373,7 +1373,7 @@ void DataBase::DeleteTransactions() {
 void DataBase::DeleteTransactions(const std::set<RowID>& vRowIDs) {
     if (BeginTransaction()) {
         for (const auto& row_id : vRowIDs) {
-            auto insert_query = ct::toStr(
+            auto insert_query = ez::str::toStr(
                 u8R"(
 DELETE FROM 
   transactions
@@ -1414,7 +1414,7 @@ VALUES
 (
 )";
         for (const auto& id : vAccountIDs) {
-            insert_query += ct::toStr("\t(%u, %u)\n", vIncomeID, id);
+            insert_query += ez::str::toStr("\t(%u, %u)\n", vIncomeID, id);
         }
         insert_query += ");";
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
@@ -1444,8 +1444,8 @@ bool DataBase::SetSettingsXMLDatas(const std::string& vXMLDatas) {
         }
         if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
 #ifdef _DEBUG
-            FileHelper::Instance()->SaveStringToFile(insert_query, "insert_query.txt");
-            FileHelper::Instance()->SaveStringToFile(m_LastErrorMsg, "last_error_msg.txt");
+            ez::file::saveStringToFile(insert_query, "insert_query.txt");
+            ez::file::saveStringToFile(m_LastErrorMsg, "last_error_msg.txt");
 #endif
             LogVarError("Fail to insert or replace xml in table settings of database : %s", m_LastErrorMsg);
             return false;
@@ -1513,7 +1513,7 @@ bool DataBase::m_OpenDB() {
 bool DataBase::m_CreateDB() {
     m_CloseDB();
     if (!m_SqliteDB) {
-        FileHelper::Instance()->DestroyFile(m_DataBaseFilePathName);
+        ez::file::destroyFile(m_DataBaseFilePathName);
         if (sqlite3_open_v2(m_DataBaseFilePathName.c_str(), &m_SqliteDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) == SQLITE_OK) {  // db possibily not exist
             m_CreateDBTables();
             m_CloseDB();

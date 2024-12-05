@@ -6,11 +6,11 @@
 #include <Headers/CashMeBuild.h>
 #include <Backend/MainBackend.h>
 
-#include <ctools/FileHelper.h>
-#include <ctools/Logger.h>
+#include <ezlibs/ezApp.hpp>
+#include <ezlibs/ezFile.hpp>
+#include <ezlibs/ezLog.hpp>
 
 // messaging
-//#include <Res/sdfmToolbarFont.cpp>
 #define MESSAGING_CODE_INFOS 0
 #define MESSAGING_LABEL_INFOS "Infos"
 #define MESSAGING_CODE_WARNINGS 1
@@ -24,20 +24,18 @@
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-int App::run(int /*argc*/, char** argv) {
+int App::run(int argc, char** argv) {
+    ez::App app(argc, argv);
     printf("-----------\n");
-    printf("[[ CashMe Beta %s ]]\n", CashMe_BuildId);
-
-    FileHelper::Instance()->SetAppPath(argv[0]);
-    FileHelper::Instance()->SetCurDirectory(FileHelper::Instance()->GetAppPath());
+    printf("[[ %s Beta %s ]]\n", CashMe_Prefix, CashMe_BuildId);
 
 #ifdef _DEBUG
-    FileHelper::Instance()->CreateDirectoryIfNotExist("sqlite3");
+    ez::file::createDirectoryIfNotExist("sqlite3");
 #endif
 
     m_InitMessaging();
 
-    MainBackend::Instance()->run();
+    MainBackend::Instance()->run(app);
 
     return 0;
 }
@@ -48,9 +46,9 @@ void App::m_InitMessaging() {
     Messaging::Instance()->AddCategory(MESSAGING_CODE_ERRORS, "Errors(s)", MESSAGING_LABEL_ERRORS, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
     Messaging::Instance()->AddCategory(MESSAGING_CODE_DEBUG, "Debug(s)", MESSAGING_LABEL_DEBUG, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
     Messaging::Instance()->SetLayoutManager(LayoutManager::Instance());
-    Logger::sStandardLogFunction = [](const int& vType, const std::string& vMessage) {
+    ez::Log::instance()->setStandardLogMessageFunctor([](const int& vType, const std::string& vMessage) {
         MessageData msg_datas;
         const auto& type = vType;
         Messaging::Instance()->AddMessage(vMessage, type, false, msg_datas, {});
-    };
+    });
 }

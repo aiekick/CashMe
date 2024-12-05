@@ -16,7 +16,7 @@ limitations under the License.
 
 #pragma once
 
-#include <ctools/ConfigAbstract.h>
+#include <ezlibs/ezXmlConfig.hpp>
 #include <string>
 
 enum class LanguageEnum
@@ -25,7 +25,7 @@ enum class LanguageEnum
 	EN
 };
 
-class TranslationHelper : public conf::ConfigAbstract
+class TranslationHelper : public ez::xml::Config
 {
 public:
 	static LanguageEnum s_HelpLanguage;
@@ -49,8 +49,8 @@ private:
 	void DefineLanguageFR();
 
 public: // configuration
-	std::string getXml(const std::string& vOffset, const std::string& vUserDatas) override;
-	bool setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas) override;
+	ez::xml::Nodes getXmlNodes(const std::string& vUserDatas) override;
+	bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
 public:
 	static TranslationHelper* Instance()

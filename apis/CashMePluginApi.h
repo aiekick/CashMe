@@ -24,6 +24,7 @@ limitations under the License.
 #include <array>
 
 #include "ILayoutPane.h"
+#include <ezlibs/ezXml.hpp>
 
 namespace Cash {
 
@@ -71,10 +72,10 @@ enum class ISettingsType {
 };
 
 struct IXmlSettings {
-    // will be called by the saver. userdatas will have two possible values. APP or PROJECT. PROJECT mean user side, APP mean common for all users
-    virtual std::string GetXmlSettings(const std::string& vOffset, const ISettingsType& vType) const = 0;
-    // will be called by the loader0 userdatas will have two possible values. APP or PROJECT. PROJECT mean user side, APP mean common for all users
-    virtual void SetXmlSettings(const std::string& vName, const std::string& vParentName, const std::string& vValue, const ISettingsType& vType) = 0;
+    // will be called by the saver
+    virtual ez::xml::Nodes getXmlSettings(const ISettingsType& vType) const = 0;
+    // will be called by the loader
+    virtual void setXmlSettings(const ez::xml::Node& vName, const ez::xml::Node& vParent, const std::string& vValue, const ISettingsType& vType) = 0;
 };
 
 struct Transaction {

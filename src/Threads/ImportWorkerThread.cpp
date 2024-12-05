@@ -1,6 +1,7 @@
 #include <Threads/ImportWorkerThread.h>
 #include <Models/DataBase.h>
-#include <ctools/Logger.h>
+#include <ezlibs/ezLog.hpp>
+#include <ezlibs/ezTime.hpp>
 
 #include <chrono>
 
@@ -154,7 +155,7 @@ void ImportWorkerThread::m_worker(  //
     vProgress = 0.0f;
     vGenerationTime = 0.0f;
     vWorking = true;
-    const auto mt0 = ct::GetTicks();
+    const auto mt0 = ez::time::getTicks();
     auto ptr = vBrocker.lock();
     if (ptr != nullptr) {
         if (!vFiles.empty()) {
@@ -173,7 +174,7 @@ void ImportWorkerThread::m_worker(  //
                     if (!stmt.statements.empty()) {
                         stmts.push_back(stmt);
                     }
-                    vGenerationTime = (ct::GetTicks() - mt0) / 1000.0f;
+                    vGenerationTime = (ez::time::getTicks() - mt0) / 1000.0f;
                     vProgress = vProgress + progress_steps;
                     if (!vWorking) {
                         break;
@@ -203,7 +204,7 @@ void ImportWorkerThread::m_worker(  //
                                     stm.amount,
                                     stm.confirmed,
                                     stm.hash);
-                                vGenerationTime = (ct::GetTicks() - mt0) / 1000.0f;
+                                vGenerationTime = (ez::time::getTicks() - mt0) / 1000.0f;
                                 if (!vWorking) {
                                     break;
                                 }

@@ -1,6 +1,6 @@
 #include <Systems/SettingsDialog.h>
 
-#include <ctools/cTools.h>
+#include <ezlibs/ezTools.hpp>
 
 #include <Plugins/PluginManager.h>
 
@@ -117,61 +117,41 @@ bool SettingsDialog::m_Save() {
     return false;
 }
 
-std::string SettingsDialog::getXml(const std::string& vOffset, const std::string& vUserDatas) {
-    UNUSED(vUserDatas);
-
-    std::string str;
-
-    str += vOffset + "<plugins>\n";
-
+ez::xml::Nodes SettingsDialog::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    node.setName("plugins");
     for (const auto& cat : m_SettingsPerCategoryPath) {
         auto ptr = cat.second.lock();
         if (ptr != nullptr) {
             if (vUserDatas == "app") {
-                str += ptr->GetXmlSettings(vOffset + "\t", Cash::ISettingsType::APP);
+                node.addChilds(ptr->getXmlSettings(Cash::ISettingsType::APP));
             } else if (vUserDatas == "project") {
-                str += ptr->GetXmlSettings(vOffset + "\t", Cash::ISettingsType::PROJECT);
+                node.addChilds(ptr->getXmlSettings(Cash::ISettingsType::PROJECT));
             } else {
-                CTOOL_DEBUG_BREAK; // ERROR
+                EZ_TOOLS_DEBUG_BREAK; // ERROR
             }
         }
     }
-
-    str += vOffset + "</plugins>\n";
-
-    return str;
+    return node.getChildren();
 }
 
-bool SettingsDialog::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas) {
-    UNUSED(vUserDatas);
-
-    // The value of this child identifies the name of this element
-    std::string strName = "";
-    std::string strValue = "";
-    std::string strParentName = "";
-
-    strName = vElem->Value();
-    if (vElem->GetText()) {
-        strValue = vElem->GetText();
-    }
-    if (vParent != nullptr) {
-        strParentName = vParent->Value();
-    }
-
+bool SettingsDialog::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    const auto& strName = vNode.getName();
+    const auto& strValue = vNode.getContent();
+    const auto& strParentName = vParent.getName();
     for (const auto& cat : m_SettingsPerCategoryPath) {
         auto ptr = cat.second.lock();
         if (ptr != nullptr) {
             if (vUserDatas == "app") {
-                ptr->SetXmlSettings(strName, strParentName, strValue, Cash::ISettingsType::APP);
-                RecursParsingConfigChilds(vElem, vUserDatas);
+                ptr->setXmlSettings(vNode, vParent, strValue, Cash::ISettingsType::APP);
+                RecursParsingConfigChilds(vNode, vUserDatas);
             } else if (vUserDatas == "project") {
-                ptr->SetXmlSettings(strName, strParentName, strValue, Cash::ISettingsType::PROJECT);
-                RecursParsingConfigChilds(vElem, vUserDatas);
+                ptr->setXmlSettings(vNode, vParent, strValue, Cash::ISettingsType::PROJECT);
+                RecursParsingConfigChilds(vNode, vUserDatas);
             } else {
-                CTOOL_DEBUG_BREAK;  // ERROR
+                EZ_TOOLS_DEBUG_BREAK;  // ERROR
             }
         }
     }
-
     return false;
 }

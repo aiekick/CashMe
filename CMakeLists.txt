@@ -69,7 +69,6 @@ if(WIN32)
 	add_definitions(-DWIN32)
 endif()
 
-add_definitions(-DUSE_XML_CONFIG)
 add_definitions(-DUSE_STD_FILESYSTEM)
 add_definitions(-DIMGUI_ENABLE_FREETYPE)
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS)
@@ -80,7 +79,8 @@ add_definitions(-DIMGUI_USER_CONFIG="${CMAKE_SOURCE_DIR}/src/Headers/CustomImGui
 add_definitions(-DCUSTOM_IMWIDGETS_CONFIG="${CMAKE_SOURCE_DIR}/src/Headers/CustomImWidgetsConfig.h")
 add_definitions(-DCUSTOM_IN_APP_GPU_PROFILER_CONFIG="${CMAKE_SOURCE_DIR}/src/Headers/CustomInAppGpuProfiler.h")
 add_definitions(-DCUSTOM_IMGUIFILEDIALOG_CONFIG="${CMAKE_SOURCE_DIR}/src/Headers/CustomImGuiFileDialogConfig.h")
-add_definitions(-DCUSTOM_CASHME_BACKEND_CONFIG="${CMAKE_SOURCE_DIR}/src/Headers/CustomCashMeBackendConfig.h")
+add_definitions(-DCUSTOM_LOG_TO_GRAPH_BACKEND_CONFIG="${CMAKE_SOURCE_DIR}/src/Headers/CustomStrockerBackendConfig.h")
+add_definitions(-DCUSTOM_THEME_HELPER_CONFIG_HEADER="${CMAKE_SOURCE_DIR}/src/Headers/CustomImGuiThemeHelperConfigHeader.h")
 
 include(cmake/3rdparty.cmake)
 
@@ -144,6 +144,7 @@ add_executable(${PROJECT}
 	${SRC_SOURCES}
 	${MAIN_SOURCES}
 	${APIS_SOURCES}
+	${EZ_LIBS_SOURCES}
 	${IMGUI_IMPL_SOURCES}
 	${PROJECT_CMAKE_FILES}
 )

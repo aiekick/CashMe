@@ -1,5 +1,5 @@
 #include <Utils/Utils.h>
-#include <ctools/cTools.h>
+#include <ezlibs/ezStr.hpp>
 
 bool parseDescription(const std::string& vDesc,  //
                       std::string& vOutEntity,
@@ -7,7 +7,7 @@ bool parseDescription(const std::string& vDesc,  //
                       std::string& vOutDescription) {
     bool ret = false;
     if (!vDesc.empty()) {
-        const auto& arr = ct::splitStringToVector(vDesc, ' ');
+        const auto& arr = ez::str::splitStringToVector(vDesc, ' ');
 
         size_t found_date_pos = arr.size();
         if (arr.size() > 0) {
@@ -29,7 +29,7 @@ bool parseDescription(const std::string& vDesc,  //
                     }
                 } 
             } else if (date_word0.find_first_not_of("0123456789/") == std::string::npos) {
-                if (ct::GetCountOccurence(date_word0, '/') == 2U) {
+                if (ez::str::getCountOccurence(date_word0, '/') == 2U) {
                     // date format : 25/03/24
                     found_date_pos = arr.size() - 1;
                 }

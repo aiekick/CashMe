@@ -99,7 +99,7 @@ void EntitiesTable::m_drawContextMenuContent() {
 }
 
 void EntitiesTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void EntitiesTable::m_updateEntities() {

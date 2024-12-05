@@ -16,7 +16,7 @@ limitations under the License.
 
 #include "TranslationHelper.h"
 
-#include <ctools/cTools.h>
+#include <ezlibs/ezTools.hpp>
 #include <ImGuiPack/ImGuiPack.h>
 
 
@@ -119,33 +119,20 @@ void TranslationHelper::DefineLanguageFR() {
 //// CONFIGURATION ////////////////////////////////////
 ///////////////////////////////////////////////////////
 
-std::string TranslationHelper::getXml(const std::string& vOffset, const std::string& vUserDatas) {
-    UNUSED(vUserDatas);
-
-    std::string str;
-
-    // the rest
-    str += vOffset + "<help_lang>" + ct::toStr((int)TranslationHelper::s_HelpLanguage) + "</help_lang>\n";
-
-    return str;
+ez::xml::Nodes TranslationHelper::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    node.addChild("help_lang").setContent(ez::str::toStr((int)TranslationHelper::s_HelpLanguage));
+    return node.getChildren();
 }
 
-bool TranslationHelper::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas) {
-    UNUSED(vUserDatas);
+bool TranslationHelper::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    const auto& strName = vNode.getName();
+    const auto& strValue = vNode.getContent();
+    const auto& strParentName = vParent.getName();
 
-    // The value of this child identifies the name of this element
-    std::string strName;
-    std::string strValue;
-    std::string strParentName;
-
-    strName = vElem->Value();
-    if (vElem->GetText())
-        strValue = vElem->GetText();
-    if (vParent != nullptr)
-        strParentName = vParent->Value();
-
-    if (strName == "help_lang")
-        DefineLanguage((LanguageEnum)ct::ivariant(strValue).GetI());
-
+    if (strName == "help_lang") {
+        DefineLanguage((LanguageEnum)ez::ivariant(strValue).GetI());
+    }
+    
     return true;  // continue for explore childs. need to return false if we want explore child ourselves
 }

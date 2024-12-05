@@ -1,6 +1,6 @@
 #include "IncomeDialog.h"
 #include <Models/DataBase.h>
-#include <ctools/cTools.h>
+#include <ezlibs/ezTools.hpp>
 
 #define MULTIPLE_VALUES "Many values"
 
@@ -55,10 +55,10 @@ void IncomeDialog::m_drawContent(const ImVec2& vPos) {
 void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
-    m_AccountsCombo.displayCombo(width, "Account", align);
-    m_EntitiesCombo.displayCombo(width, "Entity", align);
-    m_CategoriesCombo.displayCombo(width, "Category", align);
-    m_OperationsCombo.displayCombo(width, "Operation", align);
+    m_AccountsCombo.displayWithColumn(width, "Account", align);
+    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_CategoriesCombo.displayWithColumn(width, "Category", align);
+    m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_IncomeStartDateInputText.DisplayInputText(width, "Start date", "", false, align);
     m_IncomeEndDateInputText.DisplayInputText(width, "End date", "", false, align);
     ImGui::DisplayAlignedWidget(width, "Min amount", align, [this]() { ImGui::InputDouble("##MinAmount", &m_IncomeMinAmountInputDouble); });
@@ -72,10 +72,10 @@ void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
 void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
     /*const auto align = 125.0f;
     const auto width = 400.0f;
-    m_AccountsCombo.displayCombo(width, "Account", align);
-    m_EntitiesCombo.displayCombo(width, "Entity", align);
-    m_CategoriesCombo.displayCombo(width, "Category", align);
-    m_OperationsCombo.displayCombo(width, "Operation", align);
+    m_AccountsCombo.displayWithColumn(width, "Account", align);
+    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_CategoriesCombo.displayWithColumn(width, "Category", align);
+    m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_IncomeDateInputText.DisplayInputText(width, "Date", "", false, align);
     m_IncomeDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
     m_IncomeCommentInputText.DisplayInputText(width, "Comment", "", false, align);
@@ -285,7 +285,7 @@ void IncomeDialog::m_confirmDialogCreation() {
     /*RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
-            const auto hash = ct::toStr(  //
+            const auto hash = ez::str::toStr(  //
                 "%s_%s_%f",               //
                 m_IncomeDateInputText.GetText().c_str(),
                 // un fichier ofc ne peut pas avoir des labels de longueur > a 30
@@ -316,7 +316,7 @@ void IncomeDialog::m_confirmDialogUpdateOnce() {
     /*RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
-            const auto hash = ct::toStr(  //
+            const auto hash = ez::str::toStr(  //
                 "%s_%s_%f",               //
                 m_IncomeDateInputText.GetText().c_str(),
                 // un fichier ofc ne peut pas avoir des labels de longueur > a 30

@@ -18,9 +18,9 @@ limitations under the License.
 
 #include <ImGuiPack.h>
 
-#include <ctools/cTools.h>
-#include <ctools/Logger.h>
-#include <ctools/ConfigAbstract.h>
+#include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezLog.hpp>
+#include <ezlibs/ezXmlConfig.hpp>
 #include <Systems/FrameActionSystem.h>
 
 #include <Backend/MainBackend.h>
@@ -101,7 +101,7 @@ confirmation dialog for close font :
     -	clear actions
 */
 
-class MainFrontend : public conf::ConfigAbstract {
+class MainFrontend : public ez::xml::Config {
 private:
     bool m_ShowImGui = false;
     bool m_ShowImPlot = false;
@@ -173,8 +173,8 @@ private:  // actions
     bool Display_SaveProjectDialog();
 
 public:  // configuration
-    std::string getXml(const std::string& vOffset, const std::string& vUserDatas = "") override;
-    bool setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas = "") override;
+    ez::xml::Nodes getXmlNodes(const std::string& vUserDatas = "") override;
+    bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
 private:
     bool m_build();

@@ -79,3 +79,6 @@ if (USE_IMGUI_COLOR_TEXT_EDIT)
 	add_definitions(-DUSE_IMGUI_COLOR_TEXT_EDIT)
 endif()
  
+target_link_libraries(ImGuiPack 
+	glfw
+)

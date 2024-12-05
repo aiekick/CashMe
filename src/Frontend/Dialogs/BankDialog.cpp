@@ -1,6 +1,6 @@
 #include "BankDialog.h"
 #include <Models/DataBase.h>
-#include <ctools/cTools.h>
+#include <ezlibs/ezTools.hpp>
 
 BankDialog::BankDialog() : ADataDialog("BankModalPopup") {
 }
@@ -132,9 +132,9 @@ void BankDialog::m_drawContentUpdate(const ImVec2& vPos) {
 }
 
 void BankDialog::m_confirmDialogDeletion() {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void BankDialog::m_drawContentDeletion(const ImVec2& vPos) {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }

@@ -205,7 +205,7 @@ void TransactionsTable::m_drawSearchRow() {
             if (m_IsGroupingModeTransactions()) {
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
                 if (m_SearchInputTexts.at(idx).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
-                    m_SearchTokens[idx] = ct::toLower(m_SearchInputTexts.at(idx).GetText());
+                    m_SearchTokens[idx] = ez::str::toLower(m_SearchInputTexts.at(idx).GetText());
                     m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
                     change = true;
                 }
@@ -584,12 +584,12 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                     Transaction t;
                     t.id = vTransactionID;
                     t.account = account_number;
-                    t.optimized[0] = ct::toLower(t.date = vDate);
-                    t.optimized[1] = ct::toLower(t.description = vDescription);
-                    t.optimized[2] = ct::toLower(t.comment = vComment);
-                    t.optimized[3] = ct::toLower(t.entity = vEntityName);
-                    t.optimized[4] = ct::toLower(t.category = vCategoryName);
-                    t.optimized[5] = ct::toLower(t.operation = vOperationName);
+                    t.optimized[0] = ez::str::toLower(t.date = vDate);
+                    t.optimized[1] = ez::str::toLower(t.description = vDescription);
+                    t.optimized[2] = ez::str::toLower(t.comment = vComment);
+                    t.optimized[3] = ez::str::toLower(t.entity = vEntityName);
+                    t.optimized[4] = ez::str::toLower(t.category = vCategoryName);
+                    t.optimized[5] = ez::str::toLower(t.operation = vOperationName);
                     t.hash = vHash;
                     t.source = vSourceName;
                     t.debit = vAmount < 0.0 ? vAmount : 0.0;

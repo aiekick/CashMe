@@ -7,8 +7,9 @@
 #include <array>
 #include <map>
 
-#include <ctools/FileHelper.h>
-#include <ctools/Logger.h>
+#include <ezlibs/ezFile.hpp>
+#include <ezlibs/ezTools.hpp>
+
 #include <ImGuiPack.h>
 
 #include <Utils/Utils.h>
@@ -194,7 +195,7 @@ private:
         const auto &pages_count = (int32_t)vContainer.size();
         for (const auto &page : vContainer) {
             const auto &page_idx = page.first;
-            const auto &page_footer = ct::toStr("  Page %u / %u", page_idx + 1, pages_count);
+            const auto &page_footer = ez::str::toStr("  Page %u / %u", page_idx + 1, pages_count);
             for (const auto &row : page.second) {
                 const auto &row_idx = row.first;
                 const auto &cols = row.second;
@@ -255,7 +256,7 @@ private:
                             m_EndDate = tmp.substr(au_pos, n_pos - au_pos);
                             n_pos += 7;
                             m_DocNumber = tmp.substr(n_pos);
-                            ct::replaceString(m_DocNumber, " ", "");
+                            ez::str::replaceString(m_DocNumber, " ", "");
                             date_range_found = true;
                         }
                     }
@@ -313,7 +314,7 @@ private:
             }
         }
         if (c < 0) {
-            CTOOL_DEBUG_BREAK;
+            EZ_TOOLS_DEBUG_BREAK;
         }
         return c;
     }
@@ -324,7 +325,7 @@ private:
             Fields currentHeader;
             for (const auto &row : vTable) {
                 /*if (row.fields.size() > 1 && row.fields.at(1).token == "CB RETRAIT DU 10/01") {
-                    CTOOL_DEBUG_BREAK;
+                    EZ_TOOLS_DEBUG_BREAK;
                 }*/
                 if (row.isHeader) {
                     currentHeader = row;
@@ -337,7 +338,7 @@ private:
                         // for table printing
                         if (col.token.size() > m_ColSizes.at(c)) {
                             if (col.token.size() > 100) {
-                                CTOOL_DEBUG_BREAK;
+                                EZ_TOOLS_DEBUG_BREAK;
                             }
                             m_ColSizes.at(c) = static_cast<int32_t>(col.token.size());  // the sx is the new max width of the column
                         }
@@ -354,16 +355,16 @@ private:
             }
             {  // start solde
                 const auto &c = getColumnOfField(m_StartSoldeToken, currentHeader.hxs);
-                ct::replaceString(m_StartSoldeToken.token, " ", "");
-                ct::replaceString(m_StartSoldeToken.token, ",", ".");
+                ez::str::replaceString(m_StartSoldeToken.token, " ", "");
+                ez::str::replaceString(m_StartSoldeToken.token, ",", ".");
                 if (c == 3) {
                     m_StartSoldeToken.token = "-" + m_StartSoldeToken.token;
                 } 
             }
             {  // end solde
                 const auto &c = getColumnOfField(m_EndSoldeToken, currentHeader.hxs);
-                ct::replaceString(m_EndSoldeToken.token, " ", "");
-                ct::replaceString(m_EndSoldeToken.token, ",", ".");
+                ez::str::replaceString(m_EndSoldeToken.token, " ", "");
+                ez::str::replaceString(m_EndSoldeToken.token, ",", ".");
                 if (c == 3) {
                     m_EndSoldeToken.token = "-" + m_EndSoldeToken.token;
                 }
@@ -395,7 +396,7 @@ private:
                 const auto &colSize = m_ColSizes.at(idx);
                 const auto w = colSize - tk.token.size();
                 if (w < 0) {
-                    CTOOL_DEBUG_BREAK;
+                    EZ_TOOLS_DEBUG_BREAK;
                 }
                 if (idx == 0) {
                     if (!tk.token.empty()) {
@@ -436,7 +437,7 @@ private:
         }
 
         {  // ledger
-            ret.ledger = ct::dvariant(m_Ledger).GetD();
+            ret.ledger = ez::dvariant(m_Ledger).GetD();
         }
 
         {  // account infos
@@ -458,8 +459,8 @@ private:
             }
 
             // remove spaces, because some numbers can be XXXXXX X
-            ct::replaceString(guichet, " ", "");
-            ct::replaceString(number, " ", "");
+            ez::str::replaceString(guichet, " ", "");
+            ez::str::replaceString(number, " ", "");
 
             // cut number like 000000XXXXXXX to XXXXXXX
             if (number.size() > 7U) {
@@ -474,8 +475,8 @@ private:
             TransDoublon trans;
 
             bool is_new_line = false;
-            m_StartSolde = ct::dvariant(m_StartSoldeToken.token).GetD();
-            m_EndSolde = ct::dvariant(m_EndSoldeToken.token).GetD();
+            m_StartSolde = ez::dvariant(m_StartSoldeToken.token).GetD();
+            m_EndSolde = ez::dvariant(m_EndSoldeToken.token).GetD();
             double solde = m_StartSolde;
             double debit = 0.0, credit = 0.0;
             // 0 is the header, so we jump it
@@ -489,11 +490,11 @@ private:
                             trans = {};
                             is_new_line = true;
                             trans.trans.date = tk.token;
-                            auto arr = ct::splitStringToVector(trans.trans.date, ".");
+                            auto arr = ez::str::splitStringToVector(trans.trans.date, ".");
                             if (arr.size() == 2U) {
                                 trans.trans.date = arr.at(1) + "-" + arr.at(0);
                             } else {
-                                CTOOL_DEBUG_BREAK;
+                                EZ_TOOLS_DEBUG_BREAK;
                             }
                         }
                     } else if (idx == 1) {
@@ -504,19 +505,19 @@ private:
                         }
                     } else if (idx == 2) {
                         if (is_new_line) {
-                            auto arr = ct::splitStringToVector(tk.token, ".");
+                            auto arr = ez::str::splitStringToVector(tk.token, ".");
                             if (arr.size() == 3U) {
                                 trans.trans.date = "20" + arr.at(2) + "-" + trans.trans.date;
                             } else {
-                                CTOOL_DEBUG_BREAK;
+                                EZ_TOOLS_DEBUG_BREAK;
                             }
                         }
                     } else if (idx == 3) {
                         if (is_new_line) {
                             auto tok = tk.token;
-                            ct::replaceString(tok, " ", "");
-                            ct::replaceString(tok, ",", ".");
-                            debit = ct::dvariant(tok).GetD();
+                            ez::str::replaceString(tok, " ", "");
+                            ez::str::replaceString(tok, ",", ".");
+                            debit = ez::dvariant(tok).GetD();
                             if (debit > 0.0) {
                                 trans.trans.amount = debit * -1.0;
                                 solde += trans.trans.amount;
@@ -525,9 +526,9 @@ private:
                     } else if (idx == 4) {
                         if (is_new_line) {
                             auto tok = tk.token;
-                            ct::replaceString(tok, " ", "");
-                            ct::replaceString(tok, ",", ".");
-                            credit = ct::dvariant(tok).GetD();
+                            ez::str::replaceString(tok, " ", "");
+                            ez::str::replaceString(tok, ",", ".");
+                            credit = ez::dvariant(tok).GetD();
                             if (credit > 0.0) {
                                 trans.trans.amount = credit;
                                 solde += trans.trans.amount;
@@ -538,7 +539,7 @@ private:
                 if (is_new_line) {
                     trans.trans.source = vSourceName;
                     trans.trans.source_type = "pdf";
-                    trans.trans.hash = ct::toStr("%s_%s_%f",  //
+                    trans.trans.hash = ez::str::toStr("%s_%s_%f",  //
                                                  trans.trans.date.c_str(),
                                                  // un fichier ofc ne peut pas avoir des description de longueur > a 30
                                                  // alors on limite le hash a utiliser un description de 30
@@ -554,8 +555,8 @@ private:
                 }
             }
 
-            const auto &compute_solde_str = ct::round_n(solde, 2);
-            const auto &final_solde_str = ct::round_n(m_EndSolde, 2);
+            const auto &compute_solde_str = ez::round_n(solde, 2);
+            const auto &final_solde_str = ez::round_n(m_EndSolde, 2);
             if (compute_solde_str != final_solde_str) {
                 LogVarDebugError("Fail, the computed solde of %s not match the end solde of the file.some lines are badly parsed maybe",
                                  compute_solde_str.c_str(),
@@ -565,7 +566,7 @@ private:
             for (const auto &t : transactions) {
                 auto trans = t.second;
                 for (uint32_t idx = 0U; idx < trans.doublons; ++idx) {
-                    trans.trans.hash = t.second.trans.hash + ct::toStr("_%u", idx);
+                    trans.trans.hash = t.second.trans.hash + ez::str::toStr("_%u", idx);
                     ret.statements.push_back(trans.trans);
                 }
             }
@@ -585,7 +586,7 @@ Cash::BankStatementModulePtr PdfAccountStatementModule::create() {
 
 Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
     Cash::AccountStatements ret{};
-    auto ps = FileHelper::Instance()->ParsePathFileName(vFilePathName);
+    auto ps = ez::file::parsePathFileName(vFilePathName);
     if (ps.isOk) {
         globalParams = new GlobalParams(nullptr);                                             // globalParams ios a extern and is used by pdf_doc_ptr...
         auto pdf_doc_ptr = new PDFDoc(new GString(vFilePathName.c_str()), nullptr, nullptr); // the GString is deleted by PDFDoc

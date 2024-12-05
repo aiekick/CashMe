@@ -19,8 +19,8 @@ limitations under the License.
 
 #include "ProjectFile.h"
 
-#include <ctools/Logger.h>
-#include <ctools/FileHelper.h>
+#include <ezlibs/ezLog.hpp>
+#include <ezlibs/ezFile.hpp>
 
 #include <Models/DataBase.h>
 
@@ -37,8 +37,8 @@ limitations under the License.
 ProjectFile::ProjectFile() = default;
 
 ProjectFile::ProjectFile(const std::string& vFilePathName) {
-    m_ProjectFilePathName = FileHelper::Instance()->SimplifyFilePath(vFilePathName);
-    auto ps = FileHelper::Instance()->ParsePathFileName(m_ProjectFilePathName);
+    m_ProjectFilePathName = ez::file::simplifyFilePath(vFilePathName);
+    auto ps = ez::file::parsePathFileName(m_ProjectFilePathName);
     if (ps.isOk) {
         m_ProjectFileName = ps.name;
         m_ProjectFilePath = ps.path;
@@ -71,9 +71,9 @@ void ProjectFile::New() {
 void ProjectFile::New(const std::string& vFilePathName) {
     Clear();
     ClearDatas();
-    m_ProjectFilePathName = FileHelper::Instance()->SimplifyFilePath(vFilePathName);
+    m_ProjectFilePathName = ez::file::simplifyFilePath(vFilePathName);
     DataBase::Instance()->CreateDBFile(m_ProjectFilePathName);
-    auto ps = FileHelper::Instance()->ParsePathFileName(m_ProjectFilePathName);
+    auto ps = ez::file::parsePathFileName(m_ProjectFilePathName);
     if (ps.isOk) {
         m_ProjectFileName = ps.name;
         m_ProjectFilePath = ps.path;
@@ -91,15 +91,14 @@ bool ProjectFile::Load() {
 bool ProjectFile::LoadAs(const std::string vFilePathName) {
     if (!vFilePathName.empty()) {
         Clear();
-        std::string filePathName = FileHelper::Instance()->SimplifyFilePath(vFilePathName);
+        std::string filePathName = ez::file::simplifyFilePath(vFilePathName);
         if (DataBase::Instance()->IsFileASqlite3DB(filePathName)) {
             if (DataBase::Instance()->OpenDBFile(filePathName)) {
                 ClearDatas();
                 auto xml_settings = DataBase::Instance()->GetSettingsXMLDatas();
-                tinyxml2::XMLError xmlError = LoadConfigString(unEscapeXmlCode(xml_settings));
-                if (xml_settings.empty() || xmlError == tinyxml2::XMLError::XML_SUCCESS) {
-                    m_ProjectFilePathName = FileHelper::Instance()->SimplifyFilePath(vFilePathName);
-                    auto ps = FileHelper::Instance()->ParsePathFileName(m_ProjectFilePathName);
+                if (LoadConfigString(ez::xml::Node::unEscapeXml(xml_settings), "project") || xml_settings.empty()) {
+                    m_ProjectFilePathName = ez::file::simplifyFilePath(vFilePathName);
+                    auto ps = ez::file::parsePathFileName(m_ProjectFilePathName);
                     if (ps.isOk) {
                         m_ProjectFileName = ps.name;
                         m_ProjectFilePath = ps.path;
@@ -113,8 +112,7 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                     SetProjectChange(false);
                 } else {
                     Clear();
-                    auto errMsg = getTinyXml2ErrorMessage(xmlError);
-                    LogVarError("The project file % s cant be loaded, Error : % s", filePathName.c_str(), errMsg.c_str());
+                    LogVarError("Error : the project file %s cant be loaded", filePathName.c_str());
                 }
                 DataBase::Instance()->CloseDBFile();
             }
@@ -129,7 +127,7 @@ bool ProjectFile::Save() {
     }
 
     if (DataBase::Instance()->OpenDBFile(m_ProjectFilePathName)) {
-        auto xml_settings = escapeXmlCode(SaveConfigString());
+        auto xml_settings = ez::xml::Node::escapeXml(SaveConfigString("project", "config"));
         if (DataBase::Instance()->SetSettingsXMLDatas(xml_settings)) {
             SetProjectChange(false);
             DataBase::Instance()->CloseDBFile();
@@ -142,10 +140,10 @@ bool ProjectFile::Save() {
 }
 
 bool ProjectFile::SaveAs(const std::string& vFilePathName) {
-    std::string filePathName = FileHelper::Instance()->SimplifyFilePath(vFilePathName);
-    auto ps = FileHelper::Instance()->ParsePathFileName(filePathName);
+    std::string filePathName = ez::file::simplifyFilePath(vFilePathName);
+    auto ps = ez::file::parsePathFileName(filePathName);
     if (ps.isOk) {
-        m_ProjectFilePathName = FileHelper::Instance()->ComposePath(ps.path, ps.name, PROJECT_EXT_DOT_LESS);
+        m_ProjectFilePathName = ez::file::composePath(ps.path, ps.name, PROJECT_EXT_DOT_LESS);
         m_ProjectFilePath = ps.path;
         m_NeverSaved = false;
         return Save();
@@ -183,59 +181,27 @@ bool ProjectFile::WasJustSaved() {
     return m_WasJustSaved;
 }
 
-std::string ProjectFile::GetAbsolutePath(const std::string& vFilePathName) const {
-    std::string res = vFilePathName;
-    if (!vFilePathName.empty()) {
-        if (!FileHelper::Instance()->IsAbsolutePath(vFilePathName))  
-        {// relative
-            res = FileHelper::Instance()->SimplifyFilePath(m_ProjectFilePath + FileHelper::Instance()->puSlashType + vFilePathName);
-        }
-    }
-    return res;
-}
-
-std::string ProjectFile::GetRelativePath(const std::string& vFilePathName) const {
-    std::string res = vFilePathName;
-    if (!vFilePathName.empty()) {
-        res = FileHelper::Instance()->GetRelativePathToPath(vFilePathName, m_ProjectFilePath);
-    }
-    return res;
-}
-
 std::string ProjectFile::GetProjectFilepathName() const {
     return m_ProjectFilePathName;
 }
 
-std::string ProjectFile::getXml(const std::string& vOffset, const std::string& /*vUserDatas*/) {
-    std::string str;
-    str += vOffset + "<project>\n";
-    const std::string& project_tag = "project";
-    str += LayoutManager::Instance()->getXml(vOffset + "\t", project_tag);
-    str += StatementsPane::Instance()->getXml(vOffset + "\t", project_tag);
-    str += SettingsDialog::Instance()->getXml(vOffset + "\t", project_tag);
-    str += vOffset + "</project>\n";
-    return str;
+ez::xml::Nodes ProjectFile::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    node.setName("project");
+    node.addChilds(LayoutManager::Instance()->getXmlNodes(vUserDatas));
+    node.addChilds(SettingsDialog::Instance()->getXmlNodes(vUserDatas));
+    return node.getChildren();
 }
 
-bool ProjectFile::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& /*vUserDatas*/) {
-    const std::string& strName = vElem->Value();  // the std::string is important, because Value() return a const char*
-    std::string strValue;
-    if (vElem->GetText()) {
-        strValue = vElem->GetText();
-    }
-    std::string strParentName;
-    if (vParent != nullptr) {
-        strParentName = vParent->Value();
-    }
-
+bool ProjectFile::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    const auto& strName = vNode.getName();
+    const auto& strValue = vNode.getContent();
+    const auto& strParentName = vParent.getName();
     if (strName == "config") {
         return true;
     } else if (strName == "project") {
-        const std::string& project_tag = "project";
-        LayoutManager::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
-        StatementsPane::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
-        SettingsDialog::Instance()->RecursParsingConfig(vElem, vParent, project_tag);
+        LayoutManager::Instance()->RecursParsingConfig(vNode, vParent, vUserDatas);
+        SettingsDialog::Instance()->RecursParsingConfig(vNode, vParent, vUserDatas);
     }
-
     return true;
 }

@@ -17,11 +17,11 @@ limitations under the License.
 #pragma once
 
 #include <apis/CashMePluginApi.h>
-#include <ctools/ConfigAbstract.h>
+#include <ezlibs/ezXmlConfig.hpp>
 #include <string>
 #include <memory>
 
-class ProjectFile : public Cash::ProjectInterface, public conf::ConfigAbstract {
+class ProjectFile : public Cash::ProjectInterface, public ez::xml::Config {
 private:  // to save
     std::string m_ProjectFilePathName;
     std::string m_ProjectFileName;
@@ -46,7 +46,6 @@ public:
     bool Load();
     bool LoadAs(const std::string vFilePathName);  // ils wanted to not pass the adress for re open case
     bool Save();
-    bool SaveTemporary();
     bool SaveAs(const std::string& vFilePathName);
 
     bool IsProjectLoaded() const override;
@@ -57,16 +56,14 @@ public:
 
     void NewFrame();
 
-    std::string GetAbsolutePath(const std::string& vFilePathName) const;
-    std::string GetRelativePath(const std::string& vFilePathName) const;
     std::string GetProjectFilepathName() const;
 
 public: // features
 
 
 public:
-    std::string getXml(const std::string& vOffset, const std::string& vUserDatas = "") override;
-    bool setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas = "") override;
+    ez::xml::Nodes getXmlNodes(const std::string& vUserDatas = "") override;
+    bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
 public:
     static std::shared_ptr<ProjectFile> Instance() {

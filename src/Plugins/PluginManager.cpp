@@ -2,7 +2,7 @@
 
 #include <ImGuiPack.h>
 
-#include <ctools/FileHelper.h>
+#include <ezlibs/ezFile.hpp>
 
 namespace fs = std::filesystem;
 
@@ -67,10 +67,10 @@ void PluginManager::Clear() {
     m_Plugins.clear();
 }
 
-void PluginManager::LoadPlugins() {
+void PluginManager::LoadPlugins(const ez::App& vApp) {
     printf("-----------\n");
     LogVarLightInfo("Availables Plugins :\n");
-    auto plugin_directory = std::filesystem::path(FileHelper::Instance()->GetAppPath()).append("plugins");
+    auto plugin_directory = std::filesystem::path(vApp.getAppPath()).append("plugins");
     if (std::filesystem::exists(plugin_directory)) {
         const auto dir_iter = std::filesystem::directory_iterator(plugin_directory);
         for (const auto& file : dir_iter) {
@@ -166,7 +166,7 @@ void PluginManager::m_LoadPlugin(const fs::directory_entry& vEntry) {
             if (file_name.find(PLUGIN_RUNTIME_CONFIG) != std::string::npos) {
                 auto file_path_name = vEntry.path().string();
                 if (file_path_name.find(GetDLLExtention()) != std::string::npos) {
-                    auto ps = FileHelper::Instance()->ParsePathFileName(file_path_name);
+                    auto ps = ez::file::parsePathFileName(file_path_name);
                     if (ps.isOk) {
                         auto resPtr = std::make_shared<PluginInstance>();
                         auto ret = resPtr->Init(ps.name, ps.GetFPNE());
@@ -222,8 +222,8 @@ void PluginManager::m_DisplayLoadedPlugins() {
             if (plugin.second != nullptr) {
                 auto plugin_instance_ptr = plugin.second->Get().lock();
                 if (plugin_instance_ptr != nullptr) {
-                    max_name_size = ct::maxi(max_name_size, plugin_instance_ptr->GetName().size() + minimal_space);
-                    max_vers_size = ct::maxi(max_vers_size, plugin_instance_ptr->GetVersion().size() + minimal_space);
+                    max_name_size = ez::maxi(max_name_size, plugin_instance_ptr->GetName().size() + minimal_space);
+                    max_vers_size = ez::maxi(max_vers_size, plugin_instance_ptr->GetVersion().size() + minimal_space);
                 }
             }
         }

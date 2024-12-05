@@ -3,8 +3,9 @@
 #include <sstream>
 #include <string>
 
-#include <ctools/FileHelper.h>
-#include <ctools/Logger.h>
+#include <ezlibs/ezFile.hpp>
+#include <ezlibs/ezTools.hpp>
+
 #include <ImGuiPack.h>
 
 #include <Utils/Utils.h>
@@ -26,9 +27,9 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
     };
     std::map<std::string, TransDoublon> transactions;
 
-    auto ps = FileHelper::Instance()->ParsePathFileName(vFilePathName);
+    auto ps = ez::file::parsePathFileName(vFilePathName);
     if (ps.isOk) {
-        auto lines = ct::splitStringToVector(FileHelper::Instance()->LoadFileToString(vFilePathName), '\n');
+        auto lines = ez::str::splitStringToVector(ez::file::loadFileToString(vFilePathName), '\n');
         if (lines.empty()) {
             LogVarError("Fail, %s is empty", vFilePathName.c_str());
             return {};
@@ -45,20 +46,20 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
         for (size_t idx = 1; idx < lines.size(); ++idx) {
             auto line = lines.at(idx);
             if (line.find("<BANKID>") != std::string::npos) {
-                ct::replaceString(line, "<BANKID>", "");
+                ez::str::replaceString(line, "<BANKID>", "");
                 ret.account.bank_id = line;
             } else if (line.find("<ACCTID>") != std::string::npos) {
-                ct::replaceString(line, "<ACCTID>", "");
+                ez::str::replaceString(line, "<ACCTID>", "");
                 ret.account.number = line;
             } else if (line.find("<DTSTART>") != std::string::npos) {
-                ct::replaceString(line, "<DTSTART>", "");
+                ez::str::replaceString(line, "<DTSTART>", "");
                 ret.start_date = line;
             } else if (line.find("<DTEND>") != std::string::npos) {
-                ct::replaceString(line, "<DTEND>", "");
+                ez::str::replaceString(line, "<DTEND>", "");
                 ret.end_date = line;
             } else if (line.find("<LEDGER>") != std::string::npos) {
-                ct::replaceString(line, "<LEDGER>", "");
-                ret.ledger = ct::dvariant(line).GetD();
+                ez::str::replaceString(line, "<LEDGER>", "");
+                ret.ledger = ez::dvariant(line).GetD();
             } else if (line.find("<STMTTRN>") != std::string::npos) {
                 is_a_stmt = true;
                 trans = {};
@@ -66,7 +67,7 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                 if (is_a_stmt) {
                     trans.trans.source = ps.GetFPNE_WithPath("");
                     trans.trans.source_type = "ofc";
-                    trans.trans.hash = ct::toStr("%s_%s_%f",  //
+                    trans.trans.hash = ez::str::toStr("%s_%s_%f",  //
                                                  trans.trans.date.c_str(),
                                                  // un fichier ofc ne peut pas avoir des description de longueur > a 30
                                                  // alors on limite le hash a utiliser un description de 30
@@ -84,26 +85,26 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
             }
             if (is_a_stmt) {
                 if (line.find("<DTPOSTED>") != std::string::npos) {
-                    ct::replaceString(line, "<DTPOSTED>", "");
+                    ez::str::replaceString(line, "<DTPOSTED>", "");
                     trans.trans.date = line;
                     if (trans.trans.date.size() == 8U) {
                         trans.trans.date.insert(6, "-");
                         trans.trans.date.insert(4, "-");
                     }
                 } else if (line.find("<TRNAMT>") != std::string::npos) {
-                    ct::replaceString(line, "<TRNAMT>", "");
-                    trans.trans.amount = ct::dvariant(line).GetD();
+                    ez::str::replaceString(line, "<TRNAMT>", "");
+                    trans.trans.amount = ez::dvariant(line).GetD();
                 } else if (line.find("<NAME>") != std::string::npos) {
-                    ct::replaceString(line, "<NAME>", "");
+                    ez::str::replaceString(line, "<NAME>", "");
                     parseDescription(line, trans.trans.entity, trans.trans.operation, trans.trans.description);
                 } else if (line.find("<MEMO>") != std::string::npos) {
-                    ct::replaceString(line, "<MEMO>", "");
+                    ez::str::replaceString(line, "<MEMO>", "");
                     trans.trans.comment = line;
                 } else if (line.find("<FITID>") != std::string::npos) {
-                    ct::replaceString(line, "<FITID>", "");
+                    ez::str::replaceString(line, "<FITID>", "");
                     //trans.hash = line;
                 } else if (line.find("<CHKNUM>") != std::string::npos) {
-                    ct::replaceString(line, "<CHKNUM>", "");
+                    ez::str::replaceString(line, "<CHKNUM>", "");
                     trans.trans.operation = "CHEQUE";
                     trans.trans.description = "CHEQUE " + line;
                     trans.trans.entity = "LCL";
@@ -114,7 +115,7 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
         for (const auto& t : transactions) {
             auto trans = t.second;
             for (uint32_t idx = 0U; idx < trans.doublons; ++idx) {
-                trans.trans.hash = t.second.trans.hash + ct::toStr("_%u", idx);
+                trans.trans.hash = t.second.trans.hash + ez::str::toStr("_%u", idx);
                 ret.statements.push_back(trans.trans);
             }
         }

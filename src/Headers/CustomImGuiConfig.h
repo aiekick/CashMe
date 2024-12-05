@@ -118,3 +118,7 @@ namespace ImGui
     void MyFunction(const char* name, const MyMatrix44& v);
 }
 */
+
+#include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezXmlConfig.hpp>
+#include <ezlibs/ezImGui.hpp>

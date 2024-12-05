@@ -190,7 +190,7 @@ void BudgetTable::m_drawSearchRow() {
             if (m_IsGroupingModeBudget()) {
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
                 if (m_SearchInputTexts.at(idx).DisplayInputText(ImGui::GetColumnWidth(idx), "", "")) {
-                    m_SearchTokens[idx] = ct::toLower(m_SearchInputTexts.at(idx).GetText());
+                    m_SearchTokens[idx] = ez::toLower(m_SearchInputTexts.at(idx).GetText());
                     m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
                     change = true;
                 }
@@ -569,12 +569,12 @@ void BudgetTable::m_UpdateBudget(const RowID& vAccountID) {
                     Budget t;
                     t.id = vBudgetID;
                     t.account = account_number;
-                    t.optimized[0] = ct::toLower(t.date = vDate);
-                    t.optimized[1] = ct::toLower(t.description = vDescription);
-                    t.optimized[2] = ct::toLower(t.comment = vComment);
-                    t.optimized[3] = ct::toLower(t.entity = vEntityName);
-                    t.optimized[4] = ct::toLower(t.category = vCategoryName);
-                    t.optimized[5] = ct::toLower(t.operation = vOperationName);
+                    t.optimized[0] = ez::toLower(t.date = vDate);
+                    t.optimized[1] = ez::toLower(t.description = vDescription);
+                    t.optimized[2] = ez::toLower(t.comment = vComment);
+                    t.optimized[3] = ez::toLower(t.entity = vEntityName);
+                    t.optimized[4] = ez::toLower(t.category = vCategoryName);
+                    t.optimized[5] = ez::toLower(t.operation = vOperationName);
                     t.hash = vHash;
                     t.source = vSourceName;
                     t.debit = vAmount < 0.0 ? vAmount : 0.0;

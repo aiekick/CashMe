@@ -23,7 +23,7 @@ void ADataTable::unload() {
 bool ADataTable::m_drawAccountMenu() {
     const auto align = 100.0f;
     const auto width = 10;
-    return m_AccountsCombo.displayCombo(width, "Account", align);
+    return m_AccountsCombo.displayWithColumn(width, "Account", align);
 }
 
 void ADataTable::draw(const ImVec2& vSize) {

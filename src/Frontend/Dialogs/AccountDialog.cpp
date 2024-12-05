@@ -1,5 +1,5 @@
 #include "AccountDialog.h"
-#include <ctools/cTools.h>
+#include <ezlibs/ezTools.hpp>
 #include <Models/DataBase.h>
 
 AccountDialog::AccountDialog() : ADataDialog("AccountModalPopup") {
@@ -131,7 +131,7 @@ void AccountDialog::m_confirmDialogCreation() {
 void AccountDialog::m_drawContentCreation(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_BanksCombo.displayCombo(width, "Bank Name", align);
+    m_BanksCombo.displayWithColumn(width, "Bank Name", align);
     m_BankAgencyInputText.DisplayInputText(width, "bank Agency", "", false, align, true);
     m_AccountNameInputText.DisplayInputText(width, "Account Name", "", false, align, true);
     m_AccountTypeInputText.DisplayInputText(width, "Account Type", "", false, align, true);
@@ -156,7 +156,7 @@ void AccountDialog::m_confirmDialogUpdate() {
 void AccountDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_BanksCombo.displayCombo(width, "Bank Name", align);
+    m_BanksCombo.displayWithColumn(width, "Bank Name", align);
     m_AccountNameInputText.DisplayInputText(width, "Account Name", "", false, align, true);
     m_AccountTypeInputText.DisplayInputText(width, "Account Type", "", false, align, true);
     m_AccountNumberInputText.DisplayInputText(width, "Account Number", "", false, align, true);
@@ -164,11 +164,11 @@ void AccountDialog::m_drawContentUpdate(const ImVec2& vPos) {
 }
 
 void AccountDialog::m_confirmDialogDeletion() {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void AccountDialog::m_drawContentDeletion(const ImVec2& vPos) {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void AccountDialog::m_UpdateBanks() {

@@ -9,8 +9,6 @@
 #include <3rdparty/imgui_docking/backends/imgui_impl_opengl3.h>
 #include <3rdparty/imgui_docking/backends/imgui_impl_glfw.h>
 
-#include <ctools/FileHelper.h>
-
 #include <cstdio>     // printf, fprintf
 #include <chrono>     // timer
 #include <cstdlib>    // abort
@@ -27,9 +25,9 @@
 
 #include <ImGuiPack.h>
 
-#include <ctools/cTools.h>
-#include <ctools/Logger.h>
-#include <ctools/FileHelper.h>
+#include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezLog.hpp>
+#include <ezlibs/ezFile.hpp>
 #include <Frontend/MainFrontend.h>
 
 #include <Panes/ConsolePane.h>
@@ -65,22 +63,22 @@ static void glfw_window_close_callback(GLFWwindow* window) {
 
 MainBackend::~MainBackend() = default;
 
-void MainBackend::run() {
-    if (init()) {
+void MainBackend::run(const ez::App& vApp) {
+    if (init(vApp)) {
         m_MainLoop();
         unit();
     }
 }
 
 // todo : to refactor ! i dont like that
-bool MainBackend::init() {
+bool MainBackend::init(const ez::App& vApp) {
 #ifdef _DEBUG
     SetConsoleVisibility(true);
 #else
     SetConsoleVisibility(false);
 #endif
     if (m_InitWindow() && m_InitImGui()) {
-        m_InitPlugins();
+        m_InitPlugins(vApp);
         m_InitModels();
         m_InitSystems();
         m_InitPanes();
@@ -93,7 +91,7 @@ bool MainBackend::init() {
 
 // todo : to refactor ! i dont like that
 void MainBackend::unit() {
-    SaveConfigFile("config.xml", "app");
+    SaveConfigFile("config.xml", "app", "config");
     m_UnitSystems();
     m_UnitModels();
     m_UnitImGui();     // before plugins since containing weak ptr to plugins
@@ -174,7 +172,7 @@ void MainBackend::CloseApp() {
 }
 
 void MainBackend::setAppTitle(const std::string& vFilePathName) {
-    auto ps = FileHelper::Instance()->ParsePathFileName(vFilePathName);
+    auto ps = ez::file::parsePathFileName(vFilePathName);
     if (ps.isOk) {
         char bufTitle[1024];
         snprintf(bufTitle, 1023, "CashMe Beta %s - Project : %s.lum", CashMe_BuildId, ps.name.c_str());
@@ -186,24 +184,14 @@ void MainBackend::setAppTitle(const std::string& vFilePathName) {
     }
 }
 
-ct::dvec2 MainBackend::GetMousePos() {
-    ct::dvec2 mp;
+ez::dvec2 MainBackend::GetMousePos() {
+    ez::dvec2 mp;
     glfwGetCursorPos(m_MainWindowPtr, &mp.x, &mp.y);
     return mp;
 }
 
 int MainBackend::GetMouseButton(int vButton) {
     return glfwGetMouseButton(m_MainWindowPtr, vButton);
-}
-
-std::string MainBackend::getAppRelativeFilePathName(const std::string& vFilePathName) {
-    if (!vFilePathName.empty()) {
-        if (FileHelper::Instance()->IsFileExist(vFilePathName)) {
-            auto file_path_name = FileHelper::Instance()->SimplifyFilePath(vFilePathName);
-            return FileHelper::Instance()->GetPathRelativeToApp(file_path_name);
-        }
-    }
-    return {};
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -317,39 +305,23 @@ void MainBackend::m_IncFrame() {
 //// CONFIGURATION ////////////////////////////////////
 ///////////////////////////////////////////////////////
 
-std::string MainBackend::getXml(const std::string& vOffset, const std::string& vUserDatas) {
-    UNUSED(vUserDatas);
-
-    std::string str;
-
-    str += MainFrontend::Instance()->getXml(vOffset, vUserDatas);
-    str += SettingsDialog::Instance()->getXml(vOffset, vUserDatas);
-    str += vOffset + "<project>" + ProjectFile::Instance()->GetProjectFilepathName() + "</project>\n";
-
-    return str;
+ez::xml::Nodes MainBackend::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    node.addChilds(MainFrontend::Instance()->getXmlNodes(vUserDatas));
+    node.addChilds(SettingsDialog::Instance()->getXmlNodes(vUserDatas));
+    node.addChild("project").setContent(ProjectFile::Instance()->GetProjectFilepathName());
+    return node.getChildren();
 }
 
-bool MainBackend::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas) {
-    UNUSED(vUserDatas);
-
-    // The value of this child identifies the name of this element
-    std::string strName;
-    std::string strValue;
-    std::string strParentName;
-
-    strName = vElem->Value();
-    if (vElem->GetText())
-        strValue = vElem->GetText();
-    if (vParent != 0)
-        strParentName = vParent->Value();
-
-    MainFrontend::Instance()->setFromXml(vElem, vParent, vUserDatas);
-    SettingsDialog::Instance()->setFromXml(vElem, vParent, vUserDatas);
-
+bool MainBackend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    const auto& strName = vNode.getName();
+    const auto& strValue = vNode.getContent();
+    const auto& strParentName = vParent.getName();
     if (strName == "project") {
         NeedToLoadProject(strValue);
     } 
-
+    MainFrontend::Instance()->setFromXmlNodes(vNode, vParent, vUserDatas);
+    SettingsDialog::Instance()->setFromXmlNodes(vNode, vParent, vUserDatas);
     return true;
 }
 
@@ -443,8 +415,8 @@ bool MainBackend::m_InitImGui() {
     return false;
 }
 
-void MainBackend::m_InitPlugins() {
-    PluginManager::Instance()->LoadPlugins();
+void MainBackend::m_InitPlugins(const ez::App& vApp) {
+    PluginManager::Instance()->LoadPlugins(vApp);
     auto pluginPanes = PluginManager::Instance()->GetPluginPanes();
     for (auto& pluginPane : pluginPanes) {
         if (!pluginPane.pane.expired()) {

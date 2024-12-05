@@ -1,6 +1,6 @@
 #include "OperationDialog.h"
 #include <Models/DataBase.h>
-#include <ctools/cTools.h>
+#include <ezlibs/ezTools.hpp>
 
 OperationDialog::OperationDialog() : ADataDialog("OperationModalPopup") {
 }
@@ -121,9 +121,9 @@ void OperationDialog::m_drawContentUpdate(const ImVec2& vPos) {
 }
 
 void OperationDialog::m_confirmDialogDeletion() {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void OperationDialog::m_drawContentDeletion(const ImVec2& vPos) {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }

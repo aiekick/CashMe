@@ -156,7 +156,7 @@ void IncomesTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
                 refreshDatas();
             }
             if (ImGui::MenuItem("Incomes")) {
-                CTOOL_DEBUG_BREAK;
+                EZ_TOOLS_DEBUG_BREAK;
                 //DataBase::Instance()->DeleteIncomes();
                 refreshDatas();
             }

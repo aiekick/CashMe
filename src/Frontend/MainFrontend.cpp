@@ -258,7 +258,7 @@ void MainFrontend::m_drawMainMenuBar() {
         }
 
         // ImGui Infos
-        const auto label = ct::toStr("Dear ImGui %s (Docking)", ImGui::GetVersion());
+        const auto label = ez::str::toStr("Dear ImGui %s (Docking)", ImGui::GetVersion());
         const auto size = ImGui::CalcTextSize(label.c_str());
         static float s_translation_menu_size = 0.0f;
 
@@ -277,7 +277,7 @@ void MainFrontend::m_drawMainStatusBar() {
 
         //  ImGui Infos
         const auto& io = ImGui::GetIO();
-        const auto fps = ct::toStr("%.1f ms/frame (%.1f fps)", 1000.0f / io.Framerate, io.Framerate);
+        const auto fps = ez::str::toStr("%.1f ms/frame (%.1f fps)", 1000.0f / io.Framerate, io.Framerate);
         const auto size = ImGui::CalcTextSize(fps.c_str());
         ImGui::Spacing(ImGui::GetContentRegionAvail().x - size.x - ImGui::GetStyle().FramePadding.x * 2.0f);
         ImGui::Text("%s", fps.c_str());
@@ -703,51 +703,38 @@ bool MainFrontend::m_build() {
 //// CONFIGURATION ////////////////////////////////////
 ///////////////////////////////////////////////////////
 
-std::string MainFrontend::getXml(const std::string& vOffset, const std::string& vUserDatas) {
-    UNUSED(vUserDatas);
-
-    std::string str;
-
-    str += ImGuiThemeHelper::Instance()->getXml(vOffset);
-    str += LayoutManager::Instance()->getXml(vOffset, "app");
+ez::xml::Nodes MainFrontend::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    node.addChilds(ImGuiThemeHelper::Instance()->getXmlNodes("app"));
+    node.addChilds(LayoutManager::Instance()->getXmlNodes("app"));
 #ifdef USE_PLACES_FEATURE
-    str += vOffset + "<places>" + ImGuiFileDialog::Instance()->SerializePlaces() + "</places>\n";
+    node.addChild("places").setContent(ImGuiFileDialog::Instance()->SerializePlaces());
 #endif
-    str += vOffset + "<showaboutdialog>" + (m_ShowAboutDialog ? "true" : "false") + "</showaboutdialog>\n";
-    str += vOffset + "<showimgui>" + (m_ShowImGui ? "true" : "false") + "</showimgui>\n";
-    str += vOffset + "<showmetric>" + (m_ShowMetric ? "true" : "false") + "</showmetric>\n";
-
-    return str;
+    node.addChild("showaboutdialog").setContent(m_ShowAboutDialog);
+    node.addChild("showimgui").setContent(m_ShowImGui);
+    node.addChild("showmetric").setContent(m_ShowMetric);
+    return node.getChildren();
 }
 
-bool MainFrontend::setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas) {
-    UNUSED(vUserDatas);
-
-    // The value of this child identifies the name of this element
-    std::string strName;
-    std::string strValue;
-    std::string strParentName;
-
-    strName = vElem->Value();
-    if (vElem->GetText())
-        strValue = vElem->GetText();
-    if (vParent != 0)
-        strParentName = vParent->Value();
-
-    ImGuiThemeHelper::Instance()->setFromXml(vElem, vParent);
-    LayoutManager::Instance()->setFromXml(vElem, vParent, "app");
+bool MainFrontend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    const auto& strName = vNode.getName();
+    const auto& strValue = vNode.getContent();
+    const auto& strParentName = vParent.getName();
 
     if (strName == "places") {
 #ifdef USE_PLACES_FEATURE
         ImGuiFileDialog::Instance()->DeserializePlaces(strValue);
 #endif
     } else if (strName == "showaboutdialog") {
-        m_ShowAboutDialog = ct::ivariant(strValue).GetB();
+        m_ShowAboutDialog = ez::ivariant(strValue).GetB();
     } else if (strName == "showimgui") {
-        m_ShowImGui = ct::ivariant(strValue).GetB();
+        m_ShowImGui = ez::ivariant(strValue).GetB();
     } else if (strName == "showmetric") {
-        m_ShowMetric = ct::ivariant(strValue).GetB();
+        m_ShowMetric = ez::ivariant(strValue).GetB();
     }
+
+    ImGuiThemeHelper::Instance()->setFromXmlNodes(vNode, vParent, "app");
+    LayoutManager::Instance()->setFromXmlNodes(vNode, vParent, "app");
 
     return true;
 }

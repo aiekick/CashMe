@@ -4,8 +4,10 @@
 #include <memory>
 #include <filesystem>
 
-#include <ctools/cTools.h>
-#include <ctools/ConfigAbstract.h>
+#include <ezlibs/ezApp.hpp>
+#include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezXmlConfig.hpp>
+
 #include <ImGuiPack.h>
 
 #ifdef WIN32
@@ -47,7 +49,7 @@ private:
     std::map<std::string, PluginInstancePtr> m_Plugins;
 
 public:
-    void LoadPlugins();
+    void LoadPlugins(const ez::App& vApp);
     std::vector<Cash::PluginModuleInfos> GetPluginModulesInfos() const;
     Cash::PluginModulePtr CreatePluginModule(const std::string& vPluginNodeName);
     std::vector<Cash::PluginPaneConfig> GetPluginPanes() const;

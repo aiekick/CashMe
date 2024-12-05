@@ -1,6 +1,6 @@
 #include "CategoryDialog.h"
 #include <Models/DataBase.h>
-#include <ctools/cTools.h>
+#include <ezlibs/ezTools.hpp>
 
 CategoryDialog::CategoryDialog() : ADataDialog("CategoryModalPopup") {
 }
@@ -122,9 +122,9 @@ void CategoryDialog::m_drawContentUpdate(const ImVec2& vPos) {
 }
 
 void CategoryDialog::m_confirmDialogDeletion() {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void CategoryDialog::m_drawContentDeletion(const ImVec2& vPos) {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }

@@ -1,8 +1,7 @@
 #pragma once
 
 #ifndef WIN32 // UNIX
-#include <iostream>
-#include <ctools/Logger.h>
+#include <ezlibs/ezLog.hpp>
 #include <dlfcn.h>
 #include <IDLLoader/IDLLoader.h>
 
@@ -50,7 +49,6 @@ public:
 			if (!allocFunc || !deleteFunc) {
                 _isAPlugin = false;
 				DLCloseLib();
-				//LogVarDebugError("%s", dlerror());
 			}
 
 			return std::shared_ptr<T>(
@@ -62,7 +60,6 @@ public:
 
 	void DLCloseLib() override {
 		if (dlclose(_handle) != 0) {
-			//LogVarDebugError("%s", dlerror());
 		}
 	}
 };

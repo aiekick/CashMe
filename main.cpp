@@ -18,9 +18,11 @@ limitations under the License.
 */
 
 #include <App.h>
-#include <ctools/Logger.h>
 #include <string>
 #include <iostream>
+
+#include <ezlibs/ezLog.hpp>
+#include <ezlibs/ezTools.hpp>
 
 int main(int argc, char** argv) {
 	int res = EXIT_SUCCESS;
@@ -41,10 +43,10 @@ int main(int argc, char** argv) {
     } catch (const std::exception& e) {
         LogVarLightInfo("Exception %s", e.what());
         res = EXIT_FAILURE;
-        CTOOL_DEBUG_BREAK;
+        EZ_TOOLS_DEBUG_BREAK;
     }
 
-    Logger::Instance()->Close();
+    ez::Log::instance()->close();
 
 #ifdef _MSC_VER
 #ifdef _DEBUG

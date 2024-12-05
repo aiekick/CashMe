@@ -57,11 +57,11 @@ void CategoriesTable::m_setupColumns() {
 }
 
 void CategoriesTable::m_drawContextMenuContent() {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void CategoriesTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-    CTOOL_DEBUG_BREAK;
+    EZ_TOOLS_DEBUG_BREAK;
 }
 
 void CategoriesTable::m_updateCategories() {

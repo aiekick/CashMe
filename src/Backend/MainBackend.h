@@ -1,8 +1,10 @@
 #pragma once
 
 #include <ImGuiPack.h>
-#include <ctools/cTools.h>
-#include <ctools/ConfigAbstract.h>
+
+#include <ezlibs/ezApp.hpp>
+#include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezXmlConfig.hpp>
 
 #include <string>
 #include <memory>
@@ -12,18 +14,18 @@
 #include <unordered_map>
 
 struct GLFWwindow;
-class MainBackend : public conf::ConfigAbstract {
+class MainBackend : public ez::xml::Config {
 private:
     GLFWwindow* m_MainWindowPtr = nullptr;
     const char* m_GlslVersion = "";
-    ct::ivec2 m_DisplayPos;
-    ct::ivec2 m_DisplaySize;
+    ez::ivec2 m_DisplayPos;
+    ez::ivec2 m_DisplaySize;
 
     // mouse
-    ct::fvec4 m_MouseFrameSize;
-    ct::fvec2 m_MousePos;
-    ct::fvec2 m_LastNormalizedMousePos;
-    ct::fvec2 m_NormalizedMousePos;
+    ez::fvec4 m_MouseFrameSize;
+    ez::fvec2 m_MousePos;
+    ez::fvec2 m_LastNormalizedMousePos;
+    ez::fvec2 m_NormalizedMousePos;
 
     bool m_ConsoleVisiblity = false;
     uint32_t m_CurrentFrame = 0U;
@@ -49,9 +51,9 @@ public:  // getters
 public:
     virtual ~MainBackend();
 
-    void run();
+    void run(const ez::App& vApp);
 
-    bool init();
+    bool init(const ez::App& vApp);
     void unit();
 
     bool isThereAnError() const;
@@ -71,14 +73,12 @@ public:
 
     void setAppTitle(const std::string& vFilePathName = {});
 
-    ct::dvec2 GetMousePos();
+    ez::dvec2 GetMousePos();
     int GetMouseButton(int vButton);
 
-    std::string getAppRelativeFilePathName(const std::string& vFilePathName);
-
 public:  // configuration
-    std::string getXml(const std::string& vOffset, const std::string& vUserDatas = "") override;
-    bool setFromXml(tinyxml2::XMLElement* vElem, tinyxml2::XMLElement* vParent, const std::string& vUserDatas = "") override;
+    ez::xml::Nodes getXmlNodes(const std::string& vUserDatas = "") override;
+    bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
     void SetConsoleVisibility(const bool& vFlag);
     void SwitchConsoleVisibility();
@@ -89,7 +89,7 @@ private:
 
     bool m_InitWindow();
     bool m_InitImGui();
-    void m_InitPlugins();
+    void m_InitPlugins(const ez::App& vApp);
     void m_InitModels();
     void m_InitSystems();
     void m_InitPanes();

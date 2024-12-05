@@ -63,7 +63,7 @@ inline void SetCurrentContext(IAGP_GPU_CONTEXT vContext) {
 
 // define your fucntion for log error message of IAGP
 // #define LOG_ERROR_MESSAGE LogError
-//#include <ctools/Logger.h>
+//#include <ezlibs/ezLog.hpp>
 //#define IAGP_LOG_ERROR_MESSAGE LogVarError
 
 // define your fucntion for log error message of IAGP only in debug
