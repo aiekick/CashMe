@@ -3,11 +3,9 @@
 
 #include <Panes/IncomesPane.h>
 
-#include <cinttypes>  // printf zu
-
 #include <Models/DataBase.h>
-
 #include <Project/ProjectFile.h>
+#include <Frontend/MainFrontend.h>
 
 IncomesPane::IncomesPane() = default;
 IncomesPane::~IncomesPane() {
@@ -44,7 +42,12 @@ bool IncomesPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiC
 #endif
 
             if (ProjectFile::Instance()->IsProjectLoaded()) {
-                m_IncomesTable.drawMenu();
+                if (ImGui::BeginMenuBar()) {
+                    auto& actionSystemRef = MainFrontend::Instance()->GetActionSystemRef();
+                    m_IncomesTable.drawAccountsMenu(actionSystemRef);
+                    m_IncomesTable.drawDebugMenu(actionSystemRef);
+                    ImGui::EndMenuBar();
+                }
                 m_IncomesTable.draw(ImGui::GetContentRegionAvail());
             }
         }

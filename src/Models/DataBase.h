@@ -142,8 +142,41 @@ public:
         const IncomeDate& vEndDate,
         const IncomeAmount& vMinAmount,
         const IncomeAmount& vMaxAmount,
-        const IncomeDelayDays& vMinDays,
-        const IncomeDelayDays& vMaxDays);
+        const IncomeDay& vMinDays,
+        const IncomeDay& vMaxDays,
+        const IncomeDescription& vDescription);
+    void GetIncomes(         //
+        const RowID& vAccountID,
+        std::function<void(  //
+            const RowID&,
+            const IncomeName&,
+            const EntityName&,
+            const CategoryName&,
+            const OperationName&,
+            const IncomeDate&,
+            const IncomeDateEpoch&,
+            const IncomeDate&,
+            const IncomeDateEpoch&,
+            const IncomeAmount&,
+            const IncomeAmount&,
+            const IncomeDay&,
+            const IncomeDay&,
+            const IncomeDescription&)> vCallback);
+    void UpdateIncome(  //
+        const RowID& vRowID,
+        const IncomeName& vIncomeName,
+        const EntityName& vEntityName,
+        const CategoryName& vCategoryName,
+        const OperationName& vOperationName,
+        const IncomeDate& vStartDate,
+        const IncomeDate& vEndDate,
+        const IncomeAmount& vMinAmount,
+        const IncomeAmount& vMaxAmount,
+        const IncomeDay& vMinDays,
+        const IncomeDay& vMaxDays,
+        const IncomeDescription& vDescription);
+    void DeleteIncome(const RowID& vRowID);
+    void DeleteIncomes();
 
     void AddTransaction(  //
         const RowID& vAccountID,

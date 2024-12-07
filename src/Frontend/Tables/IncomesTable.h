@@ -10,9 +10,19 @@
 
 class IncomesTable : public ADataTable {
 private:
-    std::vector<Income> m_Incomes;
-
+    struct Datas {
+        std::vector<Account> accounts;
+        std::vector<AccountNumber> accountNumbers;
+        std::vector<Income> incomes;
+        void clear() {
+            accounts.clear();
+            accountNumbers.clear();
+            incomes.clear();
+        }
+    } m_Datas;
     IncomeDialog m_IncomeDialog;
+    // accounts display
+    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
 
 public:
     IncomesTable();
@@ -27,9 +37,10 @@ public:
 
     IncomeDialog& getIncomeDialogRef();
 
-    void clear();    
+    void clear();
     void refreshDatas();
     void drawDebugMenu(FrameActionSystem& vFrameActionSystem);
+    void drawAccountsMenu(FrameActionSystem& vFrameActionSystem);
 
 protected:
     size_t m_getItemsCount() const final;
@@ -38,4 +49,7 @@ protected:
     void m_setupColumns() final;
     void m_drawContextMenuContent() final;
     void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) final;
+
+    void m_UpdateAccounts();
+    void m_UpdateIncomes(const RowID& vAccountID);
 };

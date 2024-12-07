@@ -50,9 +50,8 @@ typedef std::string IncomeName;
 typedef std::string IncomeDate;
 typedef int64_t IncomeDateEpoch;
 typedef double IncomeAmount;
-typedef int32_t IncomeDelayDays;
+typedef int32_t IncomeDay;
 typedef std::string IncomeDescription;
-typedef std::string IncomeComment;
 
 typedef std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> DataBrockerContainer;
 
@@ -129,10 +128,9 @@ struct Income {
     IncomeDateEpoch endDateEpoch = 0;
     IncomeAmount minAmount = 0.0;
     IncomeAmount maxAmount = 0.0;
-    IncomeDelayDays minDay = 0U;
-    IncomeDelayDays maxDay = 0U;
+    IncomeDay minDay = 0U;
+    IncomeDay maxDay = 0U;
     IncomeDescription description;
-    IncomeComment comment;
 };
 
 struct Transaction {

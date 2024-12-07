@@ -67,7 +67,6 @@ void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
     ImGui::DisplayAlignedWidget(width, "Min day", align, [this]() { ImGui::InputInt("##MinDay", &m_IncomeMinDayInputInt32); });
     ImGui::DisplayAlignedWidget(width, "Max day", align, [this]() { ImGui::InputInt("##MaxDay", &m_IncomeMaxDayInputInt32); });
     m_IncomeDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
-    m_IncomeCommentInputText.DisplayInputText(width, "Comment", "", false, align);
 }
 
 void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
@@ -167,13 +166,10 @@ void IncomeDialog::m_prepare() {
             m_IncomeToUpdate.entity = trans.entity;
             m_IncomeToUpdate.operation = trans.operation;
             m_IncomeToUpdate.description = trans.description;
-            m_IncomeToUpdate.comment = trans.comment;
             m_IncomeToUpdate.maxAmount = trans.amount;
             m_IncomeToUpdate.minAmount = trans.amount;
             m_IncomeToUpdate.startDate = trans.date;
             m_IncomeToUpdate.startDateEpoch = trans.epoch;
-            m_IncomeToUpdate.endDate = trans.date;
-            m_IncomeToUpdate.endDateEpoch = trans.epoch;
             m_IncomeToUpdate.minDay = ez::time::decomposeEpoch(trans.epoch).tm_mday;
             m_IncomeToUpdate.maxDay = m_IncomeToUpdate.minDay;  
             for (const auto& t : m_TransactionToAddAsIncomes) {
@@ -189,26 +185,16 @@ void IncomeDialog::m_prepare() {
                 if (m_IncomeToUpdate.description != t.description) {
                     m_IncomeToUpdate.description = "Many values";
                 }
-                if (m_IncomeToUpdate.comment != t.comment) {
-                    m_IncomeToUpdate.comment = "Many values";
-                }
                 if (t.amount < m_IncomeToUpdate.minAmount) {
                     m_IncomeToUpdate.minAmount = t.amount;
                 }
                 if (t.amount > m_IncomeToUpdate.maxAmount) {
                     m_IncomeToUpdate.maxAmount = t.amount;
                 }
-                // cette simple conversion n'est pas viable
-                // il va falloir convertir en epoch
                 if (t.epoch < m_IncomeToUpdate.startDateEpoch) {
                     m_IncomeToUpdate.startDateEpoch = t.epoch;
                     m_IncomeToUpdate.startDate = t.date;
                 }
-                if (t.epoch > m_IncomeToUpdate.endDateEpoch) {
-                    m_IncomeToUpdate.endDateEpoch = t.epoch;
-                    m_IncomeToUpdate.endDate = t.date;
-                }
-                // et aussi extraire le numero du jour dans le mois
                 auto day = ez::time::decomposeEpoch(t.epoch).tm_mday;
                 if (day < m_IncomeToUpdate.minDay) {
                     m_IncomeToUpdate.minDay = day;
@@ -230,7 +216,6 @@ void IncomeDialog::m_prepare() {
     m_IncomeMinAmountInputDouble = m_IncomeToUpdate.minAmount;
     m_IncomeMaxAmountInputDouble = m_IncomeToUpdate.maxAmount;
     m_IncomeDescriptionInputText.SetText(m_IncomeToUpdate.description);
-    m_IncomeCommentInputText.SetText(m_IncomeToUpdate.comment);
 }
 
 const char* IncomeDialog::m_getTitle() const {
@@ -301,7 +286,7 @@ void IncomeDialog::m_confirmDialogCreation() {
     RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
-            DataBase::Instance()->AddIncome(
+            DataBase::Instance()->AddIncome(  //
                 account_id,
                 m_IncomeNameInputText.GetText(),
                 m_EntitiesCombo.getText(),
@@ -312,7 +297,8 @@ void IncomeDialog::m_confirmDialogCreation() {
                 m_IncomeMinAmountInputDouble,
                 m_IncomeMaxAmountInputDouble,
                 m_IncomeMinDayInputInt32,
-                m_IncomeMaxDayInputInt32);
+                m_IncomeMaxDayInputInt32,
+                m_IncomeDescriptionInputText.GetText());
             DataBase::Instance()->CloseDBFile();
         }
     }
@@ -429,7 +415,7 @@ void IncomeDialog::m_UpdateAccounts() {
 
 void IncomeDialog::m_UpdateEntities() {
     m_EntitiesCombo.clear();
-    DataBase::Instance()->GetEntities(         //
+    DataBase::Instance()->GetEntities(           //
         [this](const EntityName& vEntityName) {  //
             m_EntitiesCombo.getArrayRef().push_back(vEntityName);
         });

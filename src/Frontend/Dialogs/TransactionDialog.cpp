@@ -359,8 +359,8 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
                     DataBase::Instance()->UpdateTransaction(  //
                         t.id,                                 //
                         t.entity,                             //
-                        t.operation,                          //
                         t.category,                           //
+                        t.operation,                          //
                         t.source,                             //
                         t.date,                               //
                         t.description,                        //

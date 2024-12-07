@@ -629,6 +629,9 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                 });
         }
     }
+    // reverse datas
+    std::reverse(m_Datas.transactions.begin(), m_Datas.transactions.end());
+    // filtering
     refreshFiltering();
 }
 

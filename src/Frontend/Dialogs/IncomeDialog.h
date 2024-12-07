@@ -22,10 +22,9 @@ private:
     ImWidgets::InputText m_IncomeNameInputText;
     ImWidgets::InputText m_IncomeStartDateInputText;
     ImWidgets::InputText m_IncomeEndDateInputText;
-    IncomeDelayDays m_IncomeMinDayInputInt32 = 0;
-    IncomeDelayDays m_IncomeMaxDayInputInt32 = 0;
+    IncomeDay m_IncomeMinDayInputInt32 = 0;
+    IncomeDay m_IncomeMaxDayInputInt32 = 0;
     ImWidgets::InputText m_IncomeDescriptionInputText;
-    ImWidgets::InputText m_IncomeCommentInputText;
 
     // transactions to add as incomes
     std::vector<Transaction> m_TransactionToAddAsIncomes;

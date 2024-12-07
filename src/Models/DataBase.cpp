@@ -878,8 +878,9 @@ void DataBase::AddIncome(  //
     const IncomeDate& vEndDate,
     const IncomeAmount& vMinAmount,
     const IncomeAmount& vMaxAmount,
-    const IncomeDelayDays& vMinDays,
-    const IncomeDelayDays& vMaxDays) {
+    const IncomeDay& vMinDays,
+    const IncomeDay& vMaxDays,
+    const IncomeDescription& vDescription) {
     AddEntity(vEntityName);
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
@@ -896,8 +897,9 @@ INSERT OR IGNORE INTO incomes
     end_date, 
     min_amount, 
     max_amount,
-    min_delay_days,
-    max_delay_days
+    min_day,
+    max_day,
+    description
 ) 
 VALUES 
 (
@@ -911,7 +913,8 @@ VALUES
     %.2f,
     %.2f,
     %i,
-    %i
+    %i,
+    "%s"
 );
 )",
         vAccountID,
@@ -924,10 +927,131 @@ VALUES
         vMinAmount,
         vMaxAmount,
         vMinDays,
-        vMaxDays);
+        vMaxDays,
+        vDescription.c_str());
     if (debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
     }
+}
+
+void DataBase::GetIncomes(  //
+    const RowID& vAccountID,
+    std::function<void(  //
+        const RowID&,
+        const IncomeName&,
+        const EntityName&,
+        const CategoryName&,
+        const OperationName&,
+        const IncomeDate&,
+        const IncomeDateEpoch&,
+        const IncomeDate&,
+        const IncomeDateEpoch&,
+        const IncomeAmount&,
+        const IncomeAmount&,
+        const IncomeDay&,
+        const IncomeDay&,
+        const IncomeDescription&)> vCallback) {
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    auto select_query = ez::str::toStr(
+        u8R"(
+SELECT
+    incomes.id AS rowid,
+    incomes.name AS name,
+    entities.name AS entity,
+    categories.name AS category,
+    operations.name AS operation,
+    incomes.start_date AS start_date, 
+    unixepoch(incomes.start_date) AS start_epoch,
+    incomes.end_date AS end_date, 
+    unixepoch(incomes.end_date) AS start_epoch,
+    incomes.min_amount AS min_amount, 
+    incomes.max_amount AS max_amount,
+    incomes.min_day AS min_day,
+    incomes.max_day AS max_day,
+    incomes.description AS description
+FROM
+    incomes
+    LEFT JOIN accounts ON incomes.account_id = accounts.id
+    LEFT JOIN entities ON incomes.entity_id = entities.id
+    LEFT JOIN categories ON incomes.category_id = categories.id
+    LEFT JOIN operations ON incomes.operation_id = operations.id
+WHERE
+    incomes.account_id = %u
+ORDER BY
+    incomes.start_date,
+    incomes.end_date
+;
+)",
+        vAccountID);
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    RowID id = sqlite3_column_int(stmt, 0);
+                    auto name = (const char*)sqlite3_column_text(stmt, 1);
+                    auto entity = (const char*)sqlite3_column_text(stmt, 2);
+                    auto category = (const char*)sqlite3_column_text(stmt, 3);
+                    auto operation = (const char*)sqlite3_column_text(stmt, 4);
+                    auto start_date = (const char*)sqlite3_column_text(stmt, 5);
+                    auto start_epoch = sqlite3_column_int64(stmt, 6);
+                    auto end_date = (const char*)sqlite3_column_text(stmt, 7);
+                    auto end_epoch = sqlite3_column_int64(stmt, 8);
+                    auto min_amount = sqlite3_column_double(stmt, 9);
+                    auto max_amount = sqlite3_column_double(stmt, 10);
+                    auto min_day = sqlite3_column_int(stmt, 11);
+                    auto max_day = sqlite3_column_int(stmt, 12);
+                    auto desc = (const char*)sqlite3_column_text(stmt, 13);
+                    vCallback(                                    //
+                        id,                                       //
+                        name != nullptr ? name : "",              //
+                        entity != nullptr ? entity : "",          //
+                        category != nullptr ? category : "",      //
+                        operation != nullptr ? operation : "",    //
+                        start_date != nullptr ? start_date : "",  //
+                        start_epoch,                              //
+                        end_date != nullptr ? end_date : "",      //
+                        end_epoch,                                //
+                        min_amount,                               //
+                        max_amount,                               //
+                        min_day,                                  //
+                        max_day,                                  //
+                        desc != nullptr ? desc : "");             //
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+}
+
+void DataBase::UpdateIncome(  //
+    const RowID& vRowID,
+    const IncomeName& vIncomeName,
+    const EntityName& vEntityName,
+    const CategoryName& vCategoryName,
+    const OperationName& vOperationName,
+    const IncomeDate& vStartDate,
+    const IncomeDate& vEndDate,
+    const IncomeAmount& vMinAmount,
+    const IncomeAmount& vMaxAmount,
+    const IncomeDay& vMinDays,
+    const IncomeDay& vMaxDays,
+    const IncomeDescription& vDescription) {
+
+}
+
+void DataBase::DeleteIncome(const RowID& vRowID) {
+
+}
+
+void DataBase::DeleteIncomes() {
+
 }
 
 void DataBase::AddTransaction(  //
@@ -1546,17 +1670,17 @@ CREATE TABLE incomes (
     end_date DATE, -- end date (empty if no end)
     min_amount REAL NOT NULL, -- min amount
     max_amount REAL NOT NULL, -- max amount, can be the same as min
-    min_delay_days INTEGER, -- delay in days, can be zero
-    max_delay_days INTEGER, -- delay in days, can be the same as min
+    min_day INTEGER, -- min day, can be zero
+    max_day INTEGER, -- max day, can be the same as min
+    description TEXT,
     -- links
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     FOREIGN KEY (entity_id) REFERENCES entities(id),
     FOREIGN KEY (category_id) REFERENCES categories(id),
     FOREIGN KEY (operation_id) REFERENCES operations(id),
     -- verifs
-    CHECK (end_date >= start_date),
     CHECK (max_amount >= min_amount),
-    CHECK (max_delay_days >= min_delay_days)
+    CHECK (max_day >= min_day)
 );
 
 CREATE TABLE transactions (
