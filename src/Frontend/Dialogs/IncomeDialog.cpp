@@ -55,6 +55,7 @@ void IncomeDialog::m_drawContent(const ImVec2& vPos) {
 void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
+    m_IncomeNameInputText.DisplayInputText(width, "Name", "", false, align);
     m_AccountsCombo.displayWithColumn(width, "Account", align);
     m_EntitiesCombo.displayWithColumn(width, "Entity", align);
     m_CategoriesCombo.displayWithColumn(width, "Category", align);
@@ -154,6 +155,10 @@ void IncomeDialog::m_drawContentDeletion(const ImVec2& vPos) {
 }
 
 void IncomeDialog::m_prepare() {
+    m_UpdateAccounts();
+    m_UpdateEntities();
+    m_UpdateOperations();
+    m_UpdateCategories();
     if (getCurrentMode() == DataDialogMode::MODE_CREATION) {
         if (!m_TransactionToAddAsIncomes.empty()) {
             const auto& trans = m_TransactionToAddAsIncomes.at(0);
@@ -166,7 +171,11 @@ void IncomeDialog::m_prepare() {
             m_IncomeToUpdate.maxAmount = trans.amount;
             m_IncomeToUpdate.minAmount = trans.amount;
             m_IncomeToUpdate.startDate = trans.date;
+            m_IncomeToUpdate.startDateEpoch = trans.epoch;
             m_IncomeToUpdate.endDate = trans.date;
+            m_IncomeToUpdate.endDateEpoch = trans.epoch;
+            m_IncomeToUpdate.minDay = ez::time::decomposeEpoch(trans.epoch).tm_mday;
+            m_IncomeToUpdate.maxDay = m_IncomeToUpdate.minDay;  
             for (const auto& t : m_TransactionToAddAsIncomes) {
                 if (m_IncomeToUpdate.entity != t.entity) {
                     m_IncomeToUpdate.entity = "Many values";
@@ -191,15 +200,22 @@ void IncomeDialog::m_prepare() {
                 }
                 // cette simple conversion n'est pas viable
                 // il va falloir convertir en epoch
-                if (t.date < m_IncomeToUpdate.startDate) {
+                if (t.epoch < m_IncomeToUpdate.startDateEpoch) {
+                    m_IncomeToUpdate.startDateEpoch = t.epoch;
                     m_IncomeToUpdate.startDate = t.date;
                 }
-                if (t.date > m_IncomeToUpdate.endDate) {
+                if (t.epoch > m_IncomeToUpdate.endDateEpoch) {
+                    m_IncomeToUpdate.endDateEpoch = t.epoch;
                     m_IncomeToUpdate.endDate = t.date;
                 }
                 // et aussi extraire le numero du jour dans le mois
-                m_IncomeToUpdate.minDay = 0;
-                m_IncomeToUpdate.maxDay = 0;
+                auto day = ez::time::decomposeEpoch(t.epoch).tm_mday;
+                if (day < m_IncomeToUpdate.minDay) {
+                    m_IncomeToUpdate.minDay = day;
+                }
+                if (day > m_IncomeToUpdate.maxDay) {
+                    m_IncomeToUpdate.maxDay = day;
+                }
             }
         }
     }
@@ -282,34 +298,24 @@ void IncomeDialog::m_cancelDialog() {
 }
 
 void IncomeDialog::m_confirmDialogCreation() {
-    /*RowID account_id = 0U;
+    RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
-            const auto hash = ez::str::toStr(  //
-                "%s_%s_%f",               //
-                m_IncomeDateInputText.GetText().c_str(),
-                // un fichier ofc ne peut pas avoir des labels de longueur > a 30
-                // alors on limite le hash a utiliser un label de 30
-                // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
-                m_IncomeDescriptionInputText.GetText().substr(0, 30).c_str(),
-                m_IncomeAmountInputDouble);              // must be unique per oepration
-            DataBase::Instance()->AddIncome(             //
-                account_id,                                   //
-                m_EntitiesCombo.getText(),                    //
-                m_CategoriesCombo.getText(),                  //
-                m_OperationsCombo.getText(),                  //
-                m_SourceName,                                 //
-                m_SourceType,                                 //
-                m_SourceSha,                                  //
-                m_IncomeDateInputText.GetText(),         //
-                m_IncomeDescriptionInputText.GetText(),  //
-                m_IncomeCommentInputText.GetText(),      //
-                m_IncomeAmountInputDouble,               //
-                false,                                        //
-                hash);
+            DataBase::Instance()->AddIncome(
+                account_id,
+                m_IncomeNameInputText.GetText(),
+                m_EntitiesCombo.getText(),
+                m_CategoriesCombo.getText(),
+                m_OperationsCombo.getText(),
+                m_IncomeStartDateInputText.GetText(),
+                m_IncomeEndDateInputText.GetText(),
+                m_IncomeMinAmountInputDouble,
+                m_IncomeMaxAmountInputDouble,
+                m_IncomeMinDayInputInt32,
+                m_IncomeMaxDayInputInt32);
             DataBase::Instance()->CloseDBFile();
         }
-    }*/
+    }
 }
 
 void IncomeDialog::m_confirmDialogUpdateOnce() {
@@ -405,24 +411,25 @@ void IncomeDialog::m_confirmDialogDeletion() {
 }
 
 void IncomeDialog::m_UpdateAccounts() {
-    /*m_AccountsCombo.clear();
+    m_AccountsCombo.clear();
     DataBase::Instance()->GetAccounts(  //
-        [this](const RowID& vRowID,
-               const BankName& vBankName,
-               const BankAgency& vBankAgency,
-               const AccountType& vAccountType,
-               const AccountName& vAccountName,
-               const AccountNumber& vAccountNumber,
-               const AccounBaseSolde& vAccounBaseSolde,
-               const IncomesCount& vIncomesCount) {  //
+        [this](
+            const RowID& vRowID,
+            const BankName& vBankName,
+            const BankAgency& vBankAgency,
+            const AccountType& vAccountType,
+            const AccountName& vAccountName,
+            const AccountNumber& vAccountNumber,
+            const AccounBaseSolde& vAccounBaseSolde,
+            const TransactionsCount& vTransactionsCount) {  //
             m_AccountsCombo.getArrayRef().push_back(vAccountNumber);
         });
-    m_AccountsCombo.getIndexRef() = 0;*/
+    m_AccountsCombo.getIndexRef() = 0;
 }
 
 void IncomeDialog::m_UpdateEntities() {
     m_EntitiesCombo.clear();
-    DataBase::Instance()->GetOperations(         //
+    DataBase::Instance()->GetEntities(         //
         [this](const EntityName& vEntityName) {  //
             m_EntitiesCombo.getArrayRef().push_back(vEntityName);
         });

@@ -32,6 +32,7 @@ typedef std::string CategoryName;
 typedef std::string OperationName;
 
 typedef std::string TransactionDate;
+typedef int64_t TransactionDateEpoch;
 typedef std::string TransactionDescription;
 typedef std::string TransactionComment;
 typedef double TransactionAmount;
@@ -47,11 +48,11 @@ typedef std::string DataBrokerWay;
 
 typedef std::string IncomeName;
 typedef std::string IncomeDate;
+typedef int64_t IncomeDateEpoch;
 typedef double IncomeAmount;
 typedef int32_t IncomeDelayDays;
 typedef std::string IncomeDescription;
 typedef std::string IncomeComment;
-typedef std::string IncomeHash;
 
 typedef std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> DataBrockerContainer;
 
@@ -123,14 +124,15 @@ struct Income {
     OperationName operation;
     IncomeName name;
     IncomeDate startDate;
+    IncomeDateEpoch startDateEpoch = 0;
     IncomeDate endDate;
+    IncomeDateEpoch endDateEpoch = 0;
     IncomeAmount minAmount = 0.0;
     IncomeAmount maxAmount = 0.0;
     IncomeDelayDays minDay = 0U;
     IncomeDelayDays maxDay = 0U;
     IncomeDescription description;
     IncomeComment comment;
-    IncomeHash hash;
 };
 
 struct Transaction {
@@ -141,6 +143,7 @@ struct Transaction {
     OperationName operation;
     SourceName source;
     TransactionDate date;
+    TransactionDateEpoch epoch = 0;
     TransactionDescription description;
     TransactionComment comment;
     TransactionDebit debit = 0.0;

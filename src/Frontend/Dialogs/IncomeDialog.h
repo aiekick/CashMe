@@ -13,16 +13,17 @@ private:
     SourceSha m_SourceSha;
 
     // widgets : Read / Write
-    double m_IncomeMinAmountInputDouble = 0.0;
-    double m_IncomeMaxAmountInputDouble = 0.0;
+    IncomeAmount m_IncomeMinAmountInputDouble = 0.0;
+    IncomeAmount m_IncomeMaxAmountInputDouble = 0.0;
     ImWidgets::QuickStringCombo m_AccountsCombo;
     ImWidgets::QuickStringEditCombo m_EntitiesCombo;
     ImWidgets::QuickStringEditCombo m_CategoriesCombo;
     ImWidgets::QuickStringEditCombo m_OperationsCombo;
+    ImWidgets::InputText m_IncomeNameInputText;
     ImWidgets::InputText m_IncomeStartDateInputText;
     ImWidgets::InputText m_IncomeEndDateInputText;
-    int32_t m_IncomeMinDayInputInt32 = 0;
-    int32_t m_IncomeMaxDayInputInt32 = 0;
+    IncomeDelayDays m_IncomeMinDayInputInt32 = 0;
+    IncomeDelayDays m_IncomeMaxDayInputInt32 = 0;
     ImWidgets::InputText m_IncomeDescriptionInputText;
     ImWidgets::InputText m_IncomeCommentInputText;
 

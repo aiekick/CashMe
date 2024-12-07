@@ -133,7 +133,7 @@ public:
     void DeleteAccounts();
 
     void AddIncome(  //
-        std::set<RowID> vAccountIDs,
+        const RowID& vAccountID,
         const IncomeName& vIncomeName,
         const EntityName& vEntityName,
         const CategoryName& vCategoryName,
@@ -143,8 +143,7 @@ public:
         const IncomeAmount& vMinAmount,
         const IncomeAmount& vMaxAmount,
         const IncomeDelayDays& vMinDays,
-        const IncomeDelayDays& vMaxDays,
-        const IncomeHash& vHash);
+        const IncomeDelayDays& vMaxDays);
 
     void AddTransaction(  //
         const RowID& vAccountID,
@@ -169,6 +168,7 @@ public:
             const OperationName&,
             const SourceName&,
             const TransactionDate&,
+            const TransactionDateEpoch&,
             const TransactionDescription&,
             const TransactionComment&,
             const TransactionAmount&,
@@ -224,10 +224,6 @@ private:
     bool m_CreateDB();
     void m_CreateDBTables(const bool& vPrintLogs = true);
     bool m_EnableForeignKey();
-    bool m_LinkOneIncomeWithManyAccounts(  //
-        const RowID& vIncomeID,
-        std::set<RowID> vAccountIDs
-    );
 
 public:  // singleton
     static std::shared_ptr<DataBase> Instance() {

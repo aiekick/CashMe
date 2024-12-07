@@ -28,6 +28,7 @@ limitations under the License.
 #include <Panes/StatsPane.h>
 #include <Panes/StatementsPane.h>
 #include <Panes/EntitiesPane.h>
+#include <Panes/IncomesPane.h>
 #include <Panes/CategoriesPane.h>
 #include <Panes/OperationsPane.h>
 
@@ -109,6 +110,7 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                     EntitiesPane::Instance()->Load();
                     CategoriesPane::Instance()->Load();
                     OperationsPane::Instance()->Load();
+                    IncomesPane::Instance()->Load();
                     SetProjectChange(false);
                 } else {
                     Clear();

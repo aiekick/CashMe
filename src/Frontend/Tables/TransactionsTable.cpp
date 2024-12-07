@@ -575,6 +575,7 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                     const OperationName& vOperationName,
                     const SourceName& vSourceName,
                     const TransactionDate& vDate,
+                    const TransactionDateEpoch& vDateEpoch,
                     const TransactionDescription& vDescription,
                     const TransactionComment& vComment,
                     const TransactionAmount& vAmount,
@@ -590,6 +591,7 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                     t.optimized[3] = ez::str::toLower(t.entity = vEntityName);
                     t.optimized[4] = ez::str::toLower(t.category = vCategoryName);
                     t.optimized[5] = ez::str::toLower(t.operation = vOperationName);
+                    t.epoch = vDateEpoch;
                     t.hash = vHash;
                     t.source = vSourceName;
                     t.debit = vAmount < 0.0 ? vAmount : 0.0;
