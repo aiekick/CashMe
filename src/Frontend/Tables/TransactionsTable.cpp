@@ -428,6 +428,8 @@ void TransactionsTable::refreshFiltering() {
             m_TotalCredit += t.credit;
         }
     }
+    // reverse datas
+    std::reverse(m_Datas.transactions_filtered.begin(), m_Datas.transactions_filtered.end());
 }
 
 void TransactionsTable::m_FilterSelection() {
@@ -629,8 +631,6 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                 });
         }
     }
-    // reverse datas
-    std::reverse(m_Datas.transactions.begin(), m_Datas.transactions.end());
     // filtering
     refreshFiltering();
 }
