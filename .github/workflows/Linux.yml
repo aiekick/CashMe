@@ -19,7 +19,7 @@ jobs:
     - name: build
       run: cmake --build build
     - name: upload artifact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: CashMe_Linux_x32
         path: bin/CashMe_Linux_x32
