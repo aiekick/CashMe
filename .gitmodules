@@ -10,3 +10,7 @@
 	path = 3rdparty/ezlibs
 	url = https://github.com/aiekick/EzLibs.git
 	branch = master
+[submodule "3rdparty/BuildInc"]
+	path = 3rdparty/BuildInc
+	url = https://github.com/aiekick/BuildInc.git
+	branch = master

@@ -223,7 +223,7 @@ add_subdirectory(3rdparty/BuildInc)
 
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
-	COMMAND BuildInc -prefix=${PROJECT} 1000000:10 $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h>
+	COMMAND BuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h>
 	DEPENDS ${PROJECT})
 
 ########################################################

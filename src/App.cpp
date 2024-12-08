@@ -27,7 +27,7 @@
 int App::run(int argc, char** argv) {
     ez::App app(argc, argv);
     printf("-----------\n");
-    printf("[[ %s Beta %s ]]\n", CashMe_Prefix, CashMe_BuildId);
+    printf("[[ %s Beta %s ]]\n", CashMe_Label, CashMe_BuildId);
 
 #ifdef _DEBUG
     ez::file::createDirectoryIfNotExist("sqlite3");
