@@ -4,7 +4,7 @@
 #include <string>
 #include <cstdint>
 
-#include <ImGuiPack.h>
+#include <imguipack.h>
 
 #include <Systems/FrameActionSystem.h>
 

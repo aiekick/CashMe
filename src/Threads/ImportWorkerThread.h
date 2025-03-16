@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ImGuiPack.h>
+#include <imguipack.h>
 #include <apis/CashMePluginApi.h>
 
 #include <mutex>

@@ -16,7 +16,7 @@ limitations under the License.
 
 #pragma once
 
-#include <ImGuiPack.h>
+#include <imguipack.h>
 
 #include <ezlibs/ezTools.hpp>
 #include <ezlibs/ezLog.hpp>

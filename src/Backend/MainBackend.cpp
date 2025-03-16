@@ -23,7 +23,7 @@
 
 #include <LayoutManager.h>
 
-#include <ImGuiPack.h>
+#include <imguipack.h>
 
 #include <ezlibs/ezTools.hpp>
 #include <ezlibs/ezLog.hpp>

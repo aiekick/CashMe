@@ -19,7 +19,7 @@ limitations under the License.
 
 #include "MainFrontend.h"
 
-#include <ImGuiPack.h>
+#include <imguipack.h>
 
 #include <Backend/MainBackend.h>
 
@@ -67,8 +67,6 @@ bool MainFrontend::sCentralWindowHovered = false;
 MainFrontend::~MainFrontend() = default;
 
 bool MainFrontend::init() {
-    ImGui::CustomStyle::Init();
-
     m_build_themes();
 
     LayoutManager::Instance()->Init("Layouts", "Default Layout");

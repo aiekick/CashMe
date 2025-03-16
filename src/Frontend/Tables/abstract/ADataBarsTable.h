@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ImGuiPack.h>
+#include <imguipack.h>
 #include <Headers/DatasDef.h>
 #include <Frontend/Tables/abstract/ADataTable.h>
 

@@ -8,7 +8,7 @@
 #include <ezlibs/ezTools.hpp>
 #include <ezlibs/ezXmlConfig.hpp>
 
-#include <ImGuiPack.h>
+#include <imguipack.h>
 
 #ifdef WIN32
 #include <IDLLoader/Windows/DLLoader.h>

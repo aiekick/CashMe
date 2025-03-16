@@ -4,7 +4,7 @@
 
 #include <Plugins/PluginManager.h>
 
-#include <ImGuiPack/ImGuiPack.h>
+#include <imguipack/imguipack.h>
 
 #include <Project/ProjectFile.h>
 
