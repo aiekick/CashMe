@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
         EZ_TOOLS_DEBUG_BREAK;
     }
 
-    ez::Log::instance()->close();
+    ez::Log::Instance()->close();
 
 #ifdef _MSC_VER
 #ifdef _DEBUG

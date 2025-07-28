@@ -7,14 +7,9 @@
 #include <ezlibs/ezApp.hpp>
 #include <ezlibs/ezTools.hpp>
 #include <ezlibs/ezXmlConfig.hpp>
+#include <ezlibs/ezPlugin.hpp>
 
 #include <imguipack.h>
-
-#ifdef WIN32
-#include <IDLLoader/Windows/DLLoader.h>
-#else
-#include <IDLLoader/Unix/DLLoader.h>
-#endif
 
 #include <apis/CashMePluginApi.h>
 
@@ -30,7 +25,7 @@ typedef std::weak_ptr<Cash::PluginInterface> PluginInterfaceWeak;
 
 class PluginInstance {
 private:
-    dlloader::DLLoader<Cash::PluginInterface> m_Loader;
+    ez::plugin::Loader<Cash::PluginInterface> m_Loader;
     PluginInterfacePtr m_PluginInstance = nullptr;
     std::string m_Name;
 

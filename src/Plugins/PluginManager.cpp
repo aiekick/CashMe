@@ -19,11 +19,11 @@ PluginInstance::~PluginInstance() {
 
 PluginReturnMsg PluginInstance::Init(const std::string& vName, const std::string& vFilePathName) {
     m_Name = vName;
-    m_Loader = dlloader::DLLoader<Cash::PluginInterface>(vFilePathName);
-    m_Loader.DLOpenLib();
-    m_PluginInstance = m_Loader.DLGetInstance();
-    if (m_Loader.IsAPlugin()) {
-        if (m_Loader.IsValid()) {
+    m_Loader = ez::plugin::Loader<Cash::PluginInterface>(vFilePathName);
+    m_Loader.dlOpenLib();
+    m_PluginInstance = m_Loader.dlGetInstance();
+    if (m_Loader.isAPlugin()) {
+        if (m_Loader.isValid()) {
             if (m_PluginInstance) {
                 if (!m_PluginInstance->Init()) {
                     m_PluginInstance.reset();
@@ -40,7 +40,7 @@ PluginReturnMsg PluginInstance::Init(const std::string& vName, const std::string
 void PluginInstance::Unit() {
     m_PluginInstance->Unit();
     m_PluginInstance.reset();
-    m_Loader.DLCloseLib();
+    m_Loader.dlCloseLib();
 }
 
 PluginInterfaceWeak PluginInstance::Get() const {

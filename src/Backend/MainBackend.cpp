@@ -175,7 +175,7 @@ void MainBackend::setAppTitle(const std::string& vFilePathName) {
     auto ps = ez::file::parsePathFileName(vFilePathName);
     if (ps.isOk) {
         char bufTitle[1024];
-        snprintf(bufTitle, 1023, "CashMe Beta %s - Project : %s.lum", CashMe_BuildId, ps.name.c_str());
+        snprintf(bufTitle, 1023, "CashMe Beta %s - Project : %s", CashMe_BuildId, vFilePathName.c_str());
         glfwSetWindowTitle(m_MainWindowPtr, bufTitle);
     } else {
         char bufTitle[1024];
