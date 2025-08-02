@@ -1,18 +1,15 @@
 #include <src/Test_CashMe.h>
+#include <src/Test_Database.h>
 
 ////////////////////////////////////////////////////////////////////////////
 //// ENTRY POINT ///////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
-#define IfTestExist(v)            \
-    if (vTest == std::string(#v)) \
-    return v()
-
-#define IfTestCollectionExist(v, str)        \
+#define IfTestCollectionExist(v)             \
     if (vTest.find(#v) != std::string::npos) \
-    return v(str)
+    return v(vTest)
 
 bool Test_CashMe(const std::string& vTest) {
-//    IfTestExist(Test_CashMe_0);
+    IfTestCollectionExist(Test_Database);
     return true;
 }

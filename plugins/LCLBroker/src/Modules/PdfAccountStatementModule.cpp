@@ -442,33 +442,33 @@ private:
 
         {  // account infos
             std::string bank_id;
-            std::string guichet;
-            std::string number;
+            std::string branch_id;
+            std::string account_id;
             if (m_RibDatas.fields.size() == 4U) {
                 // RIB // Compte Depot
                 bank_id = m_RibDatas.fields.at(0).token;
-                guichet = m_RibDatas.fields.at(1).token;
-                number = m_RibDatas.fields.at(2).token;
+                branch_id = m_RibDatas.fields.at(1).token;
+                account_id = m_RibDatas.fields.at(2).token;
             } else if (m_RibDatas.fields.size() == 2U) {
                 // NO RIB // Compte Epargne
-                guichet = m_RibDatas.fields.at(0).token;
-                number = m_RibDatas.fields.at(1).token;
+                branch_id = m_RibDatas.fields.at(0).token;
+                account_id = m_RibDatas.fields.at(1).token;
             } else {
                 LogVarError("Fail, No Bank Infos found");
                 return {};
             }
 
             // remove spaces, because some numbers can be XXXXXX X
-            ez::str::replaceString(guichet, " ", "");
-            ez::str::replaceString(number, " ", "");
+            ez::str::replaceString(branch_id, " ", "");
+            ez::str::replaceString(account_id, " ", "");
 
             // cut number like 000000XXXXXXX to XXXXXXX
-            if (number.size() > 7U) {
-                number = number.substr(number.size() - 7U);
+            if (account_id.size() > 7U) {
+                account_id = account_id.substr(account_id.size() - 7U);
             }
 
             ret.account.bank_id = bank_id;
-            ret.account.number = guichet + " " + number;
+            ret.account.number.append(branch_id).append(" ").append(account_id);
         }
 
         {  // statements
@@ -582,6 +582,10 @@ Cash::BankStatementModulePtr PdfAccountStatementModule::create() {
         res.reset();
     }
     return res;
+}
+
+std::string PdfAccountStatementModule::getFileExt() const {
+    return ".pdf";
 }
 
 Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std::string& vFilePathName) {

@@ -8,8 +8,6 @@ public:
 
 public:
     virtual ~PdfAccountStatementModule() = default;
+    std::string getFileExt() const override;
     Cash::AccountStatements importBankStatement(const std::string& vFilePathName) final;
-    std::string getFileExt() const override {
-        return ".pdf";
-    }
 };

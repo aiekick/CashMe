@@ -77,13 +77,13 @@ std::string LCLBroker::GetDescription() const {
 
 std::vector<Cash::PluginModuleInfos> LCLBroker::GetModulesInfos() const {
     std::vector<Cash::PluginModuleInfos> res;
-    res.push_back(Cash::PluginModuleInfos("LCL", "OFC", Cash::PluginModuleType::DATA_BROKER));
+    res.push_back(Cash::PluginModuleInfos("LCL", "OFC/OFX", Cash::PluginModuleType::DATA_BROKER));
     res.push_back(Cash::PluginModuleInfos("LCL", "PDF", Cash::PluginModuleType::DATA_BROKER));
     return res;
 }
 
 Cash::PluginModulePtr LCLBroker::CreateModule(const std::string& vPluginModuleName, Cash::PluginBridge* /*vBridgePtr*/) {
-    if (vPluginModuleName == "OFC") {
+    if (vPluginModuleName == "OFC/OFX") {
         return OfcAccountStatementModule::create();
     } else if (vPluginModuleName == "PDF") {
         return PdfAccountStatementModule::create();

@@ -17,6 +17,9 @@ Cash::BankStatementModulePtr OfcAccountStatementModule::create() {
     }
     return res;
 }
+std::string OfcAccountStatementModule::getFileExt() const {
+    return "Bank Account files (*.ofc *.ofx){.ofc,.ofx}";
+}
 
 Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
     Cash::AccountStatements ret;
@@ -34,23 +37,43 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
             LogVarError("Fail, %s is empty", vFilePathName.c_str());
             return {};
         }
-        if (lines.at(0).find("<OFC>") == std::string::npos) {
-            LogVarError("Fail, %s is not a OFC File", vFilePathName.c_str());
+
+        m_fileType = FileType::NONE;
+
+        if (lines.at(0).find("<OFC>") != std::string::npos) {
+            m_fileType = FileType::OFC;
+        } else if (lines.at(0).find("application/x-ofx") != std::string::npos) {
+            m_fileType = FileType::OFX;
+        }else {
+            LogVarError("Fail, %s is not a OFC or OFX File", vFilePathName.c_str());
             return {};
         }
 
+        // Account detections
+        // OFC give
+        // <ACCTID> 000XX 999999X
+        // OFX give :
+        // <BRANCHID> 000XX
+        // <ACCTID> 999999X
+
         bool is_a_stmt = false;
         TransDoublon trans;
-
         // we start at 1, since 0 is the header
         for (size_t idx = 1; idx < lines.size(); ++idx) {
             auto line = lines.at(idx);
             if (line.find("<BANKID>") != std::string::npos) {
                 ez::str::replaceString(line, "<BANKID>", "");
                 ret.account.bank_id = line;
+            } else if (line.find("<BRANCHID>") != std::string::npos) {
+                ez::str::replaceString(line, "<BRANCHID>", "");
+                ret.account.number = line;
             } else if (line.find("<ACCTID>") != std::string::npos) {
                 ez::str::replaceString(line, "<ACCTID>", "");
-                ret.account.number = line;
+                if (m_fileType == FileType::OFC) { // OFC
+                    ret.account.number = line;
+                } else { // OFX
+                    ret.account.number.append(" ").append(line);
+                }
             } else if (line.find("<DTSTART>") != std::string::npos) {
                 ez::str::replaceString(line, "<DTSTART>", "");
                 ret.start_date = line;
