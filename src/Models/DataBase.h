@@ -20,6 +20,7 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <functional>
+#include <sqlite3.hpp>
 #include <Headers/DatasDef.h>
 
 enum class DateFormat { DAYS = 0, MONTHS, YEARS, Count };
@@ -257,6 +258,22 @@ private:
     bool m_CreateDB();
     void m_CreateDBTables(const bool& vPrintLogs = true);
     bool m_EnableForeignKey();
+    static int32_t m_debug_sqlite3_exec(  //
+        const char* vDebugLabel,
+        sqlite3* db,                                 /* An open database */
+        const char* sql_query,                       /* SQL to be evaluated */
+        int (*callback)(void*, int, char**, char**), /* Callback function */
+        void* arg1,                                  /* 1st argument to callback */
+        char** errmsg);
+
+    static int32_t m_debug_sqlite3_prepare_v2(  //
+        const char* vDebugLabel,
+        sqlite3* db,           /* Database handle. */
+        const char* sql_query, /* UTF-8 encoded SQL statement. */
+        int nBytes,            /* Length of zSql in bytes. */
+        sqlite3_stmt** ppStmt, /* OUT: A pointer to the prepared statement */
+        const char** pzTail);
+
 
 public:  // singleton
     static std::shared_ptr<DataBase> Instance() {
