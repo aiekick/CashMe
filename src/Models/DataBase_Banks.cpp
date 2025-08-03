@@ -115,7 +115,7 @@ ORDER BY
     }
 }
 
-void DataBase::UpdateBank(const RowID& vRowID, const BankName& vBankName, const std::string& vUrl) {
+void DataBase::UpdateBank(const RowID& vRowID, const BankName& vBankName, const BankUrl& vUrl) {
     auto insert_query = ez::str::toStr(u8R"(UPDATE banks SET name = "%s", url = "%s" WHERE id = %u;)", vBankName.c_str(), vUrl.c_str(), vRowID);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a bank in database : %s", m_LastErrorMsg);

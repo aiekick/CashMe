@@ -261,8 +261,8 @@ CREATE TABLE incomes (
     end_date DATE, -- end date (empty if no end)
     min_amount REAL NOT NULL, -- min amount
     max_amount REAL NOT NULL, -- max amount, can be the same as min
-    min_day INTEGER, -- min day, can be zero
-    max_day INTEGER, -- max day, can be the same as min
+    min_day INTEGER, -- min day from the first day of month, can be negative (for represent last month days)
+    max_day INTEGER, -- max day from the first day of month, can be the same as min 
     description TEXT,
     -- links
     FOREIGN KEY (account_id) REFERENCES accounts(id),
@@ -281,6 +281,8 @@ CREATE TABLE transactions (
     category_id INTEGER NOT NULL,
     operation_id INTEGER NOT NULL,
     source_id INTEGER NOT NULL,
+    income_id INTEGER NULL,        -- lié a un income
+    income_confirmer INTEGER NULL, -- income lie, confirmé par le user
     date DATE NOT NULL,
     description TEXT,
     comment TEXT,
@@ -291,7 +293,8 @@ CREATE TABLE transactions (
     FOREIGN KEY (operation_id) REFERENCES operations(id),
     FOREIGN KEY (category_id) REFERENCES categories(id),
     FOREIGN KEY (entity_id) REFERENCES entities(id),
-    FOREIGN KEY (source_id) REFERENCES sources(id)
+    FOREIGN KEY (source_id) REFERENCES sources(id),
+    FOREIGN KEY (income_id) REFERENCES incomes(id)
 );
 
 CREATE TABLE settings (

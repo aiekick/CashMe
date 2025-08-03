@@ -1,4 +1,4 @@
-/*#pragma once
+#pragma once
 
 #include <Frontend/Tables/abstract/ADataTable.h>
 
@@ -6,93 +6,45 @@
 
 #include <Threads/ImportWorkerThread.h>
 
-#include <Frontend/Dialogs/BudgetDialog.h>
-
 class BudgetTable : public ADataTable {
 private:
     struct Datas {
-        std::vector<BankName> bankNames;
-        std::vector<EntityName> entityNames;
-        std::vector<CategoryName> categoryNames;
-        std::vector<OperationName> operationNames;
         std::vector<Account> accounts;
         std::vector<AccountNumber> accountNumbers;
-        std::vector<Budget> transactions;
-        std::vector<Budget> transactions_filtered;
-        std::set<RowID> transactions_filtered_rowids;
-        std::set<RowID> filtered_selected_transactions;
+        std::vector<Budget> budgets;
         void clear() {
             accounts.clear();
-            bankNames.clear();
-            transactions.clear();
-            categoryNames.clear();
             accountNumbers.clear();
-            operationNames.clear();
-            transactions_filtered.clear();
+            budgets.clear();
         }
     } m_Datas;
-
-    BudgetDialog m_BudgetDialog;
-
-    double m_CurrentBaseSolde = 0.0;
-    double m_TotalDebit = 0.0;
-    double m_TotalCredit = 0.0;
-
-    std::array<ImWidgets::InputText, SearchColumns::SEARCH_COLUMN_Count> m_SearchInputTexts;
-    std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> m_SearchTokens;
-    FilteringMode m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;
-    GroupingMode m_GroupingMode = GroupingMode::GROUPING_MODE_TRANSACTIONS;
-
     // accounts display
     std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
 
 public:
     BudgetTable();
-    ~BudgetTable();
+    ~BudgetTable() = default;
 
-    bool Init();
-    void Unit();
+    bool init();
+    void unit();
 
     bool load() final;
     void unload() final;
     bool drawMenu() final;
 
-    BudgetDialog& getBudgetDialogRef();
-
-    void clear();    
+    void clear();
     void refreshDatas();
-    void refreshFiltering();
-    void resetFiltering();
-
-    void drawAccountsMenu(FrameActionSystem& vFrameActionSystem);
-    void drawSelectMenu(FrameActionSystem& vFrameActionSystem);
     void drawDebugMenu(FrameActionSystem& vFrameActionSystem);
-    void drawGroupingMenu(FrameActionSystem& vFrameActionSystem);
+    void drawAccountsMenu(FrameActionSystem& vFrameActionSystem);
 
 protected:
     size_t m_getItemsCount() const final;
     RowID m_getItemRowID(const size_t& vIdx) const final;
-    double m_getItemBarAmount(const size_t& vIdx) const final;
     void m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) final;
     void m_setupColumns() final;
     void m_drawContextMenuContent() final;
     void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) final;
 
-private:
-    bool m_isGroupingModeBudget();
-    void m_drawSearchRow();
-    void m_FilterSelection();
-    void m_SelectPossibleDuplicateEntryOnPricesAndDates();
-    void m_SelectUnConfirmedBudget();
-    void m_SelectEmptyColumn(const SearchColumns& vColumn);
-    void m_GroupBudget(const GroupingMode& vGroupingMode);
-    void m_UpdateBanks();
     void m_UpdateAccounts();
-    void m_UpdateEntities();
-    void m_UpdateCategories();
-    void m_UpdateOperations();
     void m_UpdateBudget(const RowID& vAccountID);
-    bool m_IsGroupingModeBudget();
-    void m_drawAmount(const double& vAmount);
 };
-*/

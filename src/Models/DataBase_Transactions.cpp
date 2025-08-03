@@ -102,7 +102,7 @@ ORDER BY
                         ez::sqlite::readStringColumn(stmt, 3),  // OperationName
                         ez::sqlite::readStringColumn(stmt, 4),  // SourceName
                         ez::sqlite::readStringColumn(stmt, 5),  // TransactionDate
-                        sqlite3_column_int(stmt, 6),            // TransactionDateEpoch
+                        sqlite3_column_int64(stmt, 6),          // TransactionDateEpoch
                         ez::sqlite::readStringColumn(stmt, 7),  // TransactionDescription
                         ez::sqlite::readStringColumn(stmt, 8),  // TransactionComment
                         sqlite3_column_double(stmt, 9),         // TransactionAmount

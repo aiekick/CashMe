@@ -3,7 +3,7 @@
 #include <ezlibs/ezSqlite.hpp>
 #include <ezlibs/ezLog.hpp>
 
-void DataBase::AddOperation(const EntityName& vOperationName) {
+void DataBase::AddOperation(const OperationName& vOperationName) {
     auto insert_query =             //
         ez::sqlite::QueryBuilder()  //
             .setTable("operations")

@@ -53,6 +53,13 @@ typedef double IncomeAmount;
 typedef int32_t IncomeDay;
 typedef std::string IncomeDescription;
 
+typedef std::string BudgetDate;
+typedef int64_t BudgetDateEpoch;
+typedef uint32_t BudgetOffset;
+typedef uint32_t BudgetProjectedDays;
+typedef double MinValue;
+typedef double MaxValue;
+
 typedef std::map<DataBrokerName, std::map<DataBrokerWay, Cash::BankStatementModulePtr>> DataBrockerContainer;
 
 enum FilteringMode {  //
@@ -161,3 +168,18 @@ struct Transaction {
     }
 };
 
+struct BudgetMinMax {
+    MinValue localMin = 0.0;
+    MaxValue localMax = 0.0;
+    MinValue accumMin = 0.0;
+    MinValue accumMax = 0.0;
+};
+
+struct Budget {
+    RowID id = 0;
+    BudgetOffset offset = 0;
+    BudgetDate date;
+    BudgetDateEpoch dateEpoch = 0;
+    std::vector<Income> incomes;
+    BudgetMinMax balance;
+};

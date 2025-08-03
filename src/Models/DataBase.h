@@ -35,14 +35,31 @@ private:
     char* m_LastErrorMsg = nullptr;
 
 public:
+    // DATABASE FILE
+
     bool IsFileASqlite3DB(const DBFile& vDBFilePathName);
     bool CreateDBFile(const DBFile& vDBFilePathName);
     bool OpenDBFile();
     bool OpenDBFile(const DBFile& vDBFilePathName);
     void CloseDBFile();
+
+    // TRANSACTIONS
+
     bool BeginTransaction();
     void CommitTransaction();
     void RollbackTransaction();
+
+    // MISC
+
+    void ClearDataTables();
+    std::string GetLastErrorMesg();
+
+    // SETTINGS
+
+    bool SetSettingsXMLDatas(const std::string& vXMLDatas);
+    std::string GetSettingsXMLDatas();
+
+    // BANK
 
     void AddBank(const BankName& vBankName, const BankUrl& vUrl = {});
     bool GetBank(const BankName& vBankName, RowID& vOutRowID);
@@ -58,53 +75,7 @@ public:
     void UpdateBank(const RowID& vRowID, const BankName& vBankName, const BankUrl& vUrl);
     void DeleteBanks();
 
-    void AddEntity(const EntityName& vEntityName);
-    bool GetEntity(const EntityName& vUserName, RowID& vOutRowID);
-    void GetEntities(std::function<void(const EntityName&)> vCallback);
-    void GetEntitiesStats(  //
-        const RowID& vAccountID,
-        std::function<void(  //
-            const RowID&,
-            const EntityName&,
-            const TransactionDebit&,
-            const TransactionCredit&,
-            const TransactionsCount&)> vCallback);
-    void UpdateEntity(const RowID& vRowID, const EntityName& vEntityName);
-    void DeleteEntities();
-
-    void AddCategory(const CategoryName& vCategoryName);
-    bool GetCategory(const CategoryName& vUserName, RowID& vOutRowID);
-    void GetCategories(std::function<void(const CategoryName&)> vCallback);
-    void GetCategoriesStats(  //
-        const RowID& vAccountID,
-        std::function<void(  //
-            const RowID&,
-            const CategoryName&,
-            const TransactionDebit&,
-            const TransactionCredit&,
-            const TransactionsCount&)> vCallback);
-    void UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName);
-    void DeleteCategories();
-
-    void AddOperation(const OperationName& vOperationName);
-    bool GetOperation(const OperationName& vUserName, RowID& vOutRowID);
-    void GetOperations(std::function<void(const OperationName&)> vCallback);
-    void GetOperationsStats(  //
-        const RowID& vAccountID,
-        std::function<void(  //
-            const RowID&,
-            const OperationName&,
-            const TransactionDebit&,
-            const TransactionCredit&,
-            const TransactionsCount&)> vCallback);
-    void UpdateOperation(const RowID& vRowID, const OperationName& vOperationName);
-    void DeleteOperations();
-
-    void AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha& vSourceSha);
-    bool GetSource(const SourceName& vSourceName, RowID& vOutRowID);
-    void GetSources(std::function<void(const SourceName&)> vCallback);
-    void UpdateSource(const RowID& vRowID, const SourceName& vSourceName);
-    void DeleteSources();
+    // ACCOUNT
 
     void AddAccount(  //
         const BankName& vBankName,
@@ -133,7 +104,7 @@ public:
             const AccountNumber&,
             const AccountBaseSolde&,
             const TransactionsCount&)> vCallback);
-    void GetAccountsStats(  //
+    void GetAccountsStats(   //
         std::function<void(  //
             const RowID&,
             const BankName&,
@@ -155,6 +126,64 @@ public:
         const AccountBaseSolde& vBaseSolde);
     void DeleteAccount(const RowID& vRowID);
     void DeleteAccounts();
+
+    // ENTITY
+
+    void AddEntity(const EntityName& vEntityName);
+    bool GetEntity(const EntityName& vUserName, RowID& vOutRowID);
+    void GetEntities(std::function<void(const EntityName&)> vCallback);
+    void GetEntitiesStats(  //
+        const RowID& vAccountID,
+        std::function<void(  //
+            const RowID&,
+            const EntityName&,
+            const TransactionDebit&,
+            const TransactionCredit&,
+            const TransactionsCount&)> vCallback);
+    void UpdateEntity(const RowID& vRowID, const EntityName& vEntityName);
+    void DeleteEntities();
+
+    // CATEGORY
+
+    void AddCategory(const CategoryName& vCategoryName);
+    bool GetCategory(const CategoryName& vUserName, RowID& vOutRowID);
+    void GetCategories(std::function<void(const CategoryName&)> vCallback);
+    void GetCategoriesStats(  //
+        const RowID& vAccountID,
+        std::function<void(  //
+            const RowID&,
+            const CategoryName&,
+            const TransactionDebit&,
+            const TransactionCredit&,
+            const TransactionsCount&)> vCallback);
+    void UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName);
+    void DeleteCategories();
+
+    // OPERATION
+
+    void AddOperation(const OperationName& vOperationName);
+    bool GetOperation(const OperationName& vUserName, RowID& vOutRowID);
+    void GetOperations(std::function<void(const OperationName&)> vCallback);
+    void GetOperationsStats(  //
+        const RowID& vAccountID,
+        std::function<void(  //
+            const RowID&,
+            const OperationName&,
+            const TransactionDebit&,
+            const TransactionCredit&,
+            const TransactionsCount&)> vCallback);
+    void UpdateOperation(const RowID& vRowID, const OperationName& vOperationName);
+    void DeleteOperations();
+
+    // SOURCE
+
+    void AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha& vSourceSha);
+    bool GetSource(const SourceName& vSourceName, RowID& vOutRowID);
+    void GetSources(std::function<void(const SourceName&)> vCallback);
+    void UpdateSource(const RowID& vRowID, const SourceName& vSourceName);
+    void DeleteSources();
+
+    // INCOME
 
     void AddIncome(  //
         const RowID& vAccountID,
@@ -201,6 +230,8 @@ public:
         const IncomeDescription& vDescription);
     void DeleteIncome(const RowID& vRowID);
     void DeleteIncomes();
+
+    // TRANSACTION
 
     void AddTransaction(  //
         const RowID& vAccountID,
@@ -270,10 +301,12 @@ public:
     void DeleteTransactions();
     void DeleteTransactions(const std::set<RowID>& vRowIDs);
 
-    void ClearDataTables();
-    std::string GetLastErrorMesg();
-    bool SetSettingsXMLDatas(const std::string& vXMLDatas);
-    std::string GetSettingsXMLDatas();
+    // BUDGET
+
+    void ComputeBudget(  //
+        const RowID& vAccountID,
+        const uint32_t& vProjectedDays,
+        std::function<void(const Budget&)> vCallback);
 
 private:
     bool m_OpenDB();
