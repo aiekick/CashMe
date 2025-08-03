@@ -3,7 +3,7 @@
 #include <ezlibs/ezSqlite.hpp>
 #include <ezlibs/ezLog.hpp>
 
-void DataBase::AddIncome(  //
+void DataBase::AddIncome(
     const RowID& vAccountID,
     const IncomeName& vIncomeName,
     const EntityName& vEntityName,
@@ -19,53 +19,25 @@ void DataBase::AddIncome(  //
     AddEntity(vEntityName);
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
-    auto insert_query = ez::str::toStr(
-        u8R"(
-INSERT OR IGNORE INTO incomes 
-(
-    account_id,
-    name, 
-    entity_id,  
-    category_id, 
-    operation_id,
-    start_date, 
-    end_date, 
-    min_amount, 
-    max_amount,
-    min_day,
-    max_day,
-    description
-) 
-VALUES 
-(
-    %u,
-    "%s", 
-    (SELECT id FROM entities WHERE entities.name = "%s"), -- entity id
-    (SELECT id FROM categories WHERE categories.name = "%s"), -- category id
-    (SELECT id FROM operations WHERE operations.name = "%s"), -- operation id
-    "%s", 
-    "%s",
-    %.2f,
-    %.2f,
-    %i,
-    %i,
-    "%s"
-);
-)",
-        vAccountID,
-        vIncomeName.c_str(),
-        vEntityName.c_str(),
-        vCategoryName.c_str(),
-        vOperationName.c_str(),
-        vStartDate.c_str(),
-        vEndDate.c_str(),
-        vMinAmount,
-        vMaxAmount,
-        vMinDays,
-        vMaxDays,
-        vDescription.c_str());
+
+    auto insert_query =  //
+        ez::sqlite::QueryBuilder()
+            .setTable("incomes")
+            .addField("account_id", vAccountID)
+            .addField("name", vIncomeName)
+            .addFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vEntityName.c_str())
+            .addFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vCategoryName.c_str())
+            .addFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vOperationName.c_str())
+            .addField("start_date", vStartDate)
+            .addField("end_date", vEndDate)
+            .addField("min_amount", vMinAmount)
+            .addField("max_amount", vMaxAmount)
+            .addField("min_day", vMinDays)
+            .addField("max_day", vMaxDays)
+            .addField("description", vDescription)
+            .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
+        LogVarError("Fail to insert an income in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
     }
 }
 

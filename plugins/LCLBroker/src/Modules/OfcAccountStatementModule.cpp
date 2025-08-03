@@ -5,6 +5,7 @@
 
 #include <ezlibs/ezFile.hpp>
 #include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezSha.hpp>
 
 #include <ImGuiPack.h>
 
@@ -89,14 +90,28 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
             } else if (line.find("</STMTTRN>") != std::string::npos) {
                 if (is_a_stmt) {
                     trans.trans.source = ps.GetFPNE_WithPath("");
-                    trans.trans.source_type = "ofc";
-                    trans.trans.hash = ez::str::toStr("%s_%s_%f",  //
-                                                 trans.trans.date.c_str(),
-                                                 // un fichier ofc ne peut pas avoir des description de longueur > a 30
-                                                 // alors on limite le hash a utiliser un description de 30
-                                                 // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
-                                                 trans.trans.description.substr(0, 30).c_str(),
-                                                 trans.trans.amount);  // must be unique per oepration
+                    if (m_fileType == FileType::OFC) {
+                        trans.trans.source_type = "ofc";
+                    } else if (m_fileType == FileType::OFX) {
+                        trans.trans.source_type = "ofx";
+                    }
+                    trans.trans.source_sha1 =         //
+                        ez::sha1()                    //
+                            .add(trans.trans.source)  //
+                            .add(trans.trans.source_type)
+                            .finalize()
+                            .getHex();
+                    trans.trans.hash =  //
+                        ez::sha1()
+                            .add(trans.trans.date)
+                            // un fichier ofc ne peut pas avoir des description de longueur > a 30
+                            // alors on limite le hash a utiliser un description de 30
+                            // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                            .add(trans.trans.description.substr(0, 30))
+                            // must be unique per oepration
+                            .addValue(trans.trans.amount)
+                            .finalize()
+                            .getHex();
                     if (transactions.find(trans.trans.hash) != transactions.end()) {
                         ++transactions.at(trans.trans.hash).doublons;
                     } else {

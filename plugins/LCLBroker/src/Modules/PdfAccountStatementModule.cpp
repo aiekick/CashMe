@@ -9,6 +9,7 @@
 
 #include <ezlibs/ezFile.hpp>
 #include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezSha.hpp>
 
 #include <ImGuiPack.h>
 
@@ -175,10 +176,10 @@ private:
 
 public:
     Cash::AccountStatements compute(const TokenContainer &vContainer, const std::string &vSourceName) {
-        const auto &tbl = fillTable(vContainer);
-        const auto &stms = solveTableColumns(tbl);
+        const auto tbl = fillTable(vContainer);
+        const auto stms = solveTableColumns(tbl);
 #if _DEBUG
-        //printTable(stms);
+        printTable(stms);
 #endif
         return extractStatements(stms, vSourceName);
     }
@@ -240,7 +241,7 @@ private:
                     if (tabled_started) {
                         if (fields.fields.at(0).token == page_footer) {
                             tabled_started = false;  // end of a table
-                        }
+                        } 
                     } else if (!date_range_found) {
                         const auto &tmp = fields.fields.at(0).token;
                         auto du_pos = tmp.find(" du ");
@@ -281,6 +282,8 @@ private:
                         } else if (fields.fields.at(1).token.find("SOLDE EN EUROS") != std::string::npos) {
                             // fin du fichier
                             m_Ledger = fields.fields.at(2).token;
+                            ez::str::replaceString(m_Ledger, " ", "");
+                            ez::str::replaceString(m_Ledger, ",", ".");
                             tabled_started = false;  // end of a table
                             m_EndSoldeToken = fields.fields.at(2);
                             return ret;
@@ -422,13 +425,44 @@ private:
         }
         LogVarDebugInfo("%s", h_line.c_str());
     }
+
+    struct TransDoublon {
+        uint32_t doublons = 1U;
+        Cash::Transaction trans;
+    };
+
+    static bool addStatement(std::map<std::string, TransDoublon> &vContainer, const std::string &vSourceName, const TransDoublon &vTransDoublon) {
+        TransDoublon trans = vTransDoublon;
+        trans.trans.source = vSourceName;
+        trans.trans.source_type = "pdf";
+        trans.trans.source_sha1 =         //
+            ez::sha1()                    //
+                .add(trans.trans.source)  //
+                .add(trans.trans.source_type)
+                .finalize()
+                .getHex();
+        trans.trans.hash =  //
+            ez::sha1()
+                .add(trans.trans.date)
+                // un fichier ofc ne peut pas avoir des description de longueur > a 30
+                // alors on limite le hash a utiliser un description de 30
+                // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                .add(trans.trans.description.substr(0, 30))
+                // must be unique per oepration
+                .addValue(trans.trans.amount)
+                .finalize()
+                .getHex();
+        if (vContainer.find(trans.trans.hash) != vContainer.end()) {
+            ++vContainer.at(trans.trans.hash).doublons;
+        } else {
+            vContainer[trans.trans.hash] = trans;
+        }
+        return true;
+    }
+
     Cash::AccountStatements extractStatements(const StatementRows &vStms, const std::string &vSourceName) {
         Cash::AccountStatements ret;
 
-        struct TransDoublon {
-            uint32_t doublons = 1U;
-            Cash::Transaction trans;
-        };
         std::map<std::string, TransDoublon> transactions;
 
         {  // dates
@@ -482,32 +516,36 @@ private:
             // 0 is the header, so we jump it
             for (size_t row_idx = 1; row_idx < vStms.size(); ++row_idx) {
                 const auto &row = vStms.at(row_idx);
-                is_new_line = false;
+                bool maybeSomeComments = row.at(0).token.empty();
+                if (!maybeSomeComments && !trans.trans.date.empty()) {  // pas de commentaire a ajouter
+                    if (addStatement(transactions, vSourceName, trans)) {
+                        trans = {};
+                    }
+                }
+                is_new_line = false;                
                 for (size_t idx = 0; idx < 5; ++idx) {
                     const auto &tk = row.at(idx);
                     if (idx == 0) {
                         if (!tk.token.empty()) {
                             trans = {};
                             is_new_line = true;
-                            trans.trans.date = tk.token;
-                            auto arr = ez::str::splitStringToVector(trans.trans.date, ".");
-                            if (arr.size() == 2U) {
-                                trans.trans.date = arr.at(1) + "-" + arr.at(0);
-                            } else {
-                                EZ_TOOLS_DEBUG_BREAK;
-                            }
                         }
                     } else if (idx == 1) {
                         if (is_new_line) {
                             parseDescription(tk.token, trans.trans.entity, trans.trans.operation, trans.trans.description);
                         } else {
-                            trans.trans.comment += tk.token;
+                            if (tk.token.find("SOLDE INTERMEDIAIRE A FIN") == std::string::npos) {
+                                if (!trans.trans.comment.empty()) {
+                                    trans.trans.comment += "\n";
+                                }
+                                trans.trans.comment += tk.token;
+                            }
                         }
                     } else if (idx == 2) {
                         if (is_new_line) {
                             auto arr = ez::str::splitStringToVector(tk.token, ".");
                             if (arr.size() == 3U) {
-                                trans.trans.date = "20" + arr.at(2) + "-" + trans.trans.date;
+                                trans.trans.date = "20" + arr.at(2) + "-" + arr.at(1) + "-" + arr.at(0);
                             } else {
                                 EZ_TOOLS_DEBUG_BREAK;
                             }
@@ -536,24 +574,13 @@ private:
                         }
                     }
                 }
-                if (is_new_line) {
-                    trans.trans.source = vSourceName;
-                    trans.trans.source_type = "pdf";
-                    trans.trans.hash = ez::str::toStr("%s_%s_%f",  //
-                                                 trans.trans.date.c_str(),
-                                                 // un fichier ofc ne peut pas avoir des description de longueur > a 30
-                                                 // alors on limite le hash a utiliser un description de 30
-                                                 // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
-                                                 trans.trans.description.substr(0, 30).c_str(),
-                                                 trans.trans.amount);  // must be unique per oepration
-                    if (transactions.find(trans.trans.hash) != transactions.end()) {
-                        ++transactions.at(trans.trans.hash).doublons;
-                    } else { 
-                        transactions[trans.trans.hash] = trans;
-                    }                    
+            }
+            if (!trans.trans.date.empty()) {
+                if (addStatement(transactions, vSourceName, trans)) {
                     trans = {};
                 }
             }
+
 
             const auto &compute_solde_str = ez::round_n(solde, 2);
             const auto &final_solde_str = ez::round_n(m_EndSolde, 2);

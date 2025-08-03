@@ -33,7 +33,9 @@ void TransactionsTable::unload() {
 }
 
 bool TransactionsTable::drawMenu() {
-    return false;
+    bool ret = false;
+    ret |= ImGui::MenuItem("Multiline comments", nullptr, &m_enableMultilineComment);
+    return ret;
 }
 
 TransactionDialog& TransactionsTable::getTransactionDialogRef() {
@@ -82,7 +84,11 @@ void TransactionsTable::m_drawTableContent(const size_t& vIdx, const double& vMa
 
     ImGui::TableNextColumn();
     {
-        ImGui::Text("%s", t.comment.c_str());
+        if (m_enableMultilineComment || t.comment_first_line_end_pos == 0) {
+            ImGui::Text(t.comment.c_str());
+        } else {
+            ImGui::TextUnformatted(t.comment.c_str(), t.comment.data() + t.comment_first_line_end_pos);
+        }
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::Instance()->isHiddenMode(), "%s", t.comment.c_str());
     }
 
@@ -304,8 +310,25 @@ void TransactionsTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
                 DataBase::Instance()->DeleteOperations();
                 refreshDatas();
             }
+            if (ImGui::MenuItem("Incomes")) {
+                DataBase::Instance()->DeleteIncomes();
+                refreshDatas();
+            }
             if (ImGui::MenuItem("Transactions")) {
                 DataBase::Instance()->DeleteTransactions();
+                refreshDatas();
+            }
+            if (ImGui::MenuItem("Sources")) {
+                DataBase::Instance()->DeleteSources();
+                refreshDatas();
+            }
+            if (ImGui::MenuItem("All Except Accounts and banks")) {
+                DataBase::Instance()->DeleteEntities();
+                DataBase::Instance()->DeleteCategories();
+                DataBase::Instance()->DeleteOperations();
+                DataBase::Instance()->DeleteIncomes();
+                DataBase::Instance()->DeleteTransactions();
+                DataBase::Instance()->DeleteSources();
                 refreshDatas();
             }
             ImGui::EndMenu();
@@ -408,7 +431,7 @@ void TransactionsTable::refreshFiltering() {
     double solde = m_CurrentBaseSolde;
     m_TotalDebit = 0.0;
     m_TotalCredit = 0.0;
-    for (auto t : m_Datas.transactions) {
+    for (auto t : m_Datas.transactions) { // copy volontaire
         use = true;
         if (m_FilteringMode == FilteringMode::FILTERING_MODE_BY_SEARCH) {
             for (size_t idx = 0; idx < SearchColumns::SEARCH_COLUMN_Count; ++idx) {
@@ -422,6 +445,10 @@ void TransactionsTable::refreshFiltering() {
         }
         if (use) {
             t.solde = solde += t.debit + t.credit;
+            const auto first_comment_end_line_pos = t.comment.find('\n');
+            if (first_comment_end_line_pos != std::string::npos) {
+                t.comment_first_line_end_pos = first_comment_end_line_pos;
+            }
             m_Datas.transactions_filtered.push_back(t);
             m_Datas.transactions_filtered_rowids.emplace(t.id);
             m_TotalDebit += t.debit;
@@ -541,7 +568,7 @@ void TransactionsTable::m_UpdateAccounts() {
                const AccountType& vAccountType,
                const AccountName& vAccountName,
                const AccountNumber& vAccountNumber,
-               const AccounBaseSolde& vBaseSolde,
+               const AccountBaseSolde& vBaseSolde,
                const TransactionsCount& vCount) {  //
             Account a;
             a.id = vRowID;

@@ -44,10 +44,18 @@ public:
     void CommitTransaction();
     void RollbackTransaction();
 
-    void AddBank(const BankName& vBankName, const std::string& vUrl = {});
+    void AddBank(const BankName& vBankName, const BankUrl& vUrl = {});
     bool GetBank(const BankName& vBankName, RowID& vOutRowID);
-    void GetBanks(std::function<void(const BankName&, const std::string&)> vCallback);
-    void UpdateBank(const RowID& vRowID, const BankName& vBankName, const std::string& vUrl);
+    void GetBanks(std::function<void(const BankName&, const BankUrl&)> vCallback);
+    void GetBanksStats(  //
+        std::function<void(        //
+            const RowID&,
+            const BankName&,
+            const BankUrl&,
+            const TransactionDebit&,
+            const TransactionCredit&,
+            const TransactionsCount&)> vCallback);
+    void UpdateBank(const RowID& vRowID, const BankName& vBankName, const BankUrl& vUrl);
     void DeleteBanks();
 
     void AddEntity(const EntityName& vEntityName);
@@ -59,7 +67,8 @@ public:
             const RowID&,
             const EntityName&,
             const TransactionDebit&,
-            const TransactionCredit&)> vCallback);
+            const TransactionCredit&,
+            const TransactionsCount&)> vCallback);
     void UpdateEntity(const RowID& vRowID, const EntityName& vEntityName);
     void DeleteEntities();
 
@@ -72,7 +81,8 @@ public:
             const RowID&,
             const CategoryName&,
             const TransactionDebit&,
-            const TransactionCredit&)> vCallback);
+            const TransactionCredit&,
+            const TransactionsCount&)> vCallback);
     void UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName);
     void DeleteCategories();
 
@@ -85,7 +95,8 @@ public:
             const RowID&,
             const OperationName&,
             const TransactionDebit&,
-            const TransactionCredit&)> vCallback);
+            const TransactionCredit&,
+            const TransactionsCount&)> vCallback);
     void UpdateOperation(const RowID& vRowID, const OperationName& vOperationName);
     void DeleteOperations();
 
@@ -101,7 +112,7 @@ public:
         const AccountType& vAccountType,
         const AccountName& vAccountName,
         const AccountNumber& vAccountNumber,
-        const AccounBaseSolde& vBaseSolde);
+        const AccountBaseSolde& vBaseSolde);
     bool GetAccount(  //
         const AccountNumber& vAccountNumber,
         RowID& vOutRowID);
@@ -120,7 +131,19 @@ public:
             const AccountType&,
             const AccountName&,
             const AccountNumber&,
-            const AccounBaseSolde&,
+            const AccountBaseSolde&,
+            const TransactionsCount&)> vCallback);
+    void GetAccountsStats(  //
+        std::function<void(  //
+            const RowID&,
+            const BankName&,
+            const BankAgency&,
+            const AccountNumber&,
+            const AccountType&,
+            const AccountName&,
+            const AccountBaseSolde&,
+            const TransactionDebit&,
+            const TransactionCredit&,
             const TransactionsCount&)> vCallback);
     void UpdateAccount(  //
         const RowID& vRowID,
@@ -129,7 +152,7 @@ public:
         const AccountType& vAccountType,
         const AccountName& vAccountName,
         const AccountNumber& vAccountNumber,
-        const AccounBaseSolde& vBaseSolde);
+        const AccountBaseSolde& vBaseSolde);
     void DeleteAccount(const RowID& vRowID);
     void DeleteAccounts();
 
@@ -146,7 +169,7 @@ public:
         const IncomeDay& vMinDays,
         const IncomeDay& vMaxDays,
         const IncomeDescription& vDescription);
-    void GetIncomes(         //
+    void GetIncomes(  //
         const RowID& vAccountID,
         std::function<void(  //
             const RowID&,
@@ -274,7 +297,6 @@ private:
         sqlite3_stmt** ppStmt, /* OUT: A pointer to the prepared statement */
         const char** pzTail);
 
-
 public:  // singleton
     static std::shared_ptr<DataBase> Instance() {
         static std::shared_ptr<DataBase> _instance = std::make_shared<DataBase>();
@@ -284,8 +306,6 @@ public:  // singleton
 public:
     DataBase() = default;                // Prevent construction
     DataBase(const DataBase&) = delete;  // Prevent construction by copying
-    DataBase& operator=(const DataBase&) {
-        return *this;
-    };                              // Prevent assignment
+    DataBase& operator=(const DataBase&) { return *this; };  // Prevent assignment
     virtual ~DataBase() = default;  // Prevent unwanted destruction};
 };

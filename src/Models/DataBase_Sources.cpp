@@ -4,13 +4,15 @@
 #include <ezlibs/ezLog.hpp>
 
 void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourceType, const SourceSha& vSourceSha) {
-    auto insert_query = ez::str::toStr(
-        u8R"(INSERT OR IGNORE INTO sources (name, type, sha) VALUES("%s", "%s", "%s");)",  //
-        vSourceName.c_str(),
-        vSourceType.c_str(),
-        vSourceSha.c_str());
+    auto insert_query =             //
+        ez::sqlite::QueryBuilder()  //
+            .setTable("sources")
+            .addField("name", vSourceName)
+            .addField("type", vSourceType)
+            .addField("sha", vSourceSha)
+            .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a source in database : %s", m_LastErrorMsg);
+        LogVarError("Fail to insert a entity in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
     }
 }
 

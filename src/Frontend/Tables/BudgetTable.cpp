@@ -524,7 +524,7 @@ void BudgetTable::m_UpdateAccounts() {
                const AccountType& vAccountType,
                const AccountName& vAccountName,
                const AccountNumber& vAccountNumber,
-               const AccounBaseSolde& vBaseSolde,
+               const AccountBaseSolde& vBaseSolde,
                const BudgetCount& vCount) {  //
             Account a;
             a.id = vRowID;

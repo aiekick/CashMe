@@ -1,7 +1,7 @@
 #include <Frontend/Tables/EntitiesTable.h>
 #include <Models/DataBase.h>
 
-EntitiesTable::EntitiesTable() : ADataBarsTable("EntitiesTable", 5) {
+EntitiesTable::EntitiesTable() : ADataBarsTable("EntitiesTable", 6) {
 }
 
 bool EntitiesTable::load() {
@@ -44,6 +44,7 @@ void EntitiesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmo
     m_drawColumnCredit(e.credit);
     m_drawColumnAmount(e.amount);
     m_drawColumnBars(e.amount, vMaxAmount, 100.0f);
+    m_drawColumnInt(e.count);
 }
 
 void EntitiesTable::m_setupColumns() {
@@ -53,6 +54,7 @@ void EntitiesTable::m_setupColumns() {
     ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Amount", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Bars", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableHeadersRow();
 }
 
@@ -108,16 +110,19 @@ void EntitiesTable::m_updateEntities() {
         m_Entities.clear();
         DataBase::Instance()->GetEntitiesStats(  //
             account_id,
-            [this](const RowID& vRowID,
-                   const EntityName& vEntityName,
-                   const TransactionDebit& vTransactionDebit,
-                   const TransactionCredit& vTransactionCredit) {  //
+            [this](
+                const RowID& vRowID,
+                const EntityName& vEntityName,
+                const TransactionDebit& vTransactionDebit,
+                const TransactionCredit& vTransactionCredit,
+                const TransactionsCount& vTransactionCount) {  //
                 Entity e;
                 e.id = vRowID;
                 e.name = vEntityName;
                 e.debit = vTransactionDebit;
                 e.credit = vTransactionCredit;
                 e.amount = vTransactionDebit + vTransactionCredit;
+                e.count = vTransactionCount;
                 m_Entities.push_back(e);
             });
     }

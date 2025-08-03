@@ -4,9 +4,13 @@
 #include <ezlibs/ezLog.hpp>
 
 void DataBase::AddEntity(const EntityName& vEntityName) {
-    auto insert_query = ez::str::toStr(u8R"(INSERT OR IGNORE INTO entities (name) VALUES("%s");)", vEntityName.c_str());
+    auto insert_query =             //
+        ez::sqlite::QueryBuilder()  //
+            .setTable("entities")
+            .addField("name", vEntityName)
+            .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a entity in database : %s", m_LastErrorMsg);
+        LogVarError("Fail to insert a entity in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
     }
 }
 
@@ -62,7 +66,8 @@ void DataBase::GetEntitiesStats(  //
         const RowID&,
         const EntityName&,
         const TransactionDebit&,
-        const TransactionCredit&)> vCallback) {
+        const TransactionCredit&,
+        const TransactionsCount&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     const auto& select_query = ez::str::toStr(
@@ -71,7 +76,8 @@ SELECT
   entities.id,
   entities.name,
   ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS debit,
-  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS credit
+  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS credit,
+  COUNT(transactions.id)
 FROM
   transactions
   LEFT JOIN entities ON transactions.entity_id = entities.id
@@ -92,11 +98,13 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    auto row_id = sqlite3_column_int(stmt, 0);
-                    auto name = (const char*)sqlite3_column_text(stmt, 1);
-                    auto debit = (TransactionDebit)sqlite3_column_double(stmt, 2);
-                    auto credit = (TransactionCredit)sqlite3_column_double(stmt, 3);
-                    vCallback(row_id, name != nullptr ? name : "", debit, credit);
+                    vCallback(
+                        sqlite3_column_int(stmt, 0),                        // RowID
+                        ez::sqlite::readStringColumn(stmt, 1),              // EntityName
+                        (TransactionDebit)sqlite3_column_double(stmt, 2),   // TransactionDebit
+                        (TransactionCredit)sqlite3_column_double(stmt, 3),  // TransactionCredit
+                        (TransactionsCount)sqlite3_column_int(stmt, 4)      // TransactionsCount
+                    );
                 }
             }
         }

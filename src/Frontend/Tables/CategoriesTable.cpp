@@ -1,7 +1,7 @@
 #include <Frontend/Tables/CategoriesTable.h>
 #include <Models/DataBase.h>
 
-CategoriesTable::CategoriesTable() : ADataBarsTable("CategoriesTable", 5) {
+CategoriesTable::CategoriesTable() : ADataBarsTable("CategoriesTable", 6) {
 }
 
 bool CategoriesTable::load() {
@@ -44,6 +44,7 @@ void CategoriesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxA
     m_drawColumnCredit(e.credit);
     m_drawColumnAmount(e.amount);
     m_drawColumnBars(e.amount, vMaxAmount, 100.0f);
+    m_drawColumnInt(e.count);
 }
 
 void CategoriesTable::m_setupColumns() {
@@ -53,6 +54,7 @@ void CategoriesTable::m_setupColumns() {
     ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Amount", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Bars", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableHeadersRow();
 }
 
@@ -70,16 +72,19 @@ void CategoriesTable::m_updateCategories() {
         m_Categories.clear();
         DataBase::Instance()->GetCategoriesStats(  //
             account_id,
-            [this](const RowID& vRowID,
-                   const CategoryName& vCategoryName,
-                   const TransactionDebit& vTransactionDebit,
-                   const TransactionCredit& vTransactionCredit) {  //
+            [this](
+                const RowID& vRowID,
+                const CategoryName& vCategoryName,
+                const TransactionDebit& vTransactionDebit,
+                const TransactionCredit& vTransactionCredit,
+                const TransactionsCount& vTransactionCount) {  //
                 Category e;
                 e.id = vRowID;
                 e.name = vCategoryName;
                 e.debit = vTransactionDebit;
                 e.credit = vTransactionCredit;
                 e.amount = vTransactionDebit + vTransactionCredit;
+                e.count = vTransactionCount;
                 m_Categories.push_back(e);
             });
     }

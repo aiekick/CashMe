@@ -71,7 +71,7 @@ void TransactionDialog::m_drawContentUpdate(const ImVec2& vPos) {
     m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
     m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
-    m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
+    m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", true, align);
     // the update all if for descriptive items buit not for amounrt
     if (getCurrentMode() != DataDialogMode::MODE_UPDATE_ALL) {
         ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble); });
@@ -395,7 +395,7 @@ void TransactionDialog::m_UpdateAccounts() {
                const AccountType& vAccountType,
                const AccountName& vAccountName,
                const AccountNumber& vAccountNumber,
-               const AccounBaseSolde& vAccounBaseSolde,
+               const AccountBaseSolde& vAccounBaseSolde,
                const TransactionsCount& vTransactionsCount) {  //
             m_AccountsCombo.getArrayRef().push_back(vAccountNumber);
         });

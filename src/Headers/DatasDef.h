@@ -23,7 +23,7 @@ typedef std::string SourceSha;
 typedef std::string AccountType;
 typedef std::string AccountName;
 typedef std::string AccountNumber;
-typedef double AccounBaseSolde;
+typedef double AccountBaseSolde;
 
 typedef std::string EntityName;
 
@@ -77,41 +77,45 @@ enum SearchColumns {  //
     SEARCH_COLUMN_Count
 };
 
-struct Bank {
-    RowID id = 0;
-    BankName name;
-    BankUrl url;
-};
-
 struct AmountStats {
     TransactionDebit debit = 0.0;
     TransactionCredit credit = 0.0;
     TransactionAmount amount = 0.0;
 };
 
-struct Entity : public AmountStats {
+struct Bank : public AmountStats {
     RowID id = 0;
-    EntityName name;
-};
-
-struct Category : public AmountStats {
-    RowID id = 0;
-    CategoryName name;
-};
-
-struct Operation : public AmountStats {
-    RowID id = 0;
-    OperationName name;
+    BankName name;
+    BankUrl url;
+    TransactionsCount count = 0U;
 };
 
 struct Account : public AmountStats {
     RowID id = 0;
     BankName bank;
     BankAgency agency;
+    AccountNumber number;
     AccountType type;
     AccountName name;
-    AccountNumber number;
-    AccounBaseSolde base_solde = 0.0;
+    AccountBaseSolde base_solde = 0.0;
+    TransactionsCount count = 0U;
+};
+
+struct Entity : public AmountStats {
+    RowID id = 0;
+    EntityName name;
+    TransactionsCount count = 0U;
+};
+
+struct Category : public AmountStats {
+    RowID id = 0;
+    CategoryName name;
+    TransactionsCount count = 0U;
+};
+
+struct Operation : public AmountStats {
+    RowID id = 0;
+    OperationName name;
     TransactionsCount count = 0U;
 };
 
@@ -144,6 +148,7 @@ struct Transaction {
     TransactionDateEpoch epoch = 0;
     TransactionDescription description;
     TransactionComment comment;
+    size_t comment_first_line_end_pos = 0;
     TransactionDebit debit = 0.0;
     TransactionCredit credit = 0.0;
     TransactionAmount amount = 0.0;

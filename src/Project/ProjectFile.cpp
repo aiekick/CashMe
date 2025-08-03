@@ -27,6 +27,8 @@ limitations under the License.
 #include <LayoutManager.h>
 #include <Panes/StatsPane.h>
 #include <Panes/StatementsPane.h>
+#include <Panes/BanksPane.h>
+#include <Panes/AccountsPane.h>
 #include <Panes/EntitiesPane.h>
 #include <Panes/IncomesPane.h>
 #include <Panes/CategoriesPane.h>
@@ -107,6 +109,8 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                     m_IsLoaded = true;
                     StatementsPane::Instance()->Load();
                     StatsPane::Instance()->Load();
+                    BanksPane::Instance()->Load();
+                    AccountsPane::Instance()->Load();
                     EntitiesPane::Instance()->Load();
                     CategoriesPane::Instance()->Load();
                     OperationsPane::Instance()->Load();

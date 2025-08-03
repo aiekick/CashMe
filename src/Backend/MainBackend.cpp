@@ -241,7 +241,7 @@ void MainBackend::m_MainLoop() {
 
         // maintain active, prevent user change via imgui dialog
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;    // Enable Docking
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Disable Viewport
+        //ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Disable Viewport
 
         glfwPollEvents();
 
@@ -372,7 +372,7 @@ bool MainBackend::m_InitImGui() {
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;    // Enable Docking
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Enable Viewport
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Enable Viewport
     io.FontAllowUserScaling = true;                      // activate zoom feature with ctrl + mousewheel
 #ifdef USE_DECORATIONS_FOR_RESIZE_CHILD_WINDOWS
     io.ConfigViewportsNoDecoration = false;  // toujours mettre une frame aux fenetres enfants

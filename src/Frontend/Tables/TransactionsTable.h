@@ -37,6 +37,8 @@ private:
     double m_TotalDebit = 0.0;
     double m_TotalCredit = 0.0;
 
+    bool m_enableMultilineComment = false;
+
     std::array<ImWidgets::InputText, SearchColumns::SEARCH_COLUMN_Count> m_SearchInputTexts;
     std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> m_SearchTokens;
     FilteringMode m_FilteringMode = FilteringMode::FILTERING_MODE_BY_SEARCH;

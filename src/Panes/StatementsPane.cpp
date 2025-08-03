@@ -12,6 +12,7 @@
 #include <Panes/StatsPane.h>
 #include <Systems/SettingsDialog.h>
 #include <Panes/IncomesPane.h>
+#include <Panes/AccountsPane.h>
 
 StatementsPane::StatementsPane() = default;
 StatementsPane::~StatementsPane() {
@@ -66,6 +67,7 @@ bool StatementsPane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened,
                     m_TransactionsTable.drawSelectMenu(actionSystemRef);
                     m_TransactionsTable.drawGroupingMenu(actionSystemRef);
                     m_TransactionsTable.drawDebugMenu(actionSystemRef);
+                    m_TransactionsTable.drawMenu();
                     ImGui::EndMenuBar();
                 }
                 m_TransactionsTable.draw(ImGui::GetContentRegionAvail());
@@ -102,6 +104,7 @@ bool StatementsPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, con
 
     if (ret) {
         m_TransactionsTable.refreshDatas();
+        AccountsPane::Instance()->Load();
     }
 
     if (m_TransactionsTable.getIncomeDialogRef().draw(center)) {

@@ -1,7 +1,7 @@
 #include <Frontend/Tables/OperationsTable.h>
 #include <Models/DataBase.h>
 
-OperationsTable::OperationsTable() : ADataBarsTable("OperationsTable", 5) {
+OperationsTable::OperationsTable() : ADataBarsTable("OperationsTable", 6) {
 }
 
 bool OperationsTable::load() {
@@ -44,6 +44,7 @@ void OperationsTable::m_drawTableContent(const size_t& vIdx, const double& vMaxA
     m_drawColumnCredit(e.credit);
     m_drawColumnAmount(e.amount);
     m_drawColumnBars(e.amount, vMaxAmount, 100.0f);
+    m_drawColumnInt(e.count);
 }
 
 void OperationsTable::m_setupColumns() {
@@ -53,6 +54,7 @@ void OperationsTable::m_setupColumns() {
     ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Amount", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Bars", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableHeadersRow();
 }
 
@@ -70,16 +72,19 @@ void OperationsTable::m_updateOperations() {
         m_Operations.clear();
         DataBase::Instance()->GetOperationsStats(  //
             account_id,
-            [this](const RowID& vRowID,
-                   const OperationName& vOperationName,
-                   const TransactionDebit& vTransactionDebit,
-                   const TransactionCredit& vTransactionCredit) {  //
+            [this](
+                const RowID& vRowID,
+                const OperationName& vOperationName,
+                const TransactionDebit& vTransactionDebit,
+                const TransactionCredit& vTransactionCredit,
+                const TransactionsCount& vTransactionCount) {  //
                 Operation e;
                 e.id = vRowID;
                 e.name = vOperationName;
                 e.debit = vTransactionDebit;
                 e.credit = vTransactionCredit;
                 e.amount = vTransactionDebit + vTransactionCredit;
+                e.count = vTransactionCount;
                 m_Operations.push_back(e);
             });
     }

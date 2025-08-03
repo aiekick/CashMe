@@ -31,6 +31,8 @@ limitations under the License.
 #include <Panes/BudgetPane.h>
 #include <Panes/ConsolePane.h>
 #include <Panes/StatementsPane.h>
+#include <Panes/AccountsPane.h>
+#include <Panes/BanksPane.h>
 #include <Panes/IncomesPane.h>
 #include <Panes/EntitiesPane.h>
 #include <Panes/CategoriesPane.h>
@@ -82,6 +84,8 @@ bool MainFrontend::init() {
     LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console", "Panes", "BOTTOM", 0.25f, false, false);
     
     // Maintenance
+    LayoutManager::Instance()->AddPane(BanksPane::Instance(), "Banks", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::Instance()->AddPane(AccountsPane::Instance(), "Accounts", "Maintenance", "CENTRAL", 0.0f, false, false);
     LayoutManager::Instance()->AddPane(EntitiesPane::Instance(), "Entities", "Maintenance", "CENTRAL", 0.0f, false, false);
     LayoutManager::Instance()->AddPane(CategoriesPane::Instance(), "Categories", "Maintenance", "CENTRAL", 0.0f, false, false);
     LayoutManager::Instance()->AddPane(OperationsPane::Instance(), "Operations", "Maintenance", "CENTRAL", 0.0f, false, false);

@@ -100,7 +100,7 @@ void StatsPane::m_updateAccounts() {
                const AccountType& vAccountType,
                const AccountName& vAccountName,
                const AccountNumber& vAccountNumber,
-               const AccounBaseSolde& vBaseSolde,
+               const AccountBaseSolde& vBaseSolde,
                const TransactionsCount& vCount) {  //
             Account a;
             a.id = vRowID;
@@ -124,15 +124,18 @@ void StatsPane::m_updateEntities() {
         m_Entities.clear();
         DataBase::Instance()->GetEntitiesStats(  //
             account_id,
-            [this](const RowID& vRowID,
-                   const EntityName& vEntityName,
-                   const TransactionDebit& vTransactionDebit,
-                   const TransactionCredit& vTransactionCredit) {  //
+            [this](
+                const RowID& vRowID,
+                const EntityName& vEntityName,
+                const TransactionDebit& vTransactionDebit,
+                const TransactionCredit& vTransactionCredit,
+                const TransactionsCount& vTransactionsCount) {  //
                 Entity e;
                 e.id = vRowID;
                 e.name = vEntityName;
                 e.debit = vTransactionDebit;
                 e.credit = vTransactionCredit;
+                e.count = vTransactionsCount;
                 m_Entities.push_back(e);
             });
     }

@@ -21,35 +21,23 @@ void DataBase::AddTransaction(  //
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
     AddSource(vSourceName, vSourceType, vSourceSha);
-    auto insert_query = ez::str::toStr(
-        u8R"(
-INSERT OR IGNORE INTO transactions 
-    (account_id, entity_id, operation_id, category_id, source_id, date, description, comment, amount, confirmed, hash) VALUES(
-        %u, -- account id
-        (SELECT id FROM entities WHERE entities.name = "%s"), -- entity id
-        (SELECT id FROM operations WHERE operations.name = "%s"), -- operation id
-        (SELECT id FROM categories WHERE categories.name = "%s"), -- category id
-        (SELECT id FROM sources WHERE sources.sha = "%s"), -- source id
-        "%s", 
-        "%s",
-        "%s",
-        %.6f,
-        "%u",
-        "%s"
-        );)",
-        vAccountID,
-        vEntityName.c_str(),
-        vOperationName.c_str(),
-        vCategoryName.c_str(),
-        vSourceSha.c_str(),
-        vDate.c_str(),
-        vDescription.c_str(),
-        vComment.c_str(),
-        vAmount,
-        vConfirmed,
-        vHash.c_str());
+    auto insert_query =             //
+        ez::sqlite::QueryBuilder()  //
+            .setTable("transactions")
+            .addField("account_id", ez::str::toStr("%u", vAccountID))
+            .addFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vEntityName.c_str())
+            .addFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vOperationName.c_str())
+            .addFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vCategoryName.c_str())
+            .addFieldQuery("source_id", R"(SELECT id FROM sources WHERE sources.sha = "%s")", vSourceSha.c_str())
+            .addField("date", vDate)
+            .addField("description", vDescription)
+            .addField("comment", vComment)
+            .addField("amount", ez::str::toStr("%.6f", vAmount))
+            .addField("confirmed", ez::str::toStr("%u", vConfirmed))
+            .addField("hash", vHash)
+            .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a transaction in database : %s", m_LastErrorMsg);
+        LogVarError("Fail to insert a transaction in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
     }
 }
 

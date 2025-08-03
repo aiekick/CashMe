@@ -406,7 +406,7 @@ void IncomeDialog::m_UpdateAccounts() {
             const AccountType& vAccountType,
             const AccountName& vAccountName,
             const AccountNumber& vAccountNumber,
-            const AccounBaseSolde& vAccounBaseSolde,
+            const AccountBaseSolde& vAccounBaseSolde,
             const TransactionsCount& vTransactionsCount) {  //
             m_AccountsCombo.getArrayRef().push_back(vAccountNumber);
         });
