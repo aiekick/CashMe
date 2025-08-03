@@ -50,8 +50,9 @@ void DataBase::GetEntities(std::function<void(const EntityName&)> vCallback) {
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    const char* entity_name = (const char*)sqlite3_column_text(stmt, 0);
-                    vCallback(entity_name != nullptr ? entity_name : "");
+                    vCallback(                                 //
+                        ez::sqlite::readStringColumn(stmt, 0)  // EntityName
+                    );
                 }
             }
         }

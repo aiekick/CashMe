@@ -57,7 +57,7 @@ void TransactionDialog::m_drawContentCreation(const ImVec2& vPos) {
     m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
     m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
-    m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", false, align);
+    m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", true, align);
     ImGui::DisplayAlignedWidget(width, "Amount", align, [this]() { ImGui::InputDouble("##Amount", &m_TransactionAmountInputDouble); });
     ImGui::DisplayAlignedWidget(width, "Confirmed", align, [this]() { ImGui::CheckBoxBoolDefault("##Confirmed", &m_TransactionConfirmed, false); });
 }

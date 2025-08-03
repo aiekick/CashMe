@@ -144,23 +144,16 @@ ORDER BY accounts.id;
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    RowID account_id = sqlite3_column_int(stmt, 0);
-                    const char* bank_name = (const char*)sqlite3_column_text(stmt, 1);
-                    const char* bank_agency = (const char*)sqlite3_column_text(stmt, 2);
-                    const char* account_type = (const char*)sqlite3_column_text(stmt, 3);
-                    const char* account_name = (const char*)sqlite3_column_text(stmt, 4);
-                    const char* account_number = (const char*)sqlite3_column_text(stmt, 5);
-                    AccountBaseSolde account_base_solde = sqlite3_column_double(stmt, 6);
-                    TransactionsCount transactions_count = sqlite3_column_int(stmt, 7);
-                    vCallback(                                            //
-                        account_id,                                       //
-                        bank_name != nullptr ? bank_name : "",            //
-                        bank_agency != nullptr ? bank_agency : "",        //
-                        account_type != nullptr ? account_type : "",      //
-                        account_name != nullptr ? account_name : "",      //
-                        account_number != nullptr ? account_number : "",  //
-                        account_base_solde,                               //
-                        transactions_count);
+                    vCallback(
+                        sqlite3_column_int(stmt, 0),            // RowID
+                        ez::sqlite::readStringColumn(stmt, 1),  // BankName
+                        ez::sqlite::readStringColumn(stmt, 2),  // BankAgency
+                        ez::sqlite::readStringColumn(stmt, 3),  // AccountType
+                        ez::sqlite::readStringColumn(stmt, 4),  // AccountName
+                        ez::sqlite::readStringColumn(stmt, 5),  // AccountNumber
+                        sqlite3_column_double(stmt, 6),         // AccountBaseSolde
+                        sqlite3_column_int(stmt, 7)             // TransactionsCount
+                    );
                 }
             }
         }

@@ -50,8 +50,9 @@ void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    const char* operation_name = (const char*)sqlite3_column_text(stmt, 0);
-                    vCallback(operation_name != nullptr ? operation_name : "");
+                    vCallback(                                 //
+                        ez::sqlite::readStringColumn(stmt, 0)  // OperationName
+                    );
                 }
             }
         }

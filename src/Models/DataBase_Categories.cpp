@@ -50,8 +50,9 @@ void DataBase::GetCategories(std::function<void(const CategoryName&)> vCallback)
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    const char* category_name = (const char*)sqlite3_column_text(stmt, 0);
-                    vCallback(category_name != nullptr ? category_name : "");
+                    vCallback(                                 //
+                        ez::sqlite::readStringColumn(stmt, 0)  // CategoryName
+                    );
                 }
             }
         }

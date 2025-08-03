@@ -95,31 +95,20 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    RowID id = sqlite3_column_int(stmt, 0);
-                    auto entity = (const char*)sqlite3_column_text(stmt, 1);
-                    auto category = (const char*)sqlite3_column_text(stmt, 2);
-                    auto operation = (const char*)sqlite3_column_text(stmt, 3);
-                    auto source = (const char*)sqlite3_column_text(stmt, 4);
-                    auto date = (const char*)sqlite3_column_text(stmt, 5);
-                    TransactionDateEpoch date_epoch = sqlite3_column_int(stmt, 6);
-                    auto description = (const char*)sqlite3_column_text(stmt, 7);
-                    auto comment = (const char*)sqlite3_column_text(stmt, 8);
-                    TransactionAmount amount = sqlite3_column_double(stmt, 9);
-                    TransactionConfirmed confirmed = sqlite3_column_int(stmt, 10);
-                    auto hash = (const char*)sqlite3_column_text(stmt, 11);
-                    vCallback(                                      //
-                        id,                                         //
-                        entity != nullptr ? entity : "",            //
-                        category != nullptr ? category : "",        //
-                        operation != nullptr ? operation : "",      //
-                        source != nullptr ? source : "",            //
-                        date != nullptr ? date : "",                //
-                        date_epoch,                                 //
-                        description != nullptr ? description : "",  //
-                        comment != nullptr ? comment : "",          //
-                        amount,                                     //
-                        confirmed,                                  //
-                        hash);
+                    vCallback(
+                        sqlite3_column_int(stmt, 0),            // RowID
+                        ez::sqlite::readStringColumn(stmt, 1),  // EntityName
+                        ez::sqlite::readStringColumn(stmt, 2),  // CategoryName
+                        ez::sqlite::readStringColumn(stmt, 3),  // OperationName
+                        ez::sqlite::readStringColumn(stmt, 4),  // SourceName
+                        ez::sqlite::readStringColumn(stmt, 5),  // TransactionDate
+                        sqlite3_column_int(stmt, 6),            // TransactionDateEpoch
+                        ez::sqlite::readStringColumn(stmt, 7),  // TransactionDescription
+                        ez::sqlite::readStringColumn(stmt, 8),  // TransactionComment
+                        sqlite3_column_double(stmt, 9),         // TransactionAmount
+                        sqlite3_column_int(stmt, 10),           // TransactionConfirmed
+                        ez::sqlite::readStringColumn(stmt, 11)  // TransactionHash
+                    );
                 }
             }
         }
@@ -224,37 +213,37 @@ ORDER BY
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
                     RowID id = sqlite3_column_int(stmt, 0);
-                    const char* date = nullptr;
+                    std::string date;
                     if (vGroupBy == GroupBy::DATES) {
-                        date = (const char*)sqlite3_column_text(stmt, 1);
+                        date = ez::sqlite::readStringColumn(stmt, 1);
                     }
-                    const char* description = nullptr;
+                    std::string description;
                     if (vGroupBy == GroupBy::DESCRIPTIONS) {
-                        description = (const char*)sqlite3_column_text(stmt, 2);
+                        description = ez::sqlite::readStringColumn(stmt, 2);
                     }
-                    const char* entity = nullptr;
+                    std::string entity;
                     if (vGroupBy == GroupBy::ENTITIES) {
-                        entity = (const char*)sqlite3_column_text(stmt, 3);
+                        entity = ez::sqlite::readStringColumn(stmt, 3);
                     }
-                    const char* category = nullptr;
+                    std::string category;
                     if (vGroupBy == GroupBy::CATEGORIES) {
-                        category = (const char*)sqlite3_column_text(stmt, 4);
+                        category = ez::sqlite::readStringColumn(stmt, 4);
                     }
-                    const char* operation = nullptr;
+                    std::string operation;
                     if (vGroupBy == GroupBy::OPERATIONS) {
-                        operation = (const char*)sqlite3_column_text(stmt, 5);
+                        operation = ez::sqlite::readStringColumn(stmt, 5);
                     }
                     TransactionDebit debit = sqlite3_column_double(stmt, 6);
                     TransactionCredit credit = sqlite3_column_double(stmt, 7);
-                    vCallback(                                      //
-                        id,                                         //
-                        date != nullptr ? date : "",                //
-                        description != nullptr ? description : "",  //
-                        entity != nullptr ? entity : "",            //
-                        category != nullptr ? category : "",        //
-                        operation != nullptr ? operation : "",      //
-                        debit,                                      //
-                        credit);                                    //
+                    vCallback(        //
+                        id,           // RowID
+                        date,         // TransactionDate
+                        description,  // TransactionDescription
+                        entity,       // EntityName
+                        category,     // CategoryName
+                        operation,    // OperationName
+                        debit,        // TransactionDebit
+                        credit);      // TransactionCredit
                 }
             }
         }

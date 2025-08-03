@@ -100,35 +100,22 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    RowID id = sqlite3_column_int(stmt, 0);
-                    auto name = (const char*)sqlite3_column_text(stmt, 1);
-                    auto entity = (const char*)sqlite3_column_text(stmt, 2);
-                    auto category = (const char*)sqlite3_column_text(stmt, 3);
-                    auto operation = (const char*)sqlite3_column_text(stmt, 4);
-                    auto start_date = (const char*)sqlite3_column_text(stmt, 5);
-                    auto start_epoch = sqlite3_column_int64(stmt, 6);
-                    auto end_date = (const char*)sqlite3_column_text(stmt, 7);
-                    auto end_epoch = sqlite3_column_int64(stmt, 8);
-                    auto min_amount = sqlite3_column_double(stmt, 9);
-                    auto max_amount = sqlite3_column_double(stmt, 10);
-                    auto min_day = sqlite3_column_int(stmt, 11);
-                    auto max_day = sqlite3_column_int(stmt, 12);
-                    auto desc = (const char*)sqlite3_column_text(stmt, 13);
-                    vCallback(                                    //
-                        id,                                       //
-                        name != nullptr ? name : "",              //
-                        entity != nullptr ? entity : "",          //
-                        category != nullptr ? category : "",      //
-                        operation != nullptr ? operation : "",    //
-                        start_date != nullptr ? start_date : "",  //
-                        start_epoch,                              //
-                        end_date != nullptr ? end_date : "",      //
-                        end_epoch,                                //
-                        min_amount,                               //
-                        max_amount,                               //
-                        min_day,                                  //
-                        max_day,                                  //
-                        desc != nullptr ? desc : "");             //
+                    vCallback(
+                        sqlite3_column_int(stmt, 0),            //
+                        ez::sqlite::readStringColumn(stmt, 1),  //
+                        ez::sqlite::readStringColumn(stmt, 2),  //
+                        ez::sqlite::readStringColumn(stmt, 3),  //
+                        ez::sqlite::readStringColumn(stmt, 4),  //
+                        ez::sqlite::readStringColumn(stmt, 5),  //
+                        sqlite3_column_int64(stmt, 6),          //
+                        ez::sqlite::readStringColumn(stmt, 7),  //
+                        sqlite3_column_int64(stmt, 8),          //
+                        sqlite3_column_double(stmt, 9),         //
+                        sqlite3_column_double(stmt, 10),        //
+                        sqlite3_column_int(stmt, 11),           //
+                        sqlite3_column_int(stmt, 12),           //
+                        ez::sqlite::readStringColumn(stmt, 13)  //
+                    );
                 }
             }
         }

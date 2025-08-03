@@ -51,11 +51,10 @@ void DataBase::GetBanks(std::function<void(const BankName&, const BankUrl&)> vCa
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    const char* bank_name = (const char*)sqlite3_column_text(stmt, 0);
-                    const char* bank_url = (const char*)sqlite3_column_text(stmt, 1);
-                    vCallback(                                  //
-                        bank_name != nullptr ? bank_name : "",  //
-                        bank_url != nullptr ? bank_url : "");
+                    vCallback(
+                        ez::sqlite::readStringColumn(stmt, 0),  // BankName
+                        ez::sqlite::readStringColumn(stmt, 1)   // BankUrl
+                    );
                 }
             }
         }
