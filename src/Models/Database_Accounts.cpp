@@ -11,7 +11,9 @@ void DataBase::AddAccount(
     const AccountName& vAccountName,
     const AccountNumber& vAccountNumber,
     const AccountBaseSolde& vBaseSolde) {
-    AddBank(vBankName);
+    BankInput bi;
+    bi.name = vBankName;
+    AddBank(bi);
 
     auto insert_query =  //
         ez::sqlite::QueryBuilder()

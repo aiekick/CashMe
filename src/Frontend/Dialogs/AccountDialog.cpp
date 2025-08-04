@@ -174,8 +174,8 @@ void AccountDialog::m_drawContentDeletion(const ImVec2& vPos) {
 void AccountDialog::m_UpdateBanks() {
     m_BanksCombo.clear();
     DataBase::Instance()->GetBanks(                                       //
-        [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
-            m_BanksCombo.getArrayRef().push_back(vUserName);
+        [this](const BankOutput& vBankOutput) {  //
+            m_BanksCombo.getArrayRef().push_back(vBankOutput.datas.name);
         });
     m_BanksCombo.getIndexRef() = 0;
     m_BanksCombo.finalize();

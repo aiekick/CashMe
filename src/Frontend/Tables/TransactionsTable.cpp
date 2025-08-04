@@ -528,8 +528,8 @@ void TransactionsTable::m_GroupTransactions(const GroupingMode& vGroupingMode) {
 void TransactionsTable::m_UpdateBanks() {
     m_Datas.bankNames.clear();
     DataBase::Instance()->GetBanks(                                       //
-        [this](const BankName& vUserName, const std::string& /*vUrl*/) {  //
-            m_Datas.bankNames.push_back(vUserName);
+        [this](const BankOutput& vBankOutput) {  //
+            m_Datas.bankNames.push_back(vBankOutput.datas.name);
         });
 }
 

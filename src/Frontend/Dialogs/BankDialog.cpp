@@ -13,7 +13,7 @@ void BankDialog::unit() {
 
 }
 
-void BankDialog::setBank(const Bank& vBank) {
+void BankDialog::setBank(const BankOutput& vBank) {
     m_Bank = vBank;
 }
 
@@ -45,8 +45,8 @@ void BankDialog::m_prepare() {
         } break;
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: {
-            m_BankNameInputText.SetText(m_Bank.name);
-            m_BankUrlInputText.SetText(m_Bank.url);
+            m_BankNameInputText.SetText(m_Bank.datas.name);
+            m_BankUrlInputText.SetText(m_Bank.datas.url);
         } break;
         case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
@@ -100,9 +100,10 @@ void BankDialog::m_cancelDialog() {
 
 void BankDialog::m_confirmDialogCreation() {
     if (DataBase::Instance()->OpenDBFile()) {
-        DataBase::Instance()->AddBank(        //
-            m_BankNameInputText.GetText(),    //
-            m_BankUrlInputText.GetText());
+        BankInput bi;
+        bi.name = m_BankNameInputText.GetText();
+        bi.url = m_BankUrlInputText.GetText();
+        DataBase::Instance()->AddBank(bi);
         DataBase::Instance()->CloseDBFile();
     }
 }
@@ -116,10 +117,10 @@ void BankDialog::m_drawContentCreation(const ImVec2& vPos) {
 
 void BankDialog::m_confirmDialogUpdate() {
     if (DataBase::Instance()->OpenDBFile()) {
-        DataBase::Instance()->UpdateBank(     //
-            m_Bank.id,                        //
-            m_BankNameInputText.GetText(),    //
-            m_BankUrlInputText.GetText());
+        BankInput bi;
+        bi.name = m_BankNameInputText.GetText();
+        bi.url = m_BankUrlInputText.GetText();
+        DataBase::Instance()->UpdateBank(m_Bank.id, bi);
         DataBase::Instance()->CloseDBFile();
     }
 }

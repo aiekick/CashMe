@@ -5,7 +5,7 @@
 
 class BankDialog : public ADataDialog {
 private:
-    Bank m_Bank;
+    BankOutput m_Bank;
     ImWidgets::InputText m_BankNameInputText;
     ImWidgets::InputText m_BankUrlInputText;
 
@@ -13,7 +13,7 @@ public:
     BankDialog();
     bool init() override;
     void unit() override;
-    void setBank(const Bank& vBank);
+    void setBank(const BankOutput& vBank);
 
 protected:
     void m_drawContent(const ImVec2& vPos) override;

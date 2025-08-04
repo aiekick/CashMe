@@ -6,7 +6,7 @@
 
 class BanksTable : public ADataBarsTable {
 private:
-    std::vector<Bank> m_Banks;
+    std::vector<BankOutput> m_Banks;
     BankDialog m_BankDialog;
 
 public:

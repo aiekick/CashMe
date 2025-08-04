@@ -90,12 +90,12 @@ struct AmountStats {
     TransactionAmount amount = 0.0;
 };
 
-struct Bank : public AmountStats {
+/*struct Bank : public AmountStats {
     RowID id = 0;
     BankName name;
     BankUrl url;
     TransactionsCount count = 0U;
-};
+};*/
 
 struct Account : public AmountStats {
     RowID id = 0;
@@ -182,4 +182,148 @@ struct Budget {
     BudgetDateEpoch dateEpoch = 0;
     std::vector<Income> incomes;
     BudgetMinMax balance;
+};
+
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+////////////// NOUVELLES STRUCTURES ///////////////////////////
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+struct Amounts {
+    double debit = 0.0;
+    double credit = 0.0;
+    double amount = 0.0;
+};
+
+// BANK
+
+struct BankInput {
+    std::string name;
+    std::string url;
+};
+
+struct BankOutput {
+    RowID id = 0;
+    BankInput datas;
+    Amounts amounts;
+    uint32_t count = 0;
+};
+
+// ACCOUNT
+
+struct AccountInput {
+    std::string number;
+    RowID bank_id = 0;
+    std::string bank_agency;
+    std::string type;
+    std::string name;
+    double base_solde = 0.0;
+    std::string hash;
+};
+
+struct AccountOutput {
+    RowID id = 0;
+    AccountInput datas;
+    Amounts amounts;
+    std::string bankName;
+    std::string accountBranchNumber;
+    uint32_t transactionCout = 0;
+};
+
+// ENTITY
+
+struct EntityInput {
+    std::string name;
+};
+
+struct EntityOutput {
+    RowID id = 0;
+    EntityInput datas;
+    Amounts amounts;
+};
+
+// CATEGORY
+
+struct CategoryInput {
+    std::string name;
+};
+
+struct CategoryOutput {
+    RowID id = 0;
+    CategoryInput datas;
+    Amounts amounts;
+};
+
+// OPERATION
+
+struct OperationInput {
+    std::string name;
+};
+
+struct OperationOutput {
+    RowID id = 0;
+    OperationInput datas;
+    Amounts amounts;
+};
+
+// INCOME
+
+struct IncomeInput {
+    std::string name;
+    RowID accountID = 0;
+    RowID enitityID = 0;
+    RowID categoryID = 0;
+    RowID operationID = 0;
+    std::string startDate;
+    std::string endDate;
+    double minAmount = 0.0;
+    double maxAmount = 0.0;
+    uint32_t minDay = 0U;
+    uint32_t maxDay = 0U;
+    std::string description;
+};
+
+struct IncomeOutput {
+    RowID id = 0;
+    std::string name;
+    std::string accountBranchNumber;
+    std::string entityName;
+    std::string categoryName;
+    std::string operationName;
+    std::string startDate;
+    std::string endDate;
+    double minAmount = 0.0;
+    double maxAmount = 0.0;
+    uint32_t minDay = 0U;
+    uint32_t maxDay = 0U;
+    std::string description;
+};
+
+// TRANSACTION
+
+struct TransactionInput {
+    RowID accountID = 0;
+    RowID operationID = 0;
+    RowID categoryID = 0;
+    RowID enitityID = 0;
+    RowID sourceID = 0;
+    std::string date;
+    std::string description;
+    std::string comment;
+    double amount = 0.0;
+    int32_t confirmed = 0;
+    std::string hash;
+};
+
+struct TransactionOutput {
+    RowID id = 0;
+    std::string accountBranchNumber;
+    std::string entityName;
+    std::string categoryName;
+    std::string operationName;
+    std::string sourceName;
+    std::string dateEpoch;
+    std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> optimized;  //
+    bool isOk() { return id != 0; }
 };

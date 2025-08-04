@@ -179,7 +179,7 @@ public:
         const auto tbl = fillTable(vContainer);
         const auto stms = solveTableColumns(tbl);
 #if _DEBUG
-        printTable(stms);
+        // printTable(stms);
 #endif
         return extractStatements(stms, vSourceName);
     }

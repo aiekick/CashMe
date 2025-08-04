@@ -61,19 +61,12 @@ public:
 
     // BANK
 
-    void AddBank(const BankName& vBankName, const BankUrl& vUrl = {});
+    bool AddBank(const BankInput& vBankInput);
     bool GetBank(const BankName& vBankName, RowID& vOutRowID);
-    void GetBanks(std::function<void(const BankName&, const BankUrl&)> vCallback);
-    void GetBanksStats(  //
-        std::function<void(        //
-            const RowID&,
-            const BankName&,
-            const BankUrl&,
-            const TransactionDebit&,
-            const TransactionCredit&,
-            const TransactionsCount&)> vCallback);
-    void UpdateBank(const RowID& vRowID, const BankName& vBankName, const BankUrl& vUrl);
-    void DeleteBanks();
+    bool GetBanks(std::function<void(const BankOutput&)> vCallback);
+    bool GetBanksStats(std::function<void(const BankOutput&)> vCallback);
+    bool UpdateBank(const RowID& vRowID, const BankInput& vBankInput);
+    bool DeleteBanks();
 
     // ACCOUNT
 
@@ -305,7 +298,7 @@ public:
 
     void ComputeBudget(  //
         const RowID& vAccountID,
-        const uint32_t& vProjectedDays,
+        const BudgetProjectedDays& vProjectedDays,
         std::function<void(const Budget&)> vCallback);
 
 private:

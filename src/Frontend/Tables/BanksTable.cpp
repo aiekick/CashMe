@@ -33,17 +33,17 @@ RowID BanksTable::m_getItemRowID(const size_t& vIdx) const {
 }
 
 double BanksTable::m_getItemBarAmount(const size_t& vIdx) const {
-    return m_Banks.at(vIdx).amount;
+    return m_Banks.at(vIdx).amounts.amount;
 }
 
 void BanksTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) {
     const auto& e = m_Banks.at(vIdx);
-    m_drawColumnSelectable(vIdx, e.id, e.name);
-    m_drawColumnText(e.url);
-    m_drawColumnDebit(e.debit);
-    m_drawColumnCredit(e.credit);
-    m_drawColumnAmount(e.amount);
-    m_drawColumnBars(e.amount, vMaxAmount, 100.0f);
+    m_drawColumnSelectable(vIdx, e.id, e.datas.name);
+    m_drawColumnText(e.datas.url);
+    m_drawColumnDebit(e.amounts.debit);
+    m_drawColumnCredit(e.amounts.credit);
+    m_drawColumnAmount(e.amounts.amount);
+    m_drawColumnBars(e.amounts.amount, vMaxAmount, 100.0f);
     m_drawColumnInt(e.count);
 }
 
@@ -62,7 +62,7 @@ void BanksTable::m_setupColumns() {
 void BanksTable::m_drawContextMenuContent() {
     if (!m_getSelectedRows().empty()) {
         if (ImGui::MenuItem("Update selection")) {
-            Bank bank_to_update;
+            BankOutput bank_to_update;
             for (const auto& bank : m_Banks) {
                 if (m_IsRowSelected(bank.id)) {
                     bank_to_update = bank;
@@ -81,22 +81,8 @@ void BanksTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
 
 void BanksTable::m_updateBanks() {
     m_Banks.clear();
-    DataBase::Instance()->GetBanksStats(  //
-        [this](
-            const RowID& vRowID,
-            const BankName& vBankName,
-            const BankUrl& vBankUrl,
-            const TransactionDebit& vTransactionDebit,
-            const TransactionCredit& vTransactionCredit,
-            const TransactionsCount& vTransactionCount) {  //
-            Bank e;
-            e.id = vRowID;
-            e.name = vBankName;
-            e.url = vBankUrl;
-            e.debit = vTransactionDebit;
-            e.credit = vTransactionCredit;
-            e.amount = vTransactionDebit + vTransactionCredit;
-            e.count = vTransactionCount;
-            m_Banks.push_back(e);
+    DataBase::Instance()->GetBanksStats(         //
+        [this](const BankOutput& vBankOutput) {  //
+            m_Banks.push_back(vBankOutput);
         });
 }
