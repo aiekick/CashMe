@@ -285,7 +285,7 @@ CREATE TABLE transactions (
     operation_id INTEGER NOT NULL,
     source_id INTEGER NOT NULL,
     income_id INTEGER NULL,        -- lié a un income
-    income_confirmer INTEGER NULL, -- income lie, confirmé par le user
+    income_confirmed INTEGER NULL, -- income lie, confirmé par le user
     date DATE NOT NULL,
     description TEXT,
     comment TEXT,

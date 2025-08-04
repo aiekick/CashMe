@@ -31,7 +31,7 @@ bool DataBase::AddAccount(const BankName& vBankName, const AccountInput& vAccoun
                     .getHex())
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a Bank AccountOutput in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+        LogVarError("Fail to insert a Bank Account in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
         ret = false;
     }
     return ret;

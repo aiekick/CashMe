@@ -117,51 +117,12 @@ public:
 
     // INCOME
 
-    void AddIncome(  //
-        const RowID& vAccountID,
-        const IncomeName& vIncomeName,
-        const EntityName& vEntityName,
-        const CategoryName& vCategoryName,
-        const OperationName& vOperationName,
-        const IncomeDate& vStartDate,
-        const IncomeDate& vEndDate,
-        const IncomeAmount& vMinAmount,
-        const IncomeAmount& vMaxAmount,
-        const IncomeDay& vMinDays,
-        const IncomeDay& vMaxDays,
-        const IncomeDescription& vDescription);
-    void GetIncomes(  //
-        const RowID& vAccountID,
-        std::function<void(  //
-            const RowID&,
-            const IncomeName&,
-            const EntityName&,
-            const CategoryName&,
-            const OperationName&,
-            const IncomeDate&,
-            const IncomeDateEpoch&,
-            const IncomeDate&,
-            const IncomeDateEpoch&,
-            const IncomeAmount&,
-            const IncomeAmount&,
-            const IncomeDay&,
-            const IncomeDay&,
-            const IncomeDescription&)> vCallback);
-    void UpdateIncome(  //
-        const RowID& vRowID,
-        const IncomeName& vIncomeName,
-        const EntityName& vEntityName,
-        const CategoryName& vCategoryName,
-        const OperationName& vOperationName,
-        const IncomeDate& vStartDate,
-        const IncomeDate& vEndDate,
-        const IncomeAmount& vMinAmount,
-        const IncomeAmount& vMaxAmount,
-        const IncomeDay& vMinDays,
-        const IncomeDay& vMaxDays,
-        const IncomeDescription& vDescription);
-    void DeleteIncome(const RowID& vRowID);
-    void DeleteIncomes();
+    bool AddIncome(const RowID& vAccountID, const IncomeInput& vIncomeInput);
+    bool GetIncomes(const RowID& vAccountID, std::function<void(const IncomeOutput&)> vCallback);
+    bool UpdateIncome(const RowID& vRowID, const IncomeInput& vIncomeInput);
+    bool DeleteIncome(const RowID& vRowID);
+    bool DeleteIncomes(const std::set<RowID>& vRowIDs);
+    bool DeleteIncomes();
 
     // TRANSACTION
 
@@ -235,10 +196,10 @@ public:
 
     // BUDGET
 
-    void ComputeBudget(  //
+    bool ComputeBudget(  //
         const RowID& vAccountID,
         const BudgetProjectedDays& vProjectedDays,
-        std::function<void(const Budget&)> vCallback);
+        std::function<void(const BudgetOutput&)> vCallback);
 
 private:
     bool m_OpenDB();

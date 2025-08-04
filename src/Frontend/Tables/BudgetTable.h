@@ -8,18 +8,7 @@
 
 class BudgetTable : public ADataTable {
 private:
-    struct Datas {
-        std::vector<AccountOutput> accounts;
-        std::vector<AccountNumber> accountNumbers;
-        std::vector<Budget> budgets;
-        void clear() {
-            accounts.clear();
-            accountNumbers.clear();
-            budgets.clear();
-        }
-    } m_Datas;
-    // accounts display
-    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, AccountOutput>>> m_Accounts;
+    std::vector<BudgetOutput> m_budgets;
 
 public:
     BudgetTable();
@@ -44,7 +33,8 @@ protected:
     void m_setupColumns() final;
     void m_drawContextMenuContent() final;
     void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) final;
+    void m_refreshDatas() final;
+    void m_updateDatas(const RowID& vAccountID) final;
 
-    void m_UpdateAccounts();
-    void m_UpdateBudget(const RowID& vAccountID);
+    void m_UpdateBudget();
 };

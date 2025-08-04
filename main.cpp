@@ -41,16 +41,18 @@ int main(int argc, char** argv) {
 #endif
 #endif
 
-    try {
-        App app;
-        app.run(argc, argv);
-    } catch (const std::exception& e) {
-        LogVarLightInfo("Exception %s", e.what());
-        res = EXIT_FAILURE;
-        EZ_TOOLS_DEBUG_BREAK;
-    }
+    {
+        try {
+            App app;
+            app.run(argc, argv);
+        } catch (const std::exception& e) {
+            LogVarLightInfo("Exception %s", e.what());
+            res = EXIT_FAILURE;
+            EZ_TOOLS_DEBUG_BREAK;
+        }
 
-    ez::Log::Instance()->close();
+        ez::Log::Instance()->close();
+    }
 
 #ifdef _MSC_VER
 #ifdef _DEBUG

@@ -11,6 +11,7 @@
 typedef std::string DBFile;
 
 typedef uint32_t RowID;
+typedef int64_t DateEpoch;
 
 typedef std::string BankName;
 typedef std::string BankUrl;
@@ -90,24 +91,6 @@ struct AmountStats {
     TransactionAmount amount = 0.0;
 };
 
-struct Income {
-    RowID id = 0;
-    AccountNumber account;
-    EntityName entity;
-    CategoryName category;
-    OperationName operation;
-    IncomeName name;
-    IncomeDate startDate;
-    IncomeDateEpoch startDateEpoch = 0;
-    IncomeDate endDate;
-    IncomeDateEpoch endDateEpoch = 0;
-    IncomeAmount minAmount = 0.0;
-    IncomeAmount maxAmount = 0.0;
-    IncomeDay minDay = 0U;
-    IncomeDay maxDay = 0U;
-    IncomeDescription description;
-};
-
 struct Transaction {
     RowID id = 0;
     AccountNumber account;
@@ -130,22 +113,6 @@ struct Transaction {
     bool isOk() {
         return id != 0;
     }
-};
-
-struct BudgetMinMax {
-    MinValue localMin = 0.0;
-    MaxValue localMax = 0.0;
-    MinValue accumMin = 0.0;
-    MinValue accumMax = 0.0;
-};
-
-struct Budget {
-    RowID id = 0;
-    BudgetOffset offset = 0;
-    BudgetDate date;
-    BudgetDateEpoch dateEpoch = 0;
-    std::vector<Income> incomes;
-    BudgetMinMax balance;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -236,25 +203,8 @@ struct OperationOutput {
 // INCOME
 
 struct IncomeInput {
+    RowID account_id = 0;
     std::string name;
-    RowID accountID = 0;
-    RowID enitityID = 0;
-    RowID categoryID = 0;
-    RowID operationID = 0;
-    std::string startDate;
-    std::string endDate;
-    double minAmount = 0.0;
-    double maxAmount = 0.0;
-    uint32_t minDay = 0U;
-    uint32_t maxDay = 0U;
-    std::string description;
-    std::string sha;
-};
-
-struct IncomeOutput {
-    RowID id = 0;
-    std::string name;
-    std::string accountBranchNumber;
     std::string entityName;
     std::string categoryName;
     std::string operationName;
@@ -262,9 +212,20 @@ struct IncomeOutput {
     std::string endDate;
     double minAmount = 0.0;
     double maxAmount = 0.0;
-    uint32_t minDay = 0U;
+    int32_t minDay = 0U;
     uint32_t maxDay = 0U;
     std::string description;
+    std::string sha;
+};
+
+struct IncomeOutput {
+    RowID id = 0;
+    AccountNumber accountNumber;
+    IncomeInput datas;
+    DateEpoch startEpoch;
+    DateEpoch endEpoch;
+    Amounts amounts;
+    uint32_t count = 0;
 };
 
 // TRANSACTION
@@ -293,4 +254,23 @@ struct TransactionOutput {
     std::string dateEpoch;
     std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> optimized;  //
     bool isOk() { return id != 0; }
+};
+
+// BUDGET
+
+struct BudgetMinMax {
+    MinValue min = 0.0;
+    MaxValue max = 0.0;
+};
+
+struct BudgetOutput {
+    RowID id = 0;
+    std::string date;
+    DateEpoch dateEpoch = 0;
+    BudgetMinMax delta;
+    BudgetMinMax solde;
+    std::string incomesMin;
+    std::string incomesMinAmount;
+    std::string incomesMax;
+    std::string incomesMaxAmount;
 };

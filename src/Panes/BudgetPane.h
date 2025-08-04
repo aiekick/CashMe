@@ -5,11 +5,12 @@
 #include <memory>
 #include <string>
 
-#include <Frontend/Tables/EntitiesTable.h>
+#include <Frontend/Tables/BudgetTable.h>
 
 class ProjectFile;
 class BudgetPane : public AbstractPane {
 private:
+    BudgetTable m_BudgetTable;
 
 public:
     bool Init() override;

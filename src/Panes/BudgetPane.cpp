@@ -22,8 +22,7 @@ void BudgetPane::Unit() {
 }
 
 void BudgetPane::Load() {
-   // m_AccountsTable.load();
-
+   m_BudgetTable.load();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +44,8 @@ bool BudgetPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiCo
 #endif
 
             if (ProjectFile::Instance()->IsProjectLoaded()) {
-
+                m_BudgetTable.drawMenu();
+                m_BudgetTable.draw(ImGui::GetContentRegionAvail());
             }
         }
 
