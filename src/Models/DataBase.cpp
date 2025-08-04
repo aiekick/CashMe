@@ -211,27 +211,29 @@ void DataBase::m_CreateDBTables(const bool& vPrintLogs) {
             u8R"(
 CREATE TABLE banks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     address TEXT,
-    url TEXT
+    url TEXT,
+    sha TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    number TEXT NOT NULL UNIQUE,
+    number TEXT NOT NULL,
     bank_id INTEGER NOT NULL,
     bank_agency TEXT,
     type TEXT NOT NULL,
     name TEXT NOT NULL,
     base_solde REAL,
+    sha TEXT NOT NULL UNIQUE,
     FOREIGN KEY (bank_id) REFERENCES banks(id)
 );
 
 CREATE TABLE sources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     type TEXT NOT NULL,
-    sha TEXT NOT NULL
+    sha TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE entities (
@@ -264,6 +266,7 @@ CREATE TABLE incomes (
     min_day INTEGER, -- min day from the first day of month, can be negative (for represent last month days)
     max_day INTEGER, -- max day from the first day of month, can be the same as min 
     description TEXT,
+    sha TEXT NOT NULL UNIQUE,
     -- links
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     FOREIGN KEY (entity_id) REFERENCES entities(id),
@@ -288,7 +291,7 @@ CREATE TABLE transactions (
     comment TEXT,
     amount REAL NOT NULL,
     confirmed INTEGER,
-    hash TEXT NOT NULL UNIQUE,
+    sha TEXT NOT NULL UNIQUE,
     FOREIGN KEY (account_id) REFERENCES accounts(id),
     FOREIGN KEY (operation_id) REFERENCES operations(id),
     FOREIGN KEY (category_id) REFERENCES categories(id),

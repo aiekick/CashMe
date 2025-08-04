@@ -70,55 +70,13 @@ public:
 
     // ACCOUNT
 
-    void AddAccount(  //
-        const BankName& vBankName,
-        const BankAgency& vBankAgency,
-        const AccountType& vAccountType,
-        const AccountName& vAccountName,
-        const AccountNumber& vAccountNumber,
-        const AccountBaseSolde& vBaseSolde);
-    bool GetAccount(  //
-        const AccountNumber& vAccountNumber,
-        RowID& vOutRowID);
-    bool GetAccount(  //
-        const BankName& vBankName,
-        const BankAgency& vBankAgency,
-        const AccountType& vAccountType,
-        const AccountName& vAccountName,
-        const AccountNumber& vAccountNumber,
-        RowID& vOutRowID);
-    void GetAccounts(        //
-        std::function<void(  //
-            const RowID&,
-            const BankName&,
-            const BankAgency&,
-            const AccountType&,
-            const AccountName&,
-            const AccountNumber&,
-            const AccountBaseSolde&,
-            const TransactionsCount&)> vCallback);
-    void GetAccountsStats(   //
-        std::function<void(  //
-            const RowID&,
-            const BankName&,
-            const BankAgency&,
-            const AccountNumber&,
-            const AccountType&,
-            const AccountName&,
-            const AccountBaseSolde&,
-            const TransactionDebit&,
-            const TransactionCredit&,
-            const TransactionsCount&)> vCallback);
-    void UpdateAccount(  //
-        const RowID& vRowID,
-        const BankName& vBankName,
-        const BankAgency& vBankAgency,
-        const AccountType& vAccountType,
-        const AccountName& vAccountName,
-        const AccountNumber& vAccountNumber,
-        const AccountBaseSolde& vBaseSolde);
-    void DeleteAccount(const RowID& vRowID);
-    void DeleteAccounts();
+    bool AddAccount(const BankName& vBankName, const AccountInput& vAccountInput);
+    bool GetAccount(const AccountNumber& vAccountNumber, RowID& vOutRowID);
+    bool GetAccounts(std::function<void(const AccountOutput&)> vCallback);
+    bool GetAccountsStats(std::function<void(const AccountOutput&)> vCallback);
+    bool UpdateAccount(const RowID& vRowID, const AccountOutput& vAccountOutput);
+    bool DeleteAccount(const RowID& vRowID);
+    bool DeleteAccounts();
 
     // ENTITY
 
@@ -239,7 +197,7 @@ public:
         const TransactionComment& vComment,
         const TransactionAmount& vAmount,
         const TransactionConfirmed& vConfirmed,
-        const TransactionHash& vHash);
+        const TransactionSha& vSha);
     void GetTransactions(  //
         const RowID& vAccountID,
         std::function<void(  //
@@ -254,7 +212,7 @@ public:
             const TransactionComment&,
             const TransactionAmount&,
             const TransactionConfirmed&,
-            const TransactionHash&)> vCallback);
+            const TransactionSha&)> vCallback);
     void GetGroupedTransactions(  //
         const RowID& vAccountID,
         const GroupBy& vGroupBy,
@@ -286,7 +244,7 @@ public:
         const TransactionComment& vComment,
         const TransactionAmount& vAmount,
         const TransactionConfirmed& vConfirmed,
-        const TransactionHash& vHash);
+        const TransactionSha& vSha);
     void ConfirmTransaction(  //
         const RowID& vRowID,
         const TransactionConfirmed& vConfirmed);

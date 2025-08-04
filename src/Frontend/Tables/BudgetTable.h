@@ -9,7 +9,7 @@
 class BudgetTable : public ADataTable {
 private:
     struct Datas {
-        std::vector<Account> accounts;
+        std::vector<AccountOutput> accounts;
         std::vector<AccountNumber> accountNumbers;
         std::vector<Budget> budgets;
         void clear() {
@@ -19,7 +19,7 @@ private:
         }
     } m_Datas;
     // accounts display
-    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
+    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, AccountOutput>>> m_Accounts;
 
 public:
     BudgetTable();

@@ -267,11 +267,11 @@ void TransactionDialog::m_confirmDialogCreation() {
     RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
-            const auto hash = ez::str::toStr(  //
+            const auto sha = ez::str::toStr(  //
                 "%s_%s_%f",               //
                 m_TransactionDateInputText.GetText().c_str(),
                 // un fichier ofc ne peut pas avoir des labels de longueur > a 30
-                // alors on limite le hash a utiliser un label de 30
+                // alors on limite le sha a utiliser un label de 30
                 // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
                 m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
                 m_TransactionAmountInputDouble);              // must be unique per oepration
@@ -288,7 +288,7 @@ void TransactionDialog::m_confirmDialogCreation() {
                 m_TransactionCommentInputText.GetText(),      //
                 m_TransactionAmountInputDouble,               //
                 false,                                        //
-                hash);
+                sha);
             DataBase::Instance()->CloseDBFile();
         }
     }
@@ -298,11 +298,11 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
     RowID account_id = 0U;
     if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::Instance()->OpenDBFile()) {
-            const auto hash = ez::str::toStr(  //
+            const auto sha = ez::str::toStr(  //
                 "%s_%s_%f",               //
                 m_TransactionDateInputText.GetText().c_str(),
                 // un fichier ofc ne peut pas avoir des labels de longueur > a 30
-                // alors on limite le hash a utiliser un label de 30
+                // alors on limite le sha a utiliser un label de 30
                 // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
                 m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
                 m_TransactionAmountInputDouble);  // must be unique per operation
@@ -320,7 +320,7 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
                 m_TransactionCommentInputText.GetText(),      //
                 m_TransactionAmountInputDouble,               //
                 false,                                        //
-                hash);
+                sha);
             DataBase::Instance()->CloseDBFile();
         }
     }
@@ -367,7 +367,7 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
                         t.comment,                            //
                         t.amount,                             //
                         t.confirmed,                          //
-                        t.hash);
+                        t.sha);
                 }
                 DataBase::Instance()->CommitTransaction();
             }
@@ -388,16 +388,9 @@ void TransactionDialog::m_confirmDialogDeletion() {
 
 void TransactionDialog::m_UpdateAccounts() {
     m_AccountsCombo.clear();
-    DataBase::Instance()->GetAccounts(  //
-        [this](const RowID& vRowID,
-               const BankName& vBankName,
-               const BankAgency& vBankAgency,
-               const AccountType& vAccountType,
-               const AccountName& vAccountName,
-               const AccountNumber& vAccountNumber,
-               const AccountBaseSolde& vAccounBaseSolde,
-               const TransactionsCount& vTransactionsCount) {  //
-            m_AccountsCombo.getArrayRef().push_back(vAccountNumber);
+    DataBase::Instance()->GetAccounts(                 //
+        [this](const AccountOutput& vAccountOutput) {  //
+            m_AccountsCombo.getArrayRef().push_back(vAccountOutput.datas.number);
         });
     m_AccountsCombo.getIndexRef() = 0;
 }

@@ -8,7 +8,7 @@ private:
     const char* m_TableName;
     const int32_t m_ColummCount;
     ImWidgets::QuickStringCombo m_AccountsCombo;
-    std::vector<Account> m_Accounts;
+    std::vector<AccountOutput> m_Accounts;
     ImGuiListClipper m_ListClipper;
     float m_TextHeight = 0.0f;
     std::set<RowID> m_SelectedItems;

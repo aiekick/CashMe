@@ -377,7 +377,7 @@ void TransactionsTable::drawAccountsMenu(FrameActionSystem& vFrameActionSystem) 
                                     ImGui::TableNextColumn();
                                     ImGui::PushID(&a);
                                     {
-                                        if (ImGui::Selectable(a.number.c_str(), m_getAccountComboRef().getIndex() == idx, ImGuiSelectableFlags_SpanAllColumns)) {
+                                        if (ImGui::Selectable(a.datas.number.c_str(), m_getAccountComboRef().getIndex() == idx, ImGuiSelectableFlags_SpanAllColumns)) {
                                             m_ResetSelection();
                                             m_UpdateTransactions(a.id);
                                             m_getAccountComboRef().getIndexRef() = idx;
@@ -386,10 +386,10 @@ void TransactionsTable::drawAccountsMenu(FrameActionSystem& vFrameActionSystem) 
                                     ImGui::PopID();
 
                                     ImGui::TableNextColumn();
-                                    ImGui::Text("%s", a.name.c_str());
+                                    ImGui::Text("%s", a.datas.name.c_str());
 
                                     ImGui::TableNextColumn();
-                                    ImGui::Text("%s", a.type.c_str());
+                                    ImGui::Text("%s", a.datas.type.c_str());
 
                                     ImGui::TableNextColumn();
                                     ImGui::Text("%u", a.count);
@@ -561,27 +561,11 @@ void TransactionsTable::m_UpdateAccounts() {
     m_Accounts.clear();
     m_Datas.accounts.clear();
     m_Datas.accountNumbers.clear();
-    DataBase::Instance()->GetAccounts(  //
-        [this](const RowID& vRowID,
-               const BankName& vBankName,
-               const BankAgency& vBankAgency,
-               const AccountType& vAccountType,
-               const AccountName& vAccountName,
-               const AccountNumber& vAccountNumber,
-               const AccountBaseSolde& vBaseSolde,
-               const TransactionsCount& vCount) {  //
-            Account a;
-            a.id = vRowID;
-            a.bank = vBankName;
-            a.agency = vBankAgency;
-            a.type = vAccountType;
-            a.name = vAccountName;
-            a.number = vAccountNumber;
-            a.base_solde = vBaseSolde;
-            a.count = vCount;
-            m_Datas.accounts.push_back(a);
-            m_Datas.accountNumbers.push_back(vAccountNumber);
-            m_Accounts[vBankName + "##BankName"][vBankAgency + "##BankAgency"][vAccountNumber] = a;
+    DataBase::Instance()->GetAccounts(                 //
+        [this](const AccountOutput& vAccountOutput) {  //
+            m_Datas.accounts.push_back(vAccountOutput);
+            m_Datas.accountNumbers.push_back(vAccountOutput.datas.number);
+            m_Accounts[vAccountOutput.bankName + "##BankName"][vAccountOutput.datas.bank_agency + "##BankAgency"][vAccountOutput.datas.number] = vAccountOutput;
         });
     if (m_getAccountComboRef().getIndex() < m_Datas.accounts.size()) {
         m_UpdateTransactions(m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id);
@@ -592,8 +576,8 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
     m_Datas.transactions.clear();
     const auto& zero_based_account_id = vAccountID - 1;
     if (zero_based_account_id < m_Datas.accounts.size()) {
-        double solde = m_CurrentBaseSolde = m_Datas.accounts.at(zero_based_account_id).base_solde;
-        const auto& account_number = m_Datas.accounts.at(zero_based_account_id).number;
+        double solde = m_CurrentBaseSolde = m_Datas.accounts.at(zero_based_account_id).datas.base_solde;
+        const auto& account_number = m_Datas.accounts.at(zero_based_account_id).datas.number;
         if (m_IsGroupingModeTransactions()) {
             DataBase::Instance()->GetTransactions(  //
                 vAccountID,                         //
@@ -609,7 +593,7 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                     const TransactionComment& vComment,
                     const TransactionAmount& vAmount,
                     const TransactionConfirmed& vConfirmed,
-                    const TransactionHash& vHash) {  //
+                    const TransactionSha& vSha) {  //
                     solde += vAmount;
                     Transaction t;
                     t.id = vTransactionID;
@@ -621,7 +605,7 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                     t.optimized[4] = ez::str::toLower(t.category = vCategoryName);
                     t.optimized[5] = ez::str::toLower(t.operation = vOperationName);
                     t.epoch = vDateEpoch;
-                    t.hash = vHash;
+                    t.sha = vSha;
                     t.source = vSourceName;
                     t.debit = vAmount < 0.0 ? vAmount : 0.0;
                     t.credit = vAmount > 0.0 ? vAmount : 0.0;

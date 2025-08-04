@@ -13,7 +13,7 @@ private:
         std::vector<EntityName> entityNames;
         std::vector<CategoryName> categoryNames;
         std::vector<OperationName> operationNames;
-        std::vector<Account> accounts;
+        std::vector<AccountOutput> accounts;
         std::vector<AccountNumber> accountNumbers;
         std::vector<Transaction> transactions;
         std::vector<Transaction> transactions_filtered;
@@ -45,7 +45,7 @@ private:
     GroupingMode m_GroupingMode = GroupingMode::GROUPING_MODE_TRANSACTIONS;
 
     // accounts display
-    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
+    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, AccountOutput>>> m_Accounts;
 
 public:
     TransactionsTable();

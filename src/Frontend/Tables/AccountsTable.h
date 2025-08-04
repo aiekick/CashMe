@@ -6,7 +6,7 @@
 
 class AccountsTable : public ADataBarsTable {
 private:
-    std::vector<Account> m_Accounts;
+    std::vector<AccountOutput> m_Accounts;
     AccountDialog m_AccountDialog;
 
 public:

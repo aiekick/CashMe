@@ -45,7 +45,7 @@ public:
 
 private:
     void m_importFromFiles(const std::vector<std::string>& vFiles);
-    void m_drawAccountMenu(const Account& vAccount);
+    void m_drawAccountMenu(const AccountOutput& vAccount);
     void m_drawCreationMenu();
     void m_drawImportMenu(FrameActionSystem& vFrameActionSystem);
     void m_getAvailableDataBrokers();

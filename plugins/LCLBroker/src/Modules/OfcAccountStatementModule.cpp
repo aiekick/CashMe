@@ -101,21 +101,21 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                             .add(trans.trans.source_type)
                             .finalize()
                             .getHex();
-                    trans.trans.hash =  //
+                    trans.trans.sha =  //
                         ez::sha1()
                             .add(trans.trans.date)
                             // un fichier ofc ne peut pas avoir des description de longueur > a 30
-                            // alors on limite le hash a utiliser un description de 30
+                            // alors on limite le sha a utiliser un description de 30
                             // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
                             .add(trans.trans.description.substr(0, 30))
                             // must be unique per oepration
                             .addValue(trans.trans.amount)
                             .finalize()
                             .getHex();
-                    if (transactions.find(trans.trans.hash) != transactions.end()) {
-                        ++transactions.at(trans.trans.hash).doublons;
+                    if (transactions.find(trans.trans.sha) != transactions.end()) {
+                        ++transactions.at(trans.trans.sha).doublons;
                     } else {
-                        transactions[trans.trans.hash] = trans;
+                        transactions[trans.trans.sha] = trans;
                     }
                     trans = {};
                     is_a_stmt = false;
@@ -140,7 +140,7 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
                     trans.trans.comment = line;
                 } else if (line.find("<FITID>") != std::string::npos) {
                     ez::str::replaceString(line, "<FITID>", "");
-                    //trans.hash = line;
+                    //trans.sha = line;
                 } else if (line.find("<CHKNUM>") != std::string::npos) {
                     ez::str::replaceString(line, "<CHKNUM>", "");
                     trans.trans.operation = "CHEQUE";
@@ -153,7 +153,7 @@ Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std
         for (const auto& t : transactions) {
             auto trans = t.second;
             for (uint32_t idx = 0U; idx < trans.doublons; ++idx) {
-                trans.trans.hash = t.second.trans.hash + ez::str::toStr("_%u", idx);
+                trans.trans.sha = t.second.trans.sha + ez::str::toStr("_%u", idx);
                 ret.statements.push_back(trans.trans);
             }
         }

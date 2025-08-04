@@ -2,6 +2,7 @@
 #include <sqlite3.hpp>
 #include <ezlibs/ezSqlite.hpp>
 #include <ezlibs/ezLog.hpp>
+#include <ezlibs/ezSha.hpp>
 
 void DataBase::AddIncome(
     const RowID& vAccountID,
@@ -35,6 +36,23 @@ void DataBase::AddIncome(
             .addField("min_day", vMinDays)
             .addField("max_day", vMaxDays)
             .addField("description", vDescription)
+            .addField(
+                "sha",
+                ez::sha1()
+                    .addValue(vAccountID)
+                    .add(vIncomeName)
+                    .add(vEntityName)
+                    .add(vCategoryName)
+                    .add(vOperationName)
+                    .add(vStartDate)
+                    .add(vEndDate)
+                    .addValue(vMinAmount)
+                    .addValue(vMaxAmount)
+                    .addValue(vMinDays)
+                    .addValue(vMaxDays)
+                    .add(vDescription)
+                    .finalize()
+                    .getHex())
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert an income in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());

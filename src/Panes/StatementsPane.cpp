@@ -1,5 +1,5 @@
 // This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Account Analyzer for C, C++ and C#: http://www.viva64.com
+// PVS-Studio Static AccountOutput Analyzer for C, C++ and C#: http://www.viva64.com
 
 #include <Panes/StatementsPane.h>
 
@@ -227,7 +227,7 @@ void StatementsPane::m_clear() {
     m_TransactionsTable.clear();
 }
 
-void StatementsPane::m_drawAccountMenu(const Account& vAccount) {
+void StatementsPane::m_drawAccountMenu(const AccountOutput& vAccount) {
     ImGui::PushID(vAccount.id);
     if (ImGui::BeginPopupContextItem(               //
             NULL,                                   //

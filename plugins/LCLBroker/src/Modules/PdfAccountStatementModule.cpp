@@ -441,21 +441,21 @@ private:
                 .add(trans.trans.source_type)
                 .finalize()
                 .getHex();
-        trans.trans.hash =  //
+        trans.trans.sha =  //
             ez::sha1()
                 .add(trans.trans.date)
                 // un fichier ofc ne peut pas avoir des description de longueur > a 30
-                // alors on limite le hash a utiliser un description de 30
+                // alors on limite le sha a utiliser un description de 30
                 // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
                 .add(trans.trans.description.substr(0, 30))
                 // must be unique per oepration
                 .addValue(trans.trans.amount)
                 .finalize()
                 .getHex();
-        if (vContainer.find(trans.trans.hash) != vContainer.end()) {
-            ++vContainer.at(trans.trans.hash).doublons;
+        if (vContainer.find(trans.trans.sha) != vContainer.end()) {
+            ++vContainer.at(trans.trans.sha).doublons;
         } else {
-            vContainer[trans.trans.hash] = trans;
+            vContainer[trans.trans.sha] = trans;
         }
         return true;
     }
@@ -593,7 +593,7 @@ private:
             for (const auto &t : transactions) {
                 auto trans = t.second;
                 for (uint32_t idx = 0U; idx < trans.doublons; ++idx) {
-                    trans.trans.hash = t.second.trans.hash + ez::str::toStr("_%u", idx);
+                    trans.trans.sha = t.second.trans.sha + ez::str::toStr("_%u", idx);
                     ret.statements.push_back(trans.trans);
                 }
             }

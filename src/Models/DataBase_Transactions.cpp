@@ -16,7 +16,7 @@ void DataBase::AddTransaction(  //
     const TransactionComment& vComment,
     const TransactionAmount& vAmount,
     const TransactionConfirmed& vConfirmed,
-    const TransactionHash& vHash) {
+    const TransactionSha& vSha) {
     AddEntity(vEntityName);
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
@@ -34,7 +34,7 @@ void DataBase::AddTransaction(  //
             .addField("comment", vComment)
             .addField("amount", ez::str::toStr("%.6f", vAmount))
             .addField("confirmed", ez::str::toStr("%u", vConfirmed))
-            .addField("hash", vHash)
+            .addField("sha", vSha)
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a transaction in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
@@ -55,7 +55,7 @@ void DataBase::GetTransactions(  //
         const TransactionComment&,
         const TransactionAmount&,
         const TransactionConfirmed&,
-        const TransactionHash&)> vCallback) {
+        const TransactionSha&)> vCallback) {
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     auto select_query = ez::str::toStr(
@@ -72,7 +72,7 @@ SELECT
   transactions.comment,
   transactions.amount,
   transactions.confirmed,
-  transactions.hash
+  transactions.sha
 FROM
   transactions
   LEFT JOIN accounts ON transactions.account_id = accounts.id
@@ -107,7 +107,7 @@ ORDER BY
                         ez::sqlite::readStringColumn(stmt, 8),  // TransactionComment
                         sqlite3_column_double(stmt, 9),         // TransactionAmount
                         sqlite3_column_int(stmt, 10),           // TransactionConfirmed
-                        ez::sqlite::readStringColumn(stmt, 11)  // TransactionHash
+                        ez::sqlite::readStringColumn(stmt, 11)  // TransactionSha
                     );
                 }
             }
@@ -336,7 +336,7 @@ void DataBase::UpdateTransaction(  //
     const TransactionComment& vComment,
     const TransactionAmount& vAmount,
     const TransactionConfirmed& vConfirmed,
-    const TransactionHash& vHash) {
+    const TransactionSha& vSha) {
     auto insert_query = ez::str::toStr(
         u8R"(
 UPDATE 
@@ -351,7 +351,7 @@ SET
   comment = "%s",
   amount = %.6f,
   confirmed = %u,
-  hash = "%s"
+  sha = "%s"
 WHERE
   transactions.id = %u;
 )",
@@ -364,7 +364,7 @@ WHERE
         vComment.c_str(),
         vAmount,
         vConfirmed,
-        vHash.c_str(),
+        vSha.c_str(),
         vRowID);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a transaction in database : %s", m_LastErrorMsg);

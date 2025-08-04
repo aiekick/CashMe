@@ -5,7 +5,7 @@
 
 class AccountDialog : public ADataDialog {
 private:
-    Account m_Account;
+    AccountOutput m_Account;
     ImWidgets::QuickStringEditCombo m_BanksCombo;
     ImWidgets::InputText m_BankAgencyInputText;
     ImWidgets::InputText m_AccountNameInputText;
@@ -18,7 +18,7 @@ public:
     AccountDialog();
     bool init() override;
     void unit() override;
-    void setAccount(const Account& vAccount);
+    void setAccount(const AccountOutput& vAccount);
 
 protected:
     void m_drawContent(const ImVec2& vPos) override;

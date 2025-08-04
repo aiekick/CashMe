@@ -11,7 +11,7 @@
 class IncomesTable : public ADataTable {
 private:
     struct Datas {
-        std::vector<Account> accounts;
+        std::vector<AccountOutput> accounts;
         std::vector<AccountNumber> accountNumbers;
         std::vector<Income> incomes;
         void clear() {
@@ -22,7 +22,7 @@ private:
     } m_Datas;
     IncomeDialog m_IncomeDialog;
     // accounts display
-    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, Account>>> m_Accounts;
+    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, AccountOutput>>> m_Accounts;
 
 public:
     IncomesTable();

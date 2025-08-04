@@ -93,25 +93,9 @@ void StatsPane::m_drawMenu() {
 
 void StatsPane::m_updateAccounts() {
     m_Accounts.clear();
-    DataBase::Instance()->GetAccounts(  //
-        [this](const RowID& vRowID,
-               const BankName& vBankName,
-               const BankAgency& vBankAgency,
-               const AccountType& vAccountType,
-               const AccountName& vAccountName,
-               const AccountNumber& vAccountNumber,
-               const AccountBaseSolde& vBaseSolde,
-               const TransactionsCount& vCount) {  //
-            Account a;
-            a.id = vRowID;
-            a.bank = vBankName;
-            a.agency = vBankAgency;
-            a.type = vAccountType;
-            a.name = vAccountName;
-            a.number = vAccountNumber;
-            a.base_solde = vBaseSolde;
-            a.count = vCount;
-            m_Accounts.push_back(a);
+    DataBase::Instance()->GetAccounts(                 //
+        [this](const AccountOutput& vAccountOutput) {  //
+            m_Accounts.push_back(vAccountOutput);
         });
 }
 

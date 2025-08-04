@@ -73,26 +73,10 @@ ImWidgets::QuickStringCombo& ADataTable::m_getAccountComboRef() {
 void ADataTable::m_updateAccounts() {
     m_Accounts.clear();
     m_AccountsCombo.clear();
-    DataBase::Instance()->GetAccounts(  //
-        [this](const RowID& vRowID,
-               const BankName& vBankName,
-               const BankAgency& vBankAgency,
-               const AccountType& vAccountType,
-               const AccountName& vAccountName,
-               const AccountNumber& vAccountNumber,
-               const AccountBaseSolde& vBaseSolde,
-               const TransactionsCount& vCount) {  //
-            Account a;
-            a.id = vRowID;
-            a.bank = vBankName;
-            a.agency = vBankAgency;
-            a.type = vAccountType;
-            a.name = vAccountName;
-            a.number = vAccountNumber;
-            a.base_solde = vBaseSolde;
-            a.count = vCount;
-            m_Accounts.push_back(a);
-            m_AccountsCombo.getArrayRef().push_back(vAccountNumber);
+    DataBase::Instance()->GetAccounts(                 //
+        [this](const AccountOutput& vAccountOutput) {  //
+            m_Accounts.push_back(vAccountOutput);
+            m_AccountsCombo.getArrayRef().push_back(vAccountOutput.datas.number);
         });
     m_AccountsCombo.getIndexRef() = 0;
 }

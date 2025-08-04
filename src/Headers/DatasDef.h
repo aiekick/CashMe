@@ -41,7 +41,7 @@ typedef double TransactionCredit;
 typedef double TransactionSolde;
 typedef bool TransactionConfirmed;
 typedef uint32_t TransactionsCount;
-typedef std::string TransactionHash;
+typedef std::string TransactionSha;
 
 typedef std::string DataBrokerName;
 typedef std::string DataBrokerWay;
@@ -90,14 +90,17 @@ struct AmountStats {
     TransactionAmount amount = 0.0;
 };
 
-/*struct Bank : public AmountStats {
+/*
+struct Bank : public AmountStats {
     RowID id = 0;
     BankName name;
     BankUrl url;
     TransactionsCount count = 0U;
-};*/
+};
+*/
 
-struct Account : public AmountStats {
+/*
+struct AccountOutput : public AmountStats {
     RowID id = 0;
     BankName bank;
     BankAgency agency;
@@ -107,6 +110,7 @@ struct Account : public AmountStats {
     AccountBaseSolde base_solde = 0.0;
     TransactionsCount count = 0U;
 };
+*/
 
 struct Entity : public AmountStats {
     RowID id = 0;
@@ -161,7 +165,7 @@ struct Transaction {
     TransactionAmount amount = 0.0;
     TransactionSolde solde = 0.0;
     TransactionConfirmed confirmed = false;
-    TransactionHash hash;
+    TransactionSha sha;
     std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> optimized;  //
     bool isOk() {
         return id != 0;
@@ -201,6 +205,7 @@ struct Amounts {
 struct BankInput {
     std::string name;
     std::string url;
+    std::string sha;
 };
 
 struct BankOutput {
@@ -214,21 +219,19 @@ struct BankOutput {
 
 struct AccountInput {
     std::string number;
-    RowID bank_id = 0;
     std::string bank_agency;
     std::string type;
     std::string name;
     double base_solde = 0.0;
-    std::string hash;
+    std::string sha;
 };
 
 struct AccountOutput {
     RowID id = 0;
+    std::string bankName;
     AccountInput datas;
     Amounts amounts;
-    std::string bankName;
-    std::string accountBranchNumber;
-    uint32_t transactionCout = 0;
+    uint32_t count = 0;
 };
 
 // ENTITY
@@ -282,6 +285,7 @@ struct IncomeInput {
     uint32_t minDay = 0U;
     uint32_t maxDay = 0U;
     std::string description;
+    std::string sha;
 };
 
 struct IncomeOutput {
@@ -313,7 +317,7 @@ struct TransactionInput {
     std::string comment;
     double amount = 0.0;
     int32_t confirmed = 0;
-    std::string hash;
+    std::string sha;
 };
 
 struct TransactionOutput {

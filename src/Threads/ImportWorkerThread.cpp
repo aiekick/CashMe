@@ -203,7 +203,7 @@ void ImportWorkerThread::m_worker(  //
                                     stm.comment,
                                     stm.amount,
                                     stm.confirmed,
-                                    stm.hash);
+                                    stm.sha);
                                 vGenerationTime = (ez::time::getTicks() - mt0) / 1000.0f;
                                 if (!vWorking) {
                                     break;
