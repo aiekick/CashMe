@@ -24,16 +24,20 @@ limitations under the License.
 #include <ezlibs/ezLog.hpp>
 #include <ezlibs/ezTools.hpp>
 
+//#define ENABLE_MEM_CHECK
+
 int main(int argc, char** argv) {
 	int res = EXIT_SUCCESS;
 	
 #ifdef _MSC_VER
 #ifdef _DEBUG
+#ifdef ENABLE_MEM_CHECK
     // active memory leak detector
     // https://stackoverflow.com/questions/4790564/finding-memory-leaks-in-a-c-application-with-visual-studio
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_CRT_DF);
     _CrtMemState sOld;
     _CrtMemCheckpoint(&sOld);  // take a snapshot
+#endif
 #endif
 #endif
 
@@ -50,6 +54,7 @@ int main(int argc, char** argv) {
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
+#ifdef ENABLE_MEM_CHECK
     _CrtMemState sNew;
     _CrtMemCheckpoint(&sNew);  // take a snapshot
     _CrtMemState sDiff;
@@ -62,6 +67,7 @@ int main(int argc, char** argv) {
         std::cout << "-----------_CrtDumpMemoryLeaks ---------" << std::endl;
         _CrtDumpMemoryLeaks();
     }
+#endif
 #endif
 #endif
 

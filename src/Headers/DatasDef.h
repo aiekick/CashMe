@@ -112,11 +112,13 @@ struct AccountOutput : public AmountStats {
 };
 */
 
-struct Entity : public AmountStats {
+/*
+struct EntityOutput : public AmountStats {
     RowID id = 0;
     EntityName name;
     TransactionsCount count = 0U;
 };
+*/
 
 struct Category : public AmountStats {
     RowID id = 0;
@@ -124,7 +126,7 @@ struct Category : public AmountStats {
     TransactionsCount count = 0U;
 };
 
-struct Operation : public AmountStats {
+struct Operation : public AmountStats { 
     RowID id = 0;
     OperationName name;
     TransactionsCount count = 0U;
@@ -244,6 +246,7 @@ struct EntityOutput {
     RowID id = 0;
     EntityInput datas;
     Amounts amounts;
+    uint32_t count = 0;
 };
 
 // CATEGORY
@@ -256,6 +259,7 @@ struct CategoryOutput {
     RowID id = 0;
     CategoryInput datas;
     Amounts amounts;
+    uint32_t count = 0;
 };
 
 // OPERATION
@@ -268,6 +272,7 @@ struct OperationOutput {
     RowID id = 0;
     OperationInput datas;
     Amounts amounts;
+    uint32_t count = 0;
 };
 
 // INCOME

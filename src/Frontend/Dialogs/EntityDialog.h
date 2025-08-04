@@ -5,20 +5,20 @@
 
 class EntityDialog : public ADataDialog {
 private:
-    Entity m_Entity;
-    std::vector<Entity> m_EntitiesToMerge;
-    std::vector<Entity> m_EntitiesToUpdate;
-    std::vector<Entity> m_EntitiesToDelete;
+    EntityOutput m_Entity;
+    std::vector<EntityOutput> m_EntitiesToMerge;
+    std::vector<EntityOutput> m_EntitiesToUpdate;
+    std::vector<EntityOutput> m_EntitiesToDelete;
     ImWidgets::InputText m_EntityNameInputText;
 
 public:
     EntityDialog();
     bool init() override;
     void unit() override;
-    void setEntity(const Entity& vEntity);
-    void setEntitiesToMerge(const std::vector<Entity>& vEntities);
-    void setEntitiesToUpdate(const std::vector<Entity>& vEntities);
-    void setEntitiesToDelete(const std::vector<Entity>& vEntities);
+    void setEntity(const EntityOutput& vEntity);
+    void setEntitiesToMerge(const std::vector<EntityOutput>& vEntities);
+    void setEntitiesToUpdate(const std::vector<EntityOutput>& vEntities);
+    void setEntitiesToDelete(const std::vector<EntityOutput>& vEntities);
 
 protected:
     void m_drawContent(const ImVec2& vPos) override;

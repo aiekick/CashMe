@@ -52,7 +52,7 @@ void TransactionDialog::m_drawContentCreation(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayWithColumn(width, "Account", align);
-    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
     m_CategoriesCombo.displayWithColumn(width, "Category", align);
     m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
@@ -66,7 +66,7 @@ void TransactionDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayWithColumn(width, "Account", align);
-    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
     m_CategoriesCombo.displayWithColumn(width, "Category", align);
     m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
@@ -306,7 +306,9 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
                 // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
                 m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
                 m_TransactionAmountInputDouble);  // must be unique per operation
-            DataBase::Instance()->AddEntity(m_EntitiesCombo.getText());
+            EntityInput ei;
+            ei.name = m_EntitiesCombo.getText();
+            DataBase::Instance()->AddEntity(ei);
             DataBase::Instance()->AddCategory(m_CategoriesCombo.getText());
             DataBase::Instance()->AddOperation(m_OperationsCombo.getText());
             DataBase::Instance()->UpdateTransaction(          //
@@ -334,7 +336,9 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
                 for (auto t : m_TransactionsToUpdate) {
                     if (m_EntitiesCombo.getText() != MULTIPLE_VALUES) {
                         t.entity = m_EntitiesCombo.getText();
-                        DataBase::Instance()->AddEntity(t.entity);
+                        EntityInput ei;
+                        ei.name = t.entity;
+                        DataBase::Instance()->AddEntity(ei);
                     }
                     if (m_CategoriesCombo.getText() != MULTIPLE_VALUES) {
                         t.category = m_CategoriesCombo.getText();

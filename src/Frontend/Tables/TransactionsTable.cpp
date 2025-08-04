@@ -125,7 +125,7 @@ void TransactionsTable::m_setupColumns() {
     ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
     ImGui::TableSetupColumn("Comments", ImGuiTableColumnFlags_WidthStretch);
-    ImGui::TableSetupColumn("Entity", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("EntityOutput", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
@@ -536,8 +536,8 @@ void TransactionsTable::m_UpdateBanks() {
 void TransactionsTable::m_UpdateEntities() {
     m_Datas.entityNames.clear();
     DataBase::Instance()->GetEntities(           //
-        [this](const EntityName& vEntityName) {  //
-            m_Datas.entityNames.push_back(vEntityName);
+        [this](const EntityOutput& vEntityOutput) {  //
+            m_Datas.entityNames.push_back(vEntityOutput.datas.name);
         });
 }
 

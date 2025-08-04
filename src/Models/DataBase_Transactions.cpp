@@ -17,7 +17,9 @@ void DataBase::AddTransaction(  //
     const TransactionAmount& vAmount,
     const TransactionConfirmed& vConfirmed,
     const TransactionSha& vSha) {
-    AddEntity(vEntityName);
+    EntityInput ei;
+    ei.name = vEntityName;
+    AddEntity(ei);
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
     AddSource(vSourceName, vSourceType, vSourceSha);

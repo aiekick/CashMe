@@ -153,7 +153,7 @@ void StatementsPane::m_drawCreationMenu() {
         if (ImGui::MenuItem("Account")) {
             m_AccountDialog.show(DataDialogMode::MODE_CREATION);
         }
-        if (ImGui::MenuItem("Entity")) {
+        if (ImGui::MenuItem("EntityOutput")) {
             m_EntityDialog.show(DataDialogMode::MODE_CREATION);
         }
         if (ImGui::MenuItem("Category")) {

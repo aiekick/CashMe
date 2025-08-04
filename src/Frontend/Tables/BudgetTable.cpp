@@ -60,7 +60,7 @@ void BudgetTable::m_setupColumns() {
     /*ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Start Date", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("End Date", ImGuiTableColumnFlags_WidthStretch);
-    ImGui::TableSetupColumn("Entity", ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableSetupColumn("EntityOutput", ImGuiTableColumnFlags_WidthStretch);
     ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Min", ImGuiTableColumnFlags_WidthFixed);

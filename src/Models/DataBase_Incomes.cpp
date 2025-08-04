@@ -17,7 +17,9 @@ void DataBase::AddIncome(
     const IncomeDay& vMinDays,
     const IncomeDay& vMaxDays,
     const IncomeDescription& vDescription) {
-    AddEntity(vEntityName);
+    EntityInput ei;
+    ei.name = vEntityName;
+    AddEntity(ei);
     AddOperation(vOperationName);
     AddCategory(vCategoryName);
 

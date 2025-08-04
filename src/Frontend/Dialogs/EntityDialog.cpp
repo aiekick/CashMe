@@ -13,19 +13,19 @@ void EntityDialog::unit() {
 
 }
 
-void EntityDialog::setEntity(const Entity& vEntity) {
+void EntityDialog::setEntity(const EntityOutput& vEntity) {
     m_Entity = vEntity;
 }
 
-void EntityDialog::setEntitiesToMerge(const std::vector<Entity>& vEntities) {
+void EntityDialog::setEntitiesToMerge(const std::vector<EntityOutput>& vEntities) {
     m_EntitiesToMerge = vEntities;
 }
 
-void EntityDialog::setEntitiesToUpdate(const std::vector<Entity>& vEntities) {
+void EntityDialog::setEntitiesToUpdate(const std::vector<EntityOutput>& vEntities) {
     m_EntitiesToUpdate = vEntities;
 }
 
-void EntityDialog::setEntitiesToDelete(const std::vector<Entity>& vEntities) {
+void EntityDialog::setEntitiesToDelete(const std::vector<EntityOutput>& vEntities) {
     m_EntitiesToDelete = vEntities;
 }
 
@@ -55,7 +55,7 @@ void EntityDialog::m_prepare() {
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL:
         case DataDialogMode::MODE_MERGE_ALL: {
-            m_EntityNameInputText.SetText(m_Entity.name);
+            m_EntityNameInputText.SetText(m_Entity.datas.name);
         } break; 
         case DataDialogMode::MODE_NONE:
         default: break;
@@ -108,8 +108,9 @@ void EntityDialog::m_cancelDialog() {
 
 void EntityDialog::m_confirmDialogCreation() {
     if (DataBase::Instance()->OpenDBFile()) {
-        DataBase::Instance()->AddEntity(        //
-            m_EntityNameInputText.GetText());
+        EntityInput ei;
+        ei.name = m_EntityNameInputText.GetText();
+        DataBase::Instance()->AddEntity(ei);
         DataBase::Instance()->CloseDBFile();
     }
 }
@@ -117,14 +118,14 @@ void EntityDialog::m_confirmDialogCreation() {
 void EntityDialog::m_drawContentCreation(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_EntityNameInputText.DisplayInputText(width, "Entity Name", "", false, align, true);
+    m_EntityNameInputText.DisplayInputText(width, "EntityOutput Name", "", false, align, true);
 }
 
 void EntityDialog::m_confirmDialogUpdate() {
     if (DataBase::Instance()->OpenDBFile()) {
-        DataBase::Instance()->UpdateEntity(     //
-            m_Entity.id,                        //
-            m_EntityNameInputText.GetText());
+        EntityOutput eo;
+        eo.datas.name = m_EntityNameInputText.GetText();
+        DataBase::Instance()->UpdateEntity(eo.id, eo);
         DataBase::Instance()->CloseDBFile();
     }
 }
@@ -132,13 +133,13 @@ void EntityDialog::m_confirmDialogUpdate() {
 void EntityDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_EntityNameInputText.DisplayInputText(width, "Entity Name", "", false, align, true);
+    m_EntityNameInputText.DisplayInputText(width, "EntityOutput Name", "", false, align, true);
 }
 
 void EntityDialog::m_drawContentMerging(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_EntityNameInputText.DisplayInputText(width, "Entity Name", "", false, align, true);
+    m_EntityNameInputText.DisplayInputText(width, "EntityOutput Name", "", false, align, true);
 }
 
 void EntityDialog::m_confirmDialogMerging() {

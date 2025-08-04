@@ -12,7 +12,7 @@ class ProjectFile;
 class StatsPane : public AbstractPane {
 private:
     std::vector<AccountOutput> m_Accounts;
-    std::vector<Entity> m_Entities;
+    std::vector<EntityOutput> m_Entities;
     std::vector<Category> m_Categories;
     std::vector<Operation> m_Operations;
 

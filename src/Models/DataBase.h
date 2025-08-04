@@ -80,19 +80,12 @@ public:
 
     // ENTITY
 
-    void AddEntity(const EntityName& vEntityName);
+    bool AddEntity(const EntityInput& vEntityInput);
     bool GetEntity(const EntityName& vUserName, RowID& vOutRowID);
-    void GetEntities(std::function<void(const EntityName&)> vCallback);
-    void GetEntitiesStats(  //
-        const RowID& vAccountID,
-        std::function<void(  //
-            const RowID&,
-            const EntityName&,
-            const TransactionDebit&,
-            const TransactionCredit&,
-            const TransactionsCount&)> vCallback);
-    void UpdateEntity(const RowID& vRowID, const EntityName& vEntityName);
-    void DeleteEntities();
+    bool GetEntities(std::function<void(const EntityOutput&)> vCallback);
+    bool GetEntitiesStats(const RowID& vAccountID, std::function<void(const EntityOutput&)> vCallback);
+    bool UpdateEntity(const RowID& vRowID, const EntityOutput& vEntityOutput);
+    bool DeleteEntities();
 
     // CATEGORY
 

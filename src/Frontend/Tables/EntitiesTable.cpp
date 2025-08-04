@@ -34,16 +34,16 @@ RowID EntitiesTable::m_getItemRowID(const size_t& vIdx) const {
 }
 
 double EntitiesTable::m_getItemBarAmount(const size_t& vIdx) const {
-    return m_Entities.at(vIdx).amount;
+    return m_Entities.at(vIdx).amounts.amount;
 }
 
 void EntitiesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) {
     const auto& e = m_Entities.at(vIdx);
-    m_drawColumnSelectable(vIdx, e.id, e.name);
-    m_drawColumnDebit(e.debit);
-    m_drawColumnCredit(e.credit);
-    m_drawColumnAmount(e.amount);
-    m_drawColumnBars(e.amount, vMaxAmount, 100.0f);
+    m_drawColumnSelectable(vIdx, e.id, e.datas.name);
+    m_drawColumnDebit(e.amounts.debit);
+    m_drawColumnCredit(e.amounts.credit);
+    m_drawColumnAmount(e.amounts.amount);
+    m_drawColumnBars(e.amounts.amount, vMaxAmount, 100.0f);
     m_drawColumnInt(e.count);
 }
 
@@ -61,7 +61,7 @@ void EntitiesTable::m_setupColumns() {
 void EntitiesTable::m_drawContextMenuContent() {
     if (!m_getSelectedRows().empty()) {
         if (ImGui::MenuItem("Update")) {
-            std::vector<Entity> entities_to_update;
+            std::vector<EntityOutput> entities_to_update;
             for (const auto& e : m_Entities) {
                 if (m_IsRowSelected(e.id)) {
                     entities_to_update.push_back(e);
@@ -77,7 +77,7 @@ void EntitiesTable::m_drawContextMenuContent() {
         }
         if (m_getSelectedRows().size() > 1U) {
             if (ImGui::MenuItem("Merge")) {
-                std::vector<Entity> entities_to_merge;
+                std::vector<EntityOutput> entities_to_merge;
                 for (const auto& e : m_Entities) {
                     if (m_IsRowSelected(e.id)) {
                         entities_to_merge.push_back(e);
@@ -88,7 +88,7 @@ void EntitiesTable::m_drawContextMenuContent() {
             }
         }
         if (ImGui::MenuItem("Delete")) {
-            std::vector<Entity> entities_to_delete;
+            std::vector<EntityOutput> entities_to_delete;
             for (const auto& e : m_Entities) {
                 if (m_IsRowSelected(e.id)) {
                     entities_to_delete.push_back(e);
@@ -108,22 +108,11 @@ void EntitiesTable::m_updateEntities() {
     const auto account_id = m_getAccountID();
     if (account_id > 0) {
         m_Entities.clear();
-        DataBase::Instance()->GetEntitiesStats(  //
-            account_id,
-            [this](
-                const RowID& vRowID,
-                const EntityName& vEntityName,
-                const TransactionDebit& vTransactionDebit,
-                const TransactionCredit& vTransactionCredit,
-                const TransactionsCount& vTransactionCount) {  //
-                Entity e;
-                e.id = vRowID;
-                e.name = vEntityName;
-                e.debit = vTransactionDebit;
-                e.credit = vTransactionCredit;
-                e.amount = vTransactionDebit + vTransactionCredit;
-                e.count = vTransactionCount;
-                m_Entities.push_back(e);
+        DataBase::Instance()->GetEntitiesStats(       //
+            account_id,                               //
+            [this](                                   //
+                const EntityOutput& vEntityOutput) {  //
+                m_Entities.push_back(vEntityOutput);
             });
     }
 }

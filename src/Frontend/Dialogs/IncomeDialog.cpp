@@ -136,7 +136,7 @@ void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
     const auto width = 400.0f;
     m_IncomeNameInputText.DisplayInputText(width, "Name", "", false, align);
     m_AccountsCombo.displayWithColumn(width, "Account", align);
-    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
     m_CategoriesCombo.displayWithColumn(width, "Category", align);
     m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_IncomeStartDateInputText.DisplayInputText(width, "Start date", "", false, align);
@@ -153,7 +153,7 @@ void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const auto width = 400.0f;
     m_IncomeNameInputText.DisplayInputText(width, "Name", "", false, align);
     m_AccountsCombo.displayWithColumn(width, "Account", align);
-    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
     m_CategoriesCombo.displayWithColumn(width, "Category", align);
     m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_IncomeStartDateInputText.DisplayInputText(width, "Start date", "", false, align);
@@ -423,8 +423,8 @@ void IncomeDialog::m_UpdateAccounts() {
 void IncomeDialog::m_UpdateEntities() {
     m_EntitiesCombo.clear();
     DataBase::Instance()->GetEntities(           //
-        [this](const EntityName& vEntityName) {  //
-            m_EntitiesCombo.getArrayRef().push_back(vEntityName);
+        [this](const EntityOutput& vEntityOutput) {  //
+            m_EntitiesCombo.getArrayRef().push_back(vEntityOutput.datas.name);
         });
     m_EntitiesCombo.getIndexRef() = 0;
     m_EntitiesCombo.finalize();

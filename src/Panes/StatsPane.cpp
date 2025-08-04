@@ -106,21 +106,11 @@ void StatsPane::m_updateEntities() {
     if (m_SelectedAccountIdx < m_Accounts.size()) {
         const auto account_id = m_Accounts.at(m_SelectedAccountIdx).id;
         m_Entities.clear();
-        DataBase::Instance()->GetEntitiesStats(  //
-            account_id,
-            [this](
-                const RowID& vRowID,
-                const EntityName& vEntityName,
-                const TransactionDebit& vTransactionDebit,
-                const TransactionCredit& vTransactionCredit,
-                const TransactionsCount& vTransactionsCount) {  //
-                Entity e;
-                e.id = vRowID;
-                e.name = vEntityName;
-                e.debit = vTransactionDebit;
-                e.credit = vTransactionCredit;
-                e.count = vTransactionsCount;
-                m_Entities.push_back(e);
+        DataBase::Instance()->GetEntitiesStats(       //
+            account_id,                               //
+            [this](                                   //
+                const EntityOutput& vEntityOutput) {  //
+                m_Entities.push_back(vEntityOutput);
             });
     }
 }

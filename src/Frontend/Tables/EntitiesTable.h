@@ -5,7 +5,7 @@
 
 class EntitiesTable : public ADataBarsTable {
 private:
-    std::vector<Entity> m_Entities;
+    std::vector<EntityOutput> m_Entities;
     EntityDialog m_EntityDialog;
 
 public:
