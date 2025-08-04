@@ -20,8 +20,12 @@ void DataBase::AddIncome(
     EntityInput ei;
     ei.name = vEntityName;
     AddEntity(ei);
-    AddOperation(vOperationName);
-    AddCategory(vCategoryName);
+    OperationInput oi;
+    oi.name = vOperationName;
+    AddOperation(oi);
+    CategoryInput ci;
+    ci.name = vCategoryName;
+    AddCategory(ci);
 
     auto insert_query =  //
         ez::sqlite::QueryBuilder()

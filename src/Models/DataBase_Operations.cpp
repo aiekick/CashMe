@@ -3,15 +3,18 @@
 #include <ezlibs/ezSqlite.hpp>
 #include <ezlibs/ezLog.hpp>
 
-void DataBase::AddOperation(const OperationName& vOperationName) {
+bool DataBase::AddOperation(const OperationInput& vOperationInput) {
+    bool ret = true;
     auto insert_query =             //
         ez::sqlite::QueryBuilder()  //
             .setTable("operations")
-            .addField("name", vOperationName)
+            .addField("name", vOperationInput.name)
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to insert a entity in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+        ret = false;
     }
+    return ret;
 }
 
 bool DataBase::GetOperation(const OperationName& vOperationName, RowID& vOutRowID) {
@@ -37,7 +40,8 @@ bool DataBase::GetOperation(const OperationName& vOperationName, RowID& vOutRowI
     return ret;
 }
 
-void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback) {
+bool DataBase::GetOperations(std::function<void(const OperationOutput&)> vCallback) {
+    bool ret = false;
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     const auto& select_query = ez::str::toStr(u8R"(SELECT name FROM operations GROUP BY name;)");
@@ -50,25 +54,21 @@ void DataBase::GetOperations(std::function<void(const OperationName&)> vCallback
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    vCallback(                                 //
-                        ez::sqlite::readStringColumn(stmt, 0)  // OperationName
-                    );
+                    OperationOutput ao;
+                    ao.datas.name = ez::sqlite::readStringColumn(stmt, 0);
+                    vCallback(ao);
+                    ret = true;
                 }
             }
         }
         sqlite3_finalize(stmt);
         m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::GetOperationsStats(  //
-    const RowID& vAccountID,
-    std::function<void(  //
-        const RowID&,
-        const OperationName&,
-        const TransactionDebit&,
-        const TransactionCredit&,
-        const TransactionsCount&)> vCallback) {
+bool DataBase::GetOperationsStats(const RowID& vAccountID, std::function<void(const OperationOutput&)> vCallback) {
+    bool ret = false;
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     const auto& select_query = ez::str::toStr(
@@ -78,6 +78,7 @@ SELECT
   operations.name,
   ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS debit,
   ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS credit,
+  SUM(transactions.amount),
   COUNT(transactions.id)
 FROM
   transactions
@@ -99,34 +100,44 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    vCallback(
-                        sqlite3_column_int(stmt, 0),                        // RowID
-                        ez::sqlite::readStringColumn(stmt, 1),              // OperationName
-                        (TransactionDebit)sqlite3_column_double(stmt, 2),   // TransactionDebit
-                        (TransactionCredit)sqlite3_column_double(stmt, 3),  // TransactionCredit
-                        (TransactionsCount)sqlite3_column_int(stmt, 4)   // TransactionsCount
-                    );
+                    OperationOutput ao;
+                    ao.id = sqlite3_column_int(stmt, 0);
+                    ao.datas.name = ez::sqlite::readStringColumn(stmt, 1);
+                    ao.amounts.debit = sqlite3_column_double(stmt, 2);
+                    ao.amounts.credit = sqlite3_column_double(stmt, 3);
+                    ao.amounts.amount = sqlite3_column_double(stmt, 4);
+                    ao.count = sqlite3_column_int(stmt, 5);
+                    vCallback(ao);
+                    ret = true;
                 }
             }
         }
         sqlite3_finalize(stmt);
         m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::UpdateOperation(const RowID& vRowID, const OperationName& vOperationName) {
-    auto insert_query = ez::str::toStr(u8R"(UPDATE operations SET name = "%s" WHERE id = %u;)", vOperationName.c_str(), vRowID);
+bool DataBase::UpdateOperation(const RowID& vRowID, const OperationInput& vOperationInput) {
+    bool ret = false;
+    auto insert_query = ez::str::toStr(u8R"(UPDATE operations SET name = "%s" WHERE id = %u;)", vOperationInput.name.c_str(), vRowID);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a operation in database : %s", m_LastErrorMsg);
+        ret = false;
     }
+    return ret;
 }
 
-void DataBase::DeleteOperations() {
+bool DataBase::DeleteOperations() {
+    bool ret = false;
     if (m_OpenDB()) {
+        ret = true;
         auto insert_query = ez::str::toStr(u8R"(DELETE FROM operations;)");
         if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of operations table in database : %s", m_LastErrorMsg);
+            ret = false;
         }
         m_CloseDB();
     }
+    return ret;
 }

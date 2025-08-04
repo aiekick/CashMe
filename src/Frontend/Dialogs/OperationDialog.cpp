@@ -12,7 +12,7 @@ bool OperationDialog::init() {
 void OperationDialog::unit() {
 }
 
-void OperationDialog::setOperation(const Operation& vOperation) {
+void OperationDialog::setOperation(const OperationOutput& vOperation) {
     m_Operation = vOperation;
 }
 
@@ -41,7 +41,7 @@ void OperationDialog::m_prepare() {
         } break;
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: {
-            m_OperationNameInputText.SetText(m_Operation.name);
+            m_OperationNameInputText.SetText(m_Operation.datas.name);
         } break;
         case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
@@ -52,10 +52,10 @@ void OperationDialog::m_prepare() {
 const char* OperationDialog::m_getTitle() const {
     const auto& mode = getCurrentMode();
     switch (mode) {
-        case DataDialogMode::MODE_CREATION: return "Operation Creation"; break;
-        case DataDialogMode::MODE_DELETE_ONCE: return "Operation Deletion"; break;
+        case DataDialogMode::MODE_CREATION: return "OperationOutput Creation"; break;
+        case DataDialogMode::MODE_DELETE_ONCE: return "OperationOutput Deletion"; break;
         case DataDialogMode::MODE_DELETE_ALL: return "Operations Deletion"; break;
-        case DataDialogMode::MODE_UPDATE_ONCE: return "Operation Update"; break;
+        case DataDialogMode::MODE_UPDATE_ONCE: return "OperationOutput Update"; break;
         case DataDialogMode::MODE_UPDATE_ALL: return "Operations Update"; break;
         case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
@@ -93,8 +93,9 @@ void OperationDialog::m_cancelDialog() {
 
 void OperationDialog::m_confirmDialogCreation() {
     if (DataBase::ref().OpenDBFile()) {
-        DataBase::ref().AddOperation(  //
-            m_OperationNameInputText.GetText());
+        OperationInput oi;
+        oi.name = m_OperationNameInputText.GetText();
+        DataBase::ref().AddOperation(oi);
         DataBase::ref().CloseDBFile();
     }
 }
@@ -102,14 +103,14 @@ void OperationDialog::m_confirmDialogCreation() {
 void OperationDialog::m_drawContentCreation(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_OperationNameInputText.DisplayInputText(width, "Operation Name", "", false, align, true);
+    m_OperationNameInputText.DisplayInputText(width, "OperationOutput Name", "", false, align, true);
 }
 
 void OperationDialog::m_confirmDialogUpdate() {
     if (DataBase::ref().OpenDBFile()) {
-        DataBase::ref().UpdateOperation(  //
-            m_Operation.id,                     //
-            m_OperationNameInputText.GetText());
+        OperationInput oi;
+        oi.name = m_OperationNameInputText.GetText();
+        DataBase::ref().UpdateOperation(m_Operation.id, oi);
         DataBase::ref().CloseDBFile();
     }
 }
@@ -117,7 +118,7 @@ void OperationDialog::m_confirmDialogUpdate() {
 void OperationDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_OperationNameInputText.DisplayInputText(width, "Operation Name", "", false, align, true);
+    m_OperationNameInputText.DisplayInputText(width, "OperationOutput Name", "", false, align, true);
 }
 
 void OperationDialog::m_confirmDialogDeletion() {

@@ -118,9 +118,9 @@ ORDER BY
     return ret;
 }
 
-bool DataBase::UpdateEntity(const RowID& vRowID, const EntityOutput& vEntityOutput) {
+bool DataBase::UpdateEntity(const RowID& vRowID, const EntityInput& vEntityInput) {
     bool ret = true;
-    auto insert_query = ez::str::toStr(u8R"(UPDATE entities SET name = "%s" WHERE id = %u;)", vEntityOutput.datas.name.c_str(), vRowID);
+    auto insert_query = ez::str::toStr(u8R"(UPDATE entities SET name = "%s" WHERE id = %u;)", vEntityInput.name.c_str(), vRowID);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a entity in database : %s", m_LastErrorMsg);
         ret = false;

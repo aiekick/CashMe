@@ -122,7 +122,7 @@ void StatsPane::m_drawCategoriesStats() {
 void StatsPane::m_updateCategories() {
     m_Categories.clear();
     DataBase::ref().GetCategories(             //
-        [/*this*/](const CategoryName& vCategoryName) {  //
+        [/*this*/](const CategoryOutput& vCategoryOutput) {  //
        //     m_Categories.push_back(vCategoryName);
         });
 }
@@ -133,7 +133,7 @@ void StatsPane::m_drawOperationsStats() {
 void StatsPane::m_updateOperations() {
     m_Operations.clear();
     DataBase::ref().GetOperations(               //
-        [/*this*/](const OperationName& vOperationName) {  //
+        [/*this*/](const OperationOutput& vOperationOutput) {  //
          //   m_Operations.push_back(vOperationName);
         });
 }

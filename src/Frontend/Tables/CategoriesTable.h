@@ -4,7 +4,7 @@
 
 class CategoriesTable : public ADataBarsTable {
 private:
-    std::vector<Category> m_Categories;
+    std::vector<CategoryOutput> m_Categories;
 
 public:
     CategoriesTable();

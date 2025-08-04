@@ -177,7 +177,7 @@ ORDER BY
     return ret;
 }
 
-bool DataBase::UpdateAccount(const RowID& vRowID, const AccountOutput& vAccountOutput) {
+bool DataBase::UpdateAccount(const RowID& vRowID, const BankName& vBankName, const AccountInput& vAccountInput) {
     bool ret = true;
     auto insert_query = ez::str::toStr(
         u8R"(
@@ -194,13 +194,13 @@ SET
 WHERE
   accounts.id = %u;
 )",
-        vAccountOutput.bankName.c_str(),
-        vAccountOutput.datas.number.c_str(),
-        vAccountOutput.datas.bank_agency.c_str(),
-        vAccountOutput.datas.type.c_str(),
-        vAccountOutput.datas.name.c_str(),
-        vAccountOutput.datas.base_solde,
-        vAccountOutput.datas.sha.c_str(),
+        vBankName.c_str(),
+        vAccountInput.number.c_str(),
+        vAccountInput.bank_agency.c_str(),
+        vAccountInput.type.c_str(),
+        vAccountInput.name.c_str(),
+        vAccountInput.base_solde,
+        vAccountInput.sha.c_str(),
         vRowID);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a account in database : %s", m_LastErrorMsg);

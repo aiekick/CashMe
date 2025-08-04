@@ -13,8 +13,8 @@ class StatsPane : public AbstractPane {
 private:
     std::vector<AccountOutput> m_Accounts;
     std::vector<EntityOutput> m_Entities;
-    std::vector<Category> m_Categories;
-    std::vector<Operation> m_Operations;
+    std::vector<CategoryOutput> m_Categories;
+    std::vector<OperationOutput> m_Operations;
 
     size_t m_SelectedAccountIdx = 0U;
 

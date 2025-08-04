@@ -4,7 +4,7 @@
 
 class OperationsTable : public ADataBarsTable {
 private:
-    std::vector<Operation> m_Operations;
+    std::vector<OperationOutput> m_Operations;
 
 public:
     OperationsTable();

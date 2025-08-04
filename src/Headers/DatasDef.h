@@ -90,48 +90,6 @@ struct AmountStats {
     TransactionAmount amount = 0.0;
 };
 
-/*
-struct Bank : public AmountStats {
-    RowID id = 0;
-    BankName name;
-    BankUrl url;
-    TransactionsCount count = 0U;
-};
-*/
-
-/*
-struct AccountOutput : public AmountStats {
-    RowID id = 0;
-    BankName bank;
-    BankAgency agency;
-    AccountNumber number;
-    AccountType type;
-    AccountName name;
-    AccountBaseSolde base_solde = 0.0;
-    TransactionsCount count = 0U;
-};
-*/
-
-/*
-struct EntityOutput : public AmountStats {
-    RowID id = 0;
-    EntityName name;
-    TransactionsCount count = 0U;
-};
-*/
-
-struct Category : public AmountStats {
-    RowID id = 0;
-    CategoryName name;
-    TransactionsCount count = 0U;
-};
-
-struct Operation : public AmountStats { 
-    RowID id = 0;
-    OperationName name;
-    TransactionsCount count = 0U;
-};
-
 struct Income {
     RowID id = 0;
     AccountNumber account;

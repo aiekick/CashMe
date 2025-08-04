@@ -123,9 +123,9 @@ void EntityDialog::m_drawContentCreation(const ImVec2& vPos) {
 
 void EntityDialog::m_confirmDialogUpdate() {
     if (DataBase::ref().OpenDBFile()) {
-        EntityOutput eo;
-        eo.datas.name = m_EntityNameInputText.GetText();
-        DataBase::ref().UpdateEntity(eo.id, eo);
+        EntityInput ei;
+        ei.name = m_EntityNameInputText.GetText();
+        DataBase::ref().UpdateEntity(m_Entity.id, ei);
         DataBase::ref().CloseDBFile();
     }
 }

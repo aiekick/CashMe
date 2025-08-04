@@ -13,7 +13,7 @@ void CategoryDialog::unit() {
 
 }
 
-void CategoryDialog::setCategory(const Category& vCategory) {
+void CategoryDialog::setCategory(const CategoryOutput& vCategory) {
     m_Category = vCategory;
 }
 
@@ -42,7 +42,7 @@ void CategoryDialog::m_prepare() {
         } break;
         case DataDialogMode::MODE_UPDATE_ONCE:
         case DataDialogMode::MODE_UPDATE_ALL: {
-            m_CategoryNameInputText.SetText(m_Category.name);
+            m_CategoryNameInputText.SetText(m_Category.datas.name);
         } break;
         case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
@@ -53,10 +53,10 @@ void CategoryDialog::m_prepare() {
 const char* CategoryDialog::m_getTitle() const {
     const auto& mode = getCurrentMode();
     switch (mode) {
-        case DataDialogMode::MODE_CREATION: return "Category Creation"; break;
-        case DataDialogMode::MODE_DELETE_ONCE: return "Category Deletion"; break;
+        case DataDialogMode::MODE_CREATION: return "CategoryOutput Creation"; break;
+        case DataDialogMode::MODE_DELETE_ONCE: return "CategoryOutput Deletion"; break;
         case DataDialogMode::MODE_DELETE_ALL: return "Categorys Deletion"; break;
-        case DataDialogMode::MODE_UPDATE_ONCE: return "Category Update"; break;
+        case DataDialogMode::MODE_UPDATE_ONCE: return "CategoryOutput Update"; break;
         case DataDialogMode::MODE_UPDATE_ALL: return "Categorys Update"; break;
         case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
@@ -94,8 +94,9 @@ void CategoryDialog::m_cancelDialog() {
 
 void CategoryDialog::m_confirmDialogCreation() {
     if (DataBase::ref().OpenDBFile()) {
-        DataBase::ref().AddCategory(        //
-            m_CategoryNameInputText.GetText());
+        CategoryInput ci;
+        ci.name = m_CategoryNameInputText.GetText();
+        DataBase::ref().AddCategory(ci);
         DataBase::ref().CloseDBFile();
     }
 }
@@ -103,14 +104,14 @@ void CategoryDialog::m_confirmDialogCreation() {
 void CategoryDialog::m_drawContentCreation(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_CategoryNameInputText.DisplayInputText(width, "Category Name", "", false, align, true);
+    m_CategoryNameInputText.DisplayInputText(width, "CategoryOutput Name", "", false, align, true);
 }
 
 void CategoryDialog::m_confirmDialogUpdate() {
     if (DataBase::ref().OpenDBFile()) {
-        DataBase::ref().UpdateCategory(     //
-            m_Category.id,                        //
-            m_CategoryNameInputText.GetText());
+        CategoryInput ci;
+        ci.name = m_CategoryNameInputText.GetText();
+        DataBase::ref().UpdateCategory(m_Category.id, ci);
         DataBase::ref().CloseDBFile();
     }
 }
@@ -118,7 +119,7 @@ void CategoryDialog::m_confirmDialogUpdate() {
 void CategoryDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const float& align = 125.0f;
     const auto& width = 400.0f;
-    m_CategoryNameInputText.DisplayInputText(width, "Category Name", "", false, align, true);
+    m_CategoryNameInputText.DisplayInputText(width, "CategoryOutput Name", "", false, align, true);
 }
 
 void CategoryDialog::m_confirmDialogDeletion() {

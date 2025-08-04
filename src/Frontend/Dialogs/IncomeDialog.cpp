@@ -137,8 +137,8 @@ void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
     m_IncomeNameInputText.DisplayInputText(width, "Name", "", false, align);
     m_AccountsCombo.displayWithColumn(width, "Account", align);
     m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
-    m_CategoriesCombo.displayWithColumn(width, "Category", align);
-    m_OperationsCombo.displayWithColumn(width, "Operation", align);
+    m_CategoriesCombo.displayWithColumn(width, "CategoryOutput", align);
+    m_OperationsCombo.displayWithColumn(width, "OperationOutput", align);
     m_IncomeStartDateInputText.DisplayInputText(width, "Start date", "", false, align);
     m_IncomeEndDateInputText.DisplayInputText(width, "End date", "", false, align);
     ImGui::DisplayAlignedWidget(width, "Min amount", align, [this]() { ImGui::InputDouble("##MinAmount", &m_IncomeMinAmountInputDouble); });
@@ -154,8 +154,8 @@ void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
     m_IncomeNameInputText.DisplayInputText(width, "Name", "", false, align);
     m_AccountsCombo.displayWithColumn(width, "Account", align);
     m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
-    m_CategoriesCombo.displayWithColumn(width, "Category", align);
-    m_OperationsCombo.displayWithColumn(width, "Operation", align);
+    m_CategoriesCombo.displayWithColumn(width, "CategoryOutput", align);
+    m_OperationsCombo.displayWithColumn(width, "OperationOutput", align);
     m_IncomeStartDateInputText.DisplayInputText(width, "Start date", "", false, align);
     m_IncomeEndDateInputText.DisplayInputText(width, "End date", "", false, align);
     ImGui::DisplayAlignedWidget(width, "Min amount", align, [this]() { ImGui::InputDouble("##MinAmount", &m_IncomeMinAmountInputDouble); });
@@ -433,8 +433,8 @@ void IncomeDialog::m_UpdateEntities() {
 void IncomeDialog::m_UpdateOperations() {
     m_OperationsCombo.clear();
     DataBase::ref().GetOperations(               //
-        [this](const OperationName& vOperationName) {  //
-            m_OperationsCombo.getArrayRef().push_back(vOperationName);
+        [this](const OperationOutput& vOperationOutput) {  //
+            m_OperationsCombo.getArrayRef().push_back(vOperationOutput.datas.name);
         });
     m_OperationsCombo.getIndexRef() = 0;
     m_OperationsCombo.finalize();
@@ -443,8 +443,8 @@ void IncomeDialog::m_UpdateOperations() {
 void IncomeDialog::m_UpdateCategories() {
     m_CategoriesCombo.clear();
     DataBase::ref().GetCategories(             //
-        [this](const CategoryName& vCategoryName) {  //
-            m_CategoriesCombo.getArrayRef().push_back(vCategoryName);
+        [this](const CategoryOutput& vOperationOutput) {  //
+            m_CategoriesCombo.getArrayRef().push_back(vOperationOutput.datas.name);
         });
     m_CategoriesCombo.getIndexRef() = 0;
     m_CategoriesCombo.finalize();

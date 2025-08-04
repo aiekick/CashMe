@@ -34,16 +34,16 @@ RowID OperationsTable::m_getItemRowID(const size_t& vIdx) const {
 }
 
 double OperationsTable::m_getItemBarAmount(const size_t& vIdx) const {
-    return m_Operations.at(vIdx).amount;
+    return m_Operations.at(vIdx).amounts.amount;
 }
 
 void OperationsTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) {
     const auto& e = m_Operations.at(vIdx);
-    m_drawColumnSelectable(vIdx, e.id, e.name);
-    m_drawColumnDebit(e.debit);
-    m_drawColumnCredit(e.credit);
-    m_drawColumnAmount(e.amount);
-    m_drawColumnBars(e.amount, vMaxAmount, 100.0f);
+    m_drawColumnSelectable(vIdx, e.id, e.datas.name);
+    m_drawColumnDebit(e.amounts.debit);
+    m_drawColumnCredit(e.amounts.credit);
+    m_drawColumnAmount(e.amounts.amount);
+    m_drawColumnBars(e.amounts.amount, vMaxAmount, 100.0f);
     m_drawColumnInt(e.count);
 }
 
@@ -70,22 +70,10 @@ void OperationsTable::m_updateOperations() {
     const auto account_id = m_getAccountID();
     if (account_id > 0) {
         m_Operations.clear();
-        DataBase::ref().GetOperationsStats(  //
-            account_id,
-            [this](
-                const RowID& vRowID,
-                const OperationName& vOperationName,
-                const TransactionDebit& vTransactionDebit,
-                const TransactionCredit& vTransactionCredit,
-                const TransactionsCount& vTransactionCount) {  //
-                Operation e;
-                e.id = vRowID;
-                e.name = vOperationName;
-                e.debit = vTransactionDebit;
-                e.credit = vTransactionCredit;
-                e.amount = vTransactionDebit + vTransactionCredit;
-                e.count = vTransactionCount;
-                m_Operations.push_back(e);
+        DataBase::ref().GetOperationsStats(                    //
+            account_id,                                        //
+            [this](const OperationOutput& vOperationOutput) {  //
+                m_Operations.push_back(vOperationOutput);
             });
     }
 }

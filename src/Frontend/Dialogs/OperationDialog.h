@@ -5,14 +5,14 @@
 
 class OperationDialog : public ADataDialog {
 private:
-    Operation m_Operation;
+    OperationOutput m_Operation;
     ImWidgets::InputText m_OperationNameInputText;
 
 public:
     OperationDialog();
     bool init() override;
     void unit() override;
-    void setOperation(const Operation& vOperation);
+    void setOperation(const OperationOutput& vOperation);
 
 protected:
     void m_drawContent(const ImVec2& vPos) override;

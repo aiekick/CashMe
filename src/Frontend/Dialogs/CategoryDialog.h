@@ -5,14 +5,14 @@
 
 class CategoryDialog : public ADataDialog {
 private:
-    Category m_Category;
+    CategoryOutput m_Category;
     ImWidgets::InputText m_CategoryNameInputText;
 
 public:
     CategoryDialog();
     bool init() override;
     void unit() override;
-    void setCategory(const Category& vCategory);
+    void setCategory(const CategoryOutput& vCategory);
 
 protected:
     void m_drawContent(const ImVec2& vPos) override;

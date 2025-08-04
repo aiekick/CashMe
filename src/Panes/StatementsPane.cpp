@@ -156,10 +156,10 @@ void StatementsPane::m_drawCreationMenu() {
         if (ImGui::MenuItem("EntityOutput")) {
             m_EntityDialog.show(DataDialogMode::MODE_CREATION);
         }
-        if (ImGui::MenuItem("Category")) {
+        if (ImGui::MenuItem("CategoryOutput")) {
             m_CategoryDialog.show(DataDialogMode::MODE_CREATION);
         }
-        if (ImGui::MenuItem("Operation")) {
+        if (ImGui::MenuItem("OperationOutput")) {
             m_OperationDialog.show(DataDialogMode::MODE_CREATION);
         }
         if (ImGui::MenuItem("Transaction")) {

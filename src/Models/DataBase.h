@@ -76,50 +76,36 @@ public:
     bool GetAccount(const AccountNumber& vAccountNumber, RowID& vOutRowID);
     bool GetAccounts(std::function<void(const AccountOutput&)> vCallback);
     bool GetAccountsStats(std::function<void(const AccountOutput&)> vCallback);
-    bool UpdateAccount(const RowID& vRowID, const AccountOutput& vAccountOutput);
+    bool UpdateAccount(const RowID& vRowID, const BankName &vBankName, const AccountInput& vAccountInput);
     bool DeleteAccount(const RowID& vRowID);
     bool DeleteAccounts();
 
     // ENTITY
 
     bool AddEntity(const EntityInput& vEntityInput);
-    bool GetEntity(const EntityName& vUserName, RowID& vOutRowID);
+    bool GetEntity(const EntityName& vEntityName, RowID& vOutRowID);
     bool GetEntities(std::function<void(const EntityOutput&)> vCallback);
     bool GetEntitiesStats(const RowID& vAccountID, std::function<void(const EntityOutput&)> vCallback);
-    bool UpdateEntity(const RowID& vRowID, const EntityOutput& vEntityOutput);
+    bool UpdateEntity(const RowID& vRowID, const EntityInput& vEntityInput);
     bool DeleteEntities();
 
     // CATEGORY
 
-    void AddCategory(const CategoryName& vCategoryName);
-    bool GetCategory(const CategoryName& vUserName, RowID& vOutRowID);
-    void GetCategories(std::function<void(const CategoryName&)> vCallback);
-    void GetCategoriesStats(  //
-        const RowID& vAccountID,
-        std::function<void(  //
-            const RowID&,
-            const CategoryName&,
-            const TransactionDebit&,
-            const TransactionCredit&,
-            const TransactionsCount&)> vCallback);
-    void UpdateCategory(const RowID& vRowID, const CategoryName& vCategoryName);
-    void DeleteCategories();
+    bool AddCategory(const CategoryInput& vCategoryInput);
+    bool GetCategory(const CategoryName& vCategoryName, RowID& vOutRowID);
+    bool GetCategories(std::function<void(const CategoryOutput&)> vCallback);
+    bool GetCategoriesStats(const RowID& vAccountID, std::function<void(const CategoryOutput&)> vCallback);
+    bool UpdateCategory(const RowID& vRowID, const CategoryInput& vCategoryInput);
+    bool DeleteCategories();
 
     // OPERATION
 
-    void AddOperation(const OperationName& vOperationName);
-    bool GetOperation(const OperationName& vUserName, RowID& vOutRowID);
-    void GetOperations(std::function<void(const OperationName&)> vCallback);
-    void GetOperationsStats(  //
-        const RowID& vAccountID,
-        std::function<void(  //
-            const RowID&,
-            const OperationName&,
-            const TransactionDebit&,
-            const TransactionCredit&,
-            const TransactionsCount&)> vCallback);
-    void UpdateOperation(const RowID& vRowID, const OperationName& vOperationName);
-    void DeleteOperations();
+    bool AddOperation(const OperationInput& vOperationInput);
+    bool GetOperation(const OperationName& vOperationName, RowID& vOutRowID);
+    bool GetOperations(std::function<void(const OperationOutput&)> vCallback);
+    bool GetOperationsStats(const RowID& vAccountID, std::function<void(const OperationOutput&)> vCallback);
+    bool UpdateOperation(const RowID& vRowID, const OperationInput& vOperationInput);
+    bool DeleteOperations();
 
     // SOURCE
 

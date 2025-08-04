@@ -141,14 +141,13 @@ void AccountDialog::m_drawContentCreation(const ImVec2& vPos) {
 
 void AccountDialog::m_confirmDialogUpdate() {
     if (DataBase::ref().OpenDBFile()) {
-        AccountOutput ao;
-        ao.bankName = m_BanksCombo.getText();
-        ao.datas.bank_agency = m_BankAgencyInputText.GetText();
-        ao.datas.type = m_AccountTypeInputText.GetText();
-        ao.datas.name = m_AccountNameInputText.GetText();
-        ao.datas.number = m_AccountNumberInputText.GetText();
-        ao.datas.base_solde = m_AccountBaseSoldeInputDouble;
-        DataBase::ref().UpdateAccount(m_Account.id, ao);
+        AccountInput ai;
+        ai.bank_agency = m_BankAgencyInputText.GetText();
+        ai.type = m_AccountTypeInputText.GetText();
+        ai.name = m_AccountNameInputText.GetText();
+        ai.number = m_AccountNumberInputText.GetText();
+        ai.base_solde = m_AccountBaseSoldeInputDouble;
+        DataBase::ref().UpdateAccount(m_Account.id, m_BanksCombo.getText(), ai);
         DataBase::ref().CloseDBFile();
     }
 }

@@ -126,8 +126,8 @@ void TransactionsTable::m_setupColumns() {
     ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
     ImGui::TableSetupColumn("Comments", ImGuiTableColumnFlags_WidthStretch);
     ImGui::TableSetupColumn("EntityOutput", ImGuiTableColumnFlags_WidthFixed);
-    ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
-    ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("CategoryOutput", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("OperationOutput", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Solde", ImGuiTableColumnFlags_WidthFixed);
@@ -544,16 +544,16 @@ void TransactionsTable::m_UpdateEntities() {
 void TransactionsTable::m_UpdateCategories() {
     m_Datas.categoryNames.clear();
     DataBase::ref().GetCategories(             //
-        [this](const CategoryName& vCategoryName) {  //
-            m_Datas.categoryNames.push_back(vCategoryName);
+        [this](const CategoryOutput& vCategoryOutput) {  //
+            m_Datas.categoryNames.push_back(vCategoryOutput.datas.name);
         });
 }
 
 void TransactionsTable::m_UpdateOperations() {
     m_Datas.operationNames.clear();
     DataBase::ref().GetOperations(               //
-        [this](const OperationName& vOperationName) {  //
-            m_Datas.operationNames.push_back(vOperationName);
+        [this](const OperationOutput& vOperationOutput) {  //
+            m_Datas.operationNames.push_back(vOperationOutput.datas.name);
         });
 }
 
