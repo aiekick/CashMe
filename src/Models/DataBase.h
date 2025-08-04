@@ -22,12 +22,14 @@ limitations under the License.
 #include <functional>
 #include <sqlite3.hpp>
 #include <Headers/DatasDef.h>
+#include <ezlibs/ezSingleton.hpp>
 
 enum class DateFormat { DAYS = 0, MONTHS, YEARS, Count };
 enum class GroupBy { DATES = 0, ENTITIES, OPERATIONS, CATEGORIES, DESCRIPTIONS, Count };
 
 struct sqlite3;
 class DataBase {
+    IMPLEMENT_SINGLETON(DataBase)
 private:
     sqlite3* m_SqliteDB = nullptr;
     std::string m_DataBaseFilePathName = "datas.db3";
@@ -273,12 +275,6 @@ private:
         int nBytes,            /* Length of zSql in bytes. */
         sqlite3_stmt** ppStmt, /* OUT: A pointer to the prepared statement */
         const char** pzTail);
-
-public:  // singleton
-    static std::shared_ptr<DataBase> Instance() {
-        static std::shared_ptr<DataBase> _instance = std::make_shared<DataBase>();
-        return _instance;
-    }
 
 public:
     DataBase() = default;                // Prevent construction

@@ -99,12 +99,12 @@ void BankDialog::m_cancelDialog() {
 }
 
 void BankDialog::m_confirmDialogCreation() {
-    if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().OpenDBFile()) {
         BankInput bi;
         bi.name = m_BankNameInputText.GetText();
         bi.url = m_BankUrlInputText.GetText();
-        DataBase::Instance()->AddBank(bi);
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().AddBank(bi);
+        DataBase::ref().CloseDBFile();
     }
 }
 
@@ -116,12 +116,12 @@ void BankDialog::m_drawContentCreation(const ImVec2& vPos) {
 }
 
 void BankDialog::m_confirmDialogUpdate() {
-    if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().OpenDBFile()) {
         BankInput bi;
         bi.name = m_BankNameInputText.GetText();
         bi.url = m_BankUrlInputText.GetText();
-        DataBase::Instance()->UpdateBank(m_Bank.id, bi);
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().UpdateBank(m_Bank.id, bi);
+        DataBase::ref().CloseDBFile();
     }
 }
 

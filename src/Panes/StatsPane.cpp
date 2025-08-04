@@ -93,7 +93,7 @@ void StatsPane::m_drawMenu() {
 
 void StatsPane::m_updateAccounts() {
     m_Accounts.clear();
-    DataBase::Instance()->GetAccounts(                 //
+    DataBase::ref().GetAccounts(                 //
         [this](const AccountOutput& vAccountOutput) {  //
             m_Accounts.push_back(vAccountOutput);
         });
@@ -106,7 +106,7 @@ void StatsPane::m_updateEntities() {
     if (m_SelectedAccountIdx < m_Accounts.size()) {
         const auto account_id = m_Accounts.at(m_SelectedAccountIdx).id;
         m_Entities.clear();
-        DataBase::Instance()->GetEntitiesStats(       //
+        DataBase::ref().GetEntitiesStats(       //
             account_id,                               //
             [this](                                   //
                 const EntityOutput& vEntityOutput) {  //
@@ -121,7 +121,7 @@ void StatsPane::m_drawCategoriesStats() {
 
 void StatsPane::m_updateCategories() {
     m_Categories.clear();
-    DataBase::Instance()->GetCategories(             //
+    DataBase::ref().GetCategories(             //
         [/*this*/](const CategoryName& vCategoryName) {  //
        //     m_Categories.push_back(vCategoryName);
         });
@@ -132,7 +132,7 @@ void StatsPane::m_drawOperationsStats() {
 
 void StatsPane::m_updateOperations() {
     m_Operations.clear();
-    DataBase::Instance()->GetOperations(               //
+    DataBase::ref().GetOperations(               //
         [/*this*/](const OperationName& vOperationName) {  //
          //   m_Operations.push_back(vOperationName);
         });

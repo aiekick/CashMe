@@ -88,7 +88,7 @@ void AccountsTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID
 
 void AccountsTable::m_updateAccounts() {
     m_Accounts.clear();
-    DataBase::Instance()->GetAccountsStats(  //
+    DataBase::ref().GetAccountsStats(  //
         [this](const AccountOutput& vAccountOutput) {  //
             m_Accounts.push_back(vAccountOutput);
         });

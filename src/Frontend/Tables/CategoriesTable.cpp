@@ -70,7 +70,7 @@ void CategoriesTable::m_updateCategories() {
     const auto account_id = m_getAccountID();
     if (account_id > 0) {
         m_Categories.clear();
-        DataBase::Instance()->GetCategoriesStats(  //
+        DataBase::ref().GetCategoriesStats(  //
             account_id,
             [this](
                 const RowID& vRowID,

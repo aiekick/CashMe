@@ -81,7 +81,7 @@ void BanksTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
 
 void BanksTable::m_updateBanks() {
     m_Banks.clear();
-    DataBase::Instance()->GetBanksStats(         //
+    DataBase::ref().GetBanksStats(         //
         [this](const BankOutput& vBankOutput) {  //
             m_Banks.push_back(vBankOutput);
         });

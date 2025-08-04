@@ -185,12 +185,12 @@ void ImportWorkerThread::m_worker(  //
             // 2) database writing
             if (vWorking && !stmts.empty()) {
                 m_setCurrentPhase("DataBase Transaction Insertion");
-                if (DataBase::Instance()->BeginTransaction()) {
+                if (DataBase::ref().BeginTransaction()) {
                     for (const auto& stmt : stmts) {
                         RowID account_id = 0U;
-                        if (DataBase::Instance()->GetAccount(stmt.account.number, account_id)) {
+                        if (DataBase::ref().GetAccount(stmt.account.number, account_id)) {
                             for (const auto& stm : stmt.statements) {
-                                DataBase::Instance()->AddTransaction(  //
+                                DataBase::ref().AddTransaction(  //
                                     account_id,
                                     stm.entity,
                                     stm.category,
@@ -222,7 +222,7 @@ void ImportWorkerThread::m_worker(  //
                         }
                     }
                     m_setCurrentPhase("DataBase Transaction Commit");
-                    DataBase::Instance()->CommitTransaction();
+                    DataBase::ref().CommitTransaction();
                 }
             }
         }

@@ -265,8 +265,8 @@ void TransactionDialog::m_cancelDialog() {
 
 void TransactionDialog::m_confirmDialogCreation() {
     RowID account_id = 0U;
-    if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
-        if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
+        if (DataBase::ref().OpenDBFile()) {
             const auto sha = ez::str::toStr(  //
                 "%s_%s_%f",               //
                 m_TransactionDateInputText.GetText().c_str(),
@@ -275,7 +275,7 @@ void TransactionDialog::m_confirmDialogCreation() {
                 // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
                 m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
                 m_TransactionAmountInputDouble);              // must be unique per oepration
-            DataBase::Instance()->AddTransaction(             //
+            DataBase::ref().AddTransaction(             //
                 account_id,                                   //
                 m_EntitiesCombo.getText(),                    //
                 m_CategoriesCombo.getText(),                  //
@@ -289,15 +289,15 @@ void TransactionDialog::m_confirmDialogCreation() {
                 m_TransactionAmountInputDouble,               //
                 false,                                        //
                 sha);
-            DataBase::Instance()->CloseDBFile();
+            DataBase::ref().CloseDBFile();
         }
     }
 }
 
 void TransactionDialog::m_confirmDialogUpdateOnce() {
     RowID account_id = 0U;
-    if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
-        if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
+        if (DataBase::ref().OpenDBFile()) {
             const auto sha = ez::str::toStr(  //
                 "%s_%s_%f",               //
                 m_TransactionDateInputText.GetText().c_str(),
@@ -308,10 +308,10 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
                 m_TransactionAmountInputDouble);  // must be unique per operation
             EntityInput ei;
             ei.name = m_EntitiesCombo.getText();
-            DataBase::Instance()->AddEntity(ei);
-            DataBase::Instance()->AddCategory(m_CategoriesCombo.getText());
-            DataBase::Instance()->AddOperation(m_OperationsCombo.getText());
-            DataBase::Instance()->UpdateTransaction(          //
+            DataBase::ref().AddEntity(ei);
+            DataBase::ref().AddCategory(m_CategoriesCombo.getText());
+            DataBase::ref().AddOperation(m_OperationsCombo.getText());
+            DataBase::ref().UpdateTransaction(          //
                 m_TransactionToUpdate.id,                     //
                 m_EntitiesCombo.getText(),                    //
                 m_CategoriesCombo.getText(),                  //
@@ -323,30 +323,30 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
                 m_TransactionAmountInputDouble,               //
                 false,                                        //
                 sha);
-            DataBase::Instance()->CloseDBFile();
+            DataBase::ref().CloseDBFile();
         }
     }
 }
 
 void TransactionDialog::m_confirmDialogUpdateAll() {
     RowID account_id = 0U;
-    if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
-        if (DataBase::Instance()->OpenDBFile()) {
-            if (DataBase::Instance()->BeginTransaction()) {
+    if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
+        if (DataBase::ref().OpenDBFile()) {
+            if (DataBase::ref().BeginTransaction()) {
                 for (auto t : m_TransactionsToUpdate) {
                     if (m_EntitiesCombo.getText() != MULTIPLE_VALUES) {
                         t.entity = m_EntitiesCombo.getText();
                         EntityInput ei;
                         ei.name = t.entity;
-                        DataBase::Instance()->AddEntity(ei);
+                        DataBase::ref().AddEntity(ei);
                     }
                     if (m_CategoriesCombo.getText() != MULTIPLE_VALUES) {
                         t.category = m_CategoriesCombo.getText();
-                        DataBase::Instance()->AddCategory(t.category);
+                        DataBase::ref().AddCategory(t.category);
                     }
                     if (m_OperationsCombo.getText() != MULTIPLE_VALUES) {
                         t.operation = m_OperationsCombo.getText();
-                        DataBase::Instance()->AddOperation(t.operation);
+                        DataBase::ref().AddOperation(t.operation);
                     }
                     if (m_TransactionDateInputText.GetText() != MULTIPLE_VALUES) {
                         t.date = m_TransactionDateInputText.GetText();
@@ -360,7 +360,7 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
                     if (!m_TransactionConfirmedManyValues) {
                         t.confirmed = m_TransactionConfirmed;
                     }
-                    DataBase::Instance()->UpdateTransaction(  //
+                    DataBase::ref().UpdateTransaction(  //
                         t.id,                                 //
                         t.entity,                             //
                         t.category,                           //
@@ -373,9 +373,9 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
                         t.confirmed,                          //
                         t.sha);
                 }
-                DataBase::Instance()->CommitTransaction();
+                DataBase::ref().CommitTransaction();
             }
-            DataBase::Instance()->CloseDBFile();
+            DataBase::ref().CloseDBFile();
         }
     }
 }
@@ -386,13 +386,13 @@ void TransactionDialog::m_confirmDialogDeletion() {
         m_rows.emplace(t.id);
     }
     if (!m_rows.empty()) {
-        DataBase::Instance()->DeleteTransactions(m_rows);
+        DataBase::ref().DeleteTransactions(m_rows);
     }
 }
 
 void TransactionDialog::m_UpdateAccounts() {
     m_AccountsCombo.clear();
-    DataBase::Instance()->GetAccounts(                 //
+    DataBase::ref().GetAccounts(                 //
         [this](const AccountOutput& vAccountOutput) {  //
             m_AccountsCombo.getArrayRef().push_back(vAccountOutput.datas.number);
         });
@@ -401,7 +401,7 @@ void TransactionDialog::m_UpdateAccounts() {
 
 void TransactionDialog::m_UpdateEntities() {
     m_EntitiesCombo.clear();
-    DataBase::Instance()->GetOperations(         //
+    DataBase::ref().GetOperations(         //
         [this](const EntityName& vEntityName) {  //
             m_EntitiesCombo.getArrayRef().push_back(vEntityName);
         });
@@ -411,7 +411,7 @@ void TransactionDialog::m_UpdateEntities() {
 
 void TransactionDialog::m_UpdateOperations() {
     m_OperationsCombo.clear();
-    DataBase::Instance()->GetOperations(               //
+    DataBase::ref().GetOperations(               //
         [this](const OperationName& vOperationName) {  //
             m_OperationsCombo.getArrayRef().push_back(vOperationName);
         });
@@ -421,7 +421,7 @@ void TransactionDialog::m_UpdateOperations() {
 
 void TransactionDialog::m_UpdateCategories() {
     m_CategoriesCombo.clear();
-    DataBase::Instance()->GetCategories(             //
+    DataBase::ref().GetCategories(             //
         [this](const CategoryName& vCategoryName) {  //
             m_CategoriesCombo.getArrayRef().push_back(vCategoryName);
         });

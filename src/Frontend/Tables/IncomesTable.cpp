@@ -136,27 +136,27 @@ void IncomesTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
         ImGui::Separator();
         if (ImGui::BeginMenu("Delete Tables")) {
             if (ImGui::MenuItem("Banks")) {
-                DataBase::Instance()->DeleteBanks();
+                DataBase::ref().DeleteBanks();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Accounts")) {
-                DataBase::Instance()->DeleteAccounts();
+                DataBase::ref().DeleteAccounts();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Entities")) {
-                DataBase::Instance()->DeleteEntities();
+                DataBase::ref().DeleteEntities();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Categories")) {
-                DataBase::Instance()->DeleteCategories();
+                DataBase::ref().DeleteCategories();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Operations")) {
-                DataBase::Instance()->DeleteOperations();
+                DataBase::ref().DeleteOperations();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Incomes")) {
-                DataBase::Instance()->DeleteIncomes();
+                DataBase::ref().DeleteIncomes();
                 refreshDatas();
             }
             ImGui::EndMenu();
@@ -231,7 +231,7 @@ void IncomesTable::m_UpdateAccounts() {
     m_Accounts.clear();
     m_Datas.accounts.clear();
     m_Datas.accountNumbers.clear();
-    DataBase::Instance()->GetAccounts(                 //
+    DataBase::ref().GetAccounts(                 //
         [this](const AccountOutput& vAccountOutput) {  //
             m_Datas.accounts.push_back(vAccountOutput);
             m_Datas.accountNumbers.push_back(vAccountOutput.datas.number);
@@ -247,7 +247,7 @@ void IncomesTable::m_UpdateIncomes(const RowID& vAccountID) {
     const auto& zero_based_account_id = vAccountID - 1;
     if (zero_based_account_id < m_Datas.accounts.size()) {
         const auto& account_number = m_Datas.accounts.at(zero_based_account_id).datas.number;
-        DataBase::Instance()->GetIncomes(
+        DataBase::ref().GetIncomes(
             vAccountID,
             [this, account_number](
                 const RowID& vIncomeID,

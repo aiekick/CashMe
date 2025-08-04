@@ -108,7 +108,7 @@ void EntitiesTable::m_updateEntities() {
     const auto account_id = m_getAccountID();
     if (account_id > 0) {
         m_Entities.clear();
-        DataBase::Instance()->GetEntitiesStats(       //
+        DataBase::ref().GetEntitiesStats(       //
             account_id,                               //
             [this](                                   //
                 const EntityOutput& vEntityOutput) {  //

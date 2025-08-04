@@ -70,7 +70,7 @@ void OperationsTable::m_updateOperations() {
     const auto account_id = m_getAccountID();
     if (account_id > 0) {
         m_Operations.clear();
-        DataBase::Instance()->GetOperationsStats(  //
+        DataBase::ref().GetOperationsStats(  //
             account_id,
             [this](
                 const RowID& vRowID,

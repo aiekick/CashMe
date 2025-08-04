@@ -73,7 +73,7 @@ ImWidgets::QuickStringCombo& ADataTable::m_getAccountComboRef() {
 void ADataTable::m_updateAccounts() {
     m_Accounts.clear();
     m_AccountsCombo.clear();
-    DataBase::Instance()->GetAccounts(                 //
+    DataBase::ref().GetAccounts(                 //
         [this](const AccountOutput& vAccountOutput) {  //
             m_Accounts.push_back(vAccountOutput);
             m_AccountsCombo.getArrayRef().push_back(vAccountOutput.datas.number);

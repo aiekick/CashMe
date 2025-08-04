@@ -107,11 +107,11 @@ void EntityDialog::m_cancelDialog() {
 }
 
 void EntityDialog::m_confirmDialogCreation() {
-    if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().OpenDBFile()) {
         EntityInput ei;
         ei.name = m_EntityNameInputText.GetText();
-        DataBase::Instance()->AddEntity(ei);
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().AddEntity(ei);
+        DataBase::ref().CloseDBFile();
     }
 }
 
@@ -122,11 +122,11 @@ void EntityDialog::m_drawContentCreation(const ImVec2& vPos) {
 }
 
 void EntityDialog::m_confirmDialogUpdate() {
-    if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().OpenDBFile()) {
         EntityOutput eo;
         eo.datas.name = m_EntityNameInputText.GetText();
-        DataBase::Instance()->UpdateEntity(eo.id, eo);
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().UpdateEntity(eo.id, eo);
+        DataBase::ref().CloseDBFile();
     }
 }
 
@@ -144,11 +144,11 @@ void EntityDialog::m_drawContentMerging(const ImVec2& vPos) {
 
 void EntityDialog::m_confirmDialogMerging() {
     EZ_TOOLS_DEBUG_BREAK;
-    if (DataBase::Instance()->OpenDBFile()) {
-        /*DataBase::Instance()->MergeEntities(  //
+    if (DataBase::ref().OpenDBFile()) {
+        /*DataBase::ref().MergeEntities(  //
             m_Entity.id,                      //
             m_EntityNameInputText.GetText());*/
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().CloseDBFile();
     }
 }
 

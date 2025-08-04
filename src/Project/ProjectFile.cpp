@@ -75,7 +75,7 @@ void ProjectFile::New(const std::string& vFilePathName) {
     Clear();
     ClearDatas();
     m_ProjectFilePathName = ez::file::simplifyFilePath(vFilePathName);
-    DataBase::Instance()->CreateDBFile(m_ProjectFilePathName);
+    DataBase::ref().CreateDBFile(m_ProjectFilePathName);
     auto ps = ez::file::parsePathFileName(m_ProjectFilePathName);
     if (ps.isOk) {
         m_ProjectFileName = ps.name;
@@ -95,10 +95,10 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
     if (!vFilePathName.empty()) {
         Clear();
         std::string filePathName = ez::file::simplifyFilePath(vFilePathName);
-        if (DataBase::Instance()->IsFileASqlite3DB(filePathName)) {
-            if (DataBase::Instance()->OpenDBFile(filePathName)) {
+        if (DataBase::ref().IsFileASqlite3DB(filePathName)) {
+            if (DataBase::ref().OpenDBFile(filePathName)) {
                 ClearDatas();
-                auto xml_settings = DataBase::Instance()->GetSettingsXMLDatas();
+                auto xml_settings = DataBase::ref().GetSettingsXMLDatas();
                 if (LoadConfigString(ez::xml::Node::unEscapeXml(xml_settings), "project") || xml_settings.empty()) {
                     m_ProjectFilePathName = ez::file::simplifyFilePath(vFilePathName);
                     auto ps = ez::file::parsePathFileName(m_ProjectFilePathName);
@@ -120,7 +120,7 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                     Clear();
                     LogVarError("Error : the project file %s cant be loaded", filePathName.c_str());
                 }
-                DataBase::Instance()->CloseDBFile();
+                DataBase::ref().CloseDBFile();
             }
         }
     }
@@ -132,14 +132,14 @@ bool ProjectFile::Save() {
         return false;
     }
 
-    if (DataBase::Instance()->OpenDBFile(m_ProjectFilePathName)) {
+    if (DataBase::ref().OpenDBFile(m_ProjectFilePathName)) {
         auto xml_settings = ez::xml::Node::escapeXml(SaveConfigString("project", "config"));
-        if (DataBase::Instance()->SetSettingsXMLDatas(xml_settings)) {
+        if (DataBase::ref().SetSettingsXMLDatas(xml_settings)) {
             SetProjectChange(false);
-            DataBase::Instance()->CloseDBFile();
+            DataBase::ref().CloseDBFile();
             return true;
         }
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().CloseDBFile();
     }	
 
     return false;

@@ -70,7 +70,7 @@ void TransactionsTable::m_drawTableContent(const size_t& vIdx, const double& vMa
             ImGui::PushID(t.id);
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
             if (ImGui::Checkbox("##check", &t.confirmed)) {
-                DataBase::Instance()->ConfirmTransaction(t.id, t.confirmed);
+                DataBase::ref().ConfirmTransaction(t.id, t.confirmed);
             }
             ImGui::PopStyleVar();
             ImGui::PopID();
@@ -291,44 +291,44 @@ void TransactionsTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
         ImGui::Separator();
         if (ImGui::BeginMenu("Delete Tables")) {
             if (ImGui::MenuItem("Banks")) {
-                DataBase::Instance()->DeleteBanks();
+                DataBase::ref().DeleteBanks();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Accounts")) {
-                DataBase::Instance()->DeleteAccounts();
+                DataBase::ref().DeleteAccounts();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Entities")) {
-                DataBase::Instance()->DeleteEntities();
+                DataBase::ref().DeleteEntities();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Categories")) {
-                DataBase::Instance()->DeleteCategories();
+                DataBase::ref().DeleteCategories();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Operations")) {
-                DataBase::Instance()->DeleteOperations();
+                DataBase::ref().DeleteOperations();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Incomes")) {
-                DataBase::Instance()->DeleteIncomes();
+                DataBase::ref().DeleteIncomes();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Transactions")) {
-                DataBase::Instance()->DeleteTransactions();
+                DataBase::ref().DeleteTransactions();
                 refreshDatas();
             }
             if (ImGui::MenuItem("Sources")) {
-                DataBase::Instance()->DeleteSources();
+                DataBase::ref().DeleteSources();
                 refreshDatas();
             }
             if (ImGui::MenuItem("All Except Accounts and banks")) {
-                DataBase::Instance()->DeleteEntities();
-                DataBase::Instance()->DeleteCategories();
-                DataBase::Instance()->DeleteOperations();
-                DataBase::Instance()->DeleteIncomes();
-                DataBase::Instance()->DeleteTransactions();
-                DataBase::Instance()->DeleteSources();
+                DataBase::ref().DeleteEntities();
+                DataBase::ref().DeleteCategories();
+                DataBase::ref().DeleteOperations();
+                DataBase::ref().DeleteIncomes();
+                DataBase::ref().DeleteTransactions();
+                DataBase::ref().DeleteSources();
                 refreshDatas();
             }
             ImGui::EndMenu();
@@ -469,7 +469,7 @@ void TransactionsTable::m_SelectPossibleDuplicateEntryOnPricesAndDates() {
     if (m_getAccountComboRef().getIndex() < m_Datas.accounts.size()) {
         RowID account_id = m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id;
         m_ResetSelection();
-        DataBase::Instance()->GetDuplicateTransactionsOnDatesAndAmount(  //
+        DataBase::ref().GetDuplicateTransactionsOnDatesAndAmount(  //
             account_id,                                                  //
             [this](const RowID& vRowID) {
                 if (m_Datas.transactions_filtered_rowids.find(vRowID) !=  //
@@ -484,7 +484,7 @@ void TransactionsTable::m_SelectUnConfirmedTransactions() {
     if (m_getAccountComboRef().getIndex() < m_Datas.accounts.size()) {
         RowID account_id = m_Datas.accounts.at(m_getAccountComboRef().getIndex()).id;
         m_ResetSelection();
-        DataBase::Instance()->GetUnConfirmedTransactions(  //
+        DataBase::ref().GetUnConfirmedTransactions(  //
             account_id,                                    //
             [this](const RowID& vRowID) {
                 if (m_Datas.transactions_filtered_rowids.find(vRowID) !=  //
@@ -527,7 +527,7 @@ void TransactionsTable::m_GroupTransactions(const GroupingMode& vGroupingMode) {
 
 void TransactionsTable::m_UpdateBanks() {
     m_Datas.bankNames.clear();
-    DataBase::Instance()->GetBanks(                                       //
+    DataBase::ref().GetBanks(                                       //
         [this](const BankOutput& vBankOutput) {  //
             m_Datas.bankNames.push_back(vBankOutput.datas.name);
         });
@@ -535,7 +535,7 @@ void TransactionsTable::m_UpdateBanks() {
 
 void TransactionsTable::m_UpdateEntities() {
     m_Datas.entityNames.clear();
-    DataBase::Instance()->GetEntities(           //
+    DataBase::ref().GetEntities(           //
         [this](const EntityOutput& vEntityOutput) {  //
             m_Datas.entityNames.push_back(vEntityOutput.datas.name);
         });
@@ -543,7 +543,7 @@ void TransactionsTable::m_UpdateEntities() {
 
 void TransactionsTable::m_UpdateCategories() {
     m_Datas.categoryNames.clear();
-    DataBase::Instance()->GetCategories(             //
+    DataBase::ref().GetCategories(             //
         [this](const CategoryName& vCategoryName) {  //
             m_Datas.categoryNames.push_back(vCategoryName);
         });
@@ -551,7 +551,7 @@ void TransactionsTable::m_UpdateCategories() {
 
 void TransactionsTable::m_UpdateOperations() {
     m_Datas.operationNames.clear();
-    DataBase::Instance()->GetOperations(               //
+    DataBase::ref().GetOperations(               //
         [this](const OperationName& vOperationName) {  //
             m_Datas.operationNames.push_back(vOperationName);
         });
@@ -561,7 +561,7 @@ void TransactionsTable::m_UpdateAccounts() {
     m_Accounts.clear();
     m_Datas.accounts.clear();
     m_Datas.accountNumbers.clear();
-    DataBase::Instance()->GetAccounts(                 //
+    DataBase::ref().GetAccounts(                 //
         [this](const AccountOutput& vAccountOutput) {  //
             m_Datas.accounts.push_back(vAccountOutput);
             m_Datas.accountNumbers.push_back(vAccountOutput.datas.number);
@@ -579,7 +579,7 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
         double solde = m_CurrentBaseSolde = m_Datas.accounts.at(zero_based_account_id).datas.base_solde;
         const auto& account_number = m_Datas.accounts.at(zero_based_account_id).datas.number;
         if (m_IsGroupingModeTransactions()) {
-            DataBase::Instance()->GetTransactions(  //
+            DataBase::ref().GetTransactions(  //
                 vAccountID,                         //
                 [this, &solde, account_number](     //
                     const RowID& vTransactionID,
@@ -615,7 +615,7 @@ void TransactionsTable::m_UpdateTransactions(const RowID& vAccountID) {
                     m_Datas.transactions.push_back(t);
                 });
         } else {
-            DataBase::Instance()->GetGroupedTransactions(  //
+            DataBase::ref().GetGroupedTransactions(  //
                 vAccountID,
                 GroupBy::DATES,
                 (DateFormat)(m_GroupingMode - 1),

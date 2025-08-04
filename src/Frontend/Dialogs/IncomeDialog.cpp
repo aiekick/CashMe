@@ -299,9 +299,9 @@ void IncomeDialog::m_cancelDialog() {
 
 void IncomeDialog::m_confirmDialogCreation() {
     RowID account_id = 0U;
-    if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
-        if (DataBase::Instance()->OpenDBFile()) {
-            DataBase::Instance()->AddIncome(  //
+    if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
+        if (DataBase::ref().OpenDBFile()) {
+            DataBase::ref().AddIncome(  //
                 account_id,
                 m_IncomeNameInputText.GetText(),
                 m_EntitiesCombo.getText(),
@@ -314,15 +314,15 @@ void IncomeDialog::m_confirmDialogCreation() {
                 m_IncomeMinDayInputInt32,
                 m_IncomeMaxDayInputInt32,
                 m_IncomeDescriptionInputText.GetText());
-            DataBase::Instance()->CloseDBFile();
+            DataBase::ref().CloseDBFile();
         }
     }
 }
 
 void IncomeDialog::m_confirmDialogUpdateOnce() {
     /*RowID account_id = 0U;
-    if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
-        if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
+        if (DataBase::ref().OpenDBFile()) {
             const auto sha = ez::str::toStr(  //
                 "%s_%s_%f",               //
                 m_IncomeDateInputText.GetText().c_str(),
@@ -331,10 +331,10 @@ void IncomeDialog::m_confirmDialogUpdateOnce() {
                 // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
                 m_IncomeDescriptionInputText.GetText().substr(0, 30).c_str(),
                 m_IncomeAmountInputDouble);  // must be unique per operation
-            DataBase::Instance()->AddEntity(m_EntitiesCombo.getText());
-            DataBase::Instance()->AddCategory(m_CategoriesCombo.getText());
-            DataBase::Instance()->AddOperation(m_OperationsCombo.getText());
-            DataBase::Instance()->UpdateIncome(          //
+            DataBase::ref().AddEntity(m_EntitiesCombo.getText());
+            DataBase::ref().AddCategory(m_CategoriesCombo.getText());
+            DataBase::ref().AddOperation(m_OperationsCombo.getText());
+            DataBase::ref().UpdateIncome(          //
                 m_IncomeToUpdate.id,                     //
                 m_EntitiesCombo.getText(),                    //
                 m_CategoriesCombo.getText(),                  //
@@ -346,28 +346,28 @@ void IncomeDialog::m_confirmDialogUpdateOnce() {
                 m_IncomeAmountInputDouble,               //
                 false,                                        //
                 sha);
-            DataBase::Instance()->CloseDBFile();
+            DataBase::ref().CloseDBFile();
         }
     }*/
 }
 
 void IncomeDialog::m_confirmDialogUpdateAll() {
     /*RowID account_id = 0U;
-    if (DataBase::Instance()->GetAccount(m_AccountsCombo.getText(), account_id)) {
-        if (DataBase::Instance()->OpenDBFile()) {
-            if (DataBase::Instance()->BeginIncome()) {
+    if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
+        if (DataBase::ref().OpenDBFile()) {
+            if (DataBase::ref().BeginIncome()) {
                 for (auto t : m_IncomesToUpdate) {
                     if (m_EntitiesCombo.getText() != MULTIPLE_VALUES) {
                         t.entity = m_EntitiesCombo.getText();
-                        DataBase::Instance()->AddEntity(t.entity);
+                        DataBase::ref().AddEntity(t.entity);
                     }
                     if (m_CategoriesCombo.getText() != MULTIPLE_VALUES) {
                         t.category = m_CategoriesCombo.getText();
-                        DataBase::Instance()->AddCategory(t.category);
+                        DataBase::ref().AddCategory(t.category);
                     }
                     if (m_OperationsCombo.getText() != MULTIPLE_VALUES) {
                         t.operation = m_OperationsCombo.getText();
-                        DataBase::Instance()->AddOperation(t.operation);
+                        DataBase::ref().AddOperation(t.operation);
                     }
                     if (m_IncomeDateInputText.GetText() != MULTIPLE_VALUES) {
                         t.date = m_IncomeDateInputText.GetText();
@@ -381,7 +381,7 @@ void IncomeDialog::m_confirmDialogUpdateAll() {
                     if (!m_IncomeConfirmedManyValues) {
                         t.confirmed = m_IncomeConfirmed;
                     }
-                    DataBase::Instance()->UpdateIncome(  //
+                    DataBase::ref().UpdateIncome(  //
                         t.id,                                 //
                         t.entity,                             //
                         t.operation,                          //
@@ -394,9 +394,9 @@ void IncomeDialog::m_confirmDialogUpdateAll() {
                         t.confirmed,                          //
                         t.sha);
                 }
-                DataBase::Instance()->CommitIncome();
+                DataBase::ref().CommitIncome();
             }
-            DataBase::Instance()->CloseDBFile();
+            DataBase::ref().CloseDBFile();
         }
     }*/
 }
@@ -407,13 +407,13 @@ void IncomeDialog::m_confirmDialogDeletion() {
         m_rows.emplace(t.id);
     }
     if (!m_rows.empty()) {
-        DataBase::Instance()->DeleteIncomes(m_rows);
+        DataBase::ref().DeleteIncomes(m_rows);
     }*/
 }
 
 void IncomeDialog::m_UpdateAccounts() {
     m_AccountsCombo.clear();
-    DataBase::Instance()->GetAccounts(  //
+    DataBase::ref().GetAccounts(  //
         [this](const AccountOutput& vAccountOutput) {  //
             m_AccountsCombo.getArrayRef().push_back(vAccountOutput.datas.number);
         });
@@ -422,7 +422,7 @@ void IncomeDialog::m_UpdateAccounts() {
 
 void IncomeDialog::m_UpdateEntities() {
     m_EntitiesCombo.clear();
-    DataBase::Instance()->GetEntities(           //
+    DataBase::ref().GetEntities(           //
         [this](const EntityOutput& vEntityOutput) {  //
             m_EntitiesCombo.getArrayRef().push_back(vEntityOutput.datas.name);
         });
@@ -432,7 +432,7 @@ void IncomeDialog::m_UpdateEntities() {
 
 void IncomeDialog::m_UpdateOperations() {
     m_OperationsCombo.clear();
-    DataBase::Instance()->GetOperations(               //
+    DataBase::ref().GetOperations(               //
         [this](const OperationName& vOperationName) {  //
             m_OperationsCombo.getArrayRef().push_back(vOperationName);
         });
@@ -442,7 +442,7 @@ void IncomeDialog::m_UpdateOperations() {
 
 void IncomeDialog::m_UpdateCategories() {
     m_CategoriesCombo.clear();
-    DataBase::Instance()->GetCategories(             //
+    DataBase::ref().GetCategories(             //
         [this](const CategoryName& vCategoryName) {  //
             m_CategoriesCombo.getArrayRef().push_back(vCategoryName);
         });

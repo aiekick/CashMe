@@ -437,9 +437,11 @@ void MainBackend::m_InitPlugins(const ez::App& vApp) {
 }
 
 void MainBackend::m_InitModels() {
+    DataBase::initSingleton();
 }
 
 void MainBackend::m_UnitModels() {
+    DataBase::unitSingleton();
 }
 
 void MainBackend::m_UnitPlugins() {

@@ -92,10 +92,10 @@ void OperationDialog::m_cancelDialog() {
 }
 
 void OperationDialog::m_confirmDialogCreation() {
-    if (DataBase::Instance()->OpenDBFile()) {
-        DataBase::Instance()->AddOperation(  //
+    if (DataBase::ref().OpenDBFile()) {
+        DataBase::ref().AddOperation(  //
             m_OperationNameInputText.GetText());
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().CloseDBFile();
     }
 }
 
@@ -106,11 +106,11 @@ void OperationDialog::m_drawContentCreation(const ImVec2& vPos) {
 }
 
 void OperationDialog::m_confirmDialogUpdate() {
-    if (DataBase::Instance()->OpenDBFile()) {
-        DataBase::Instance()->UpdateOperation(  //
+    if (DataBase::ref().OpenDBFile()) {
+        DataBase::ref().UpdateOperation(  //
             m_Operation.id,                     //
             m_OperationNameInputText.GetText());
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().CloseDBFile();
     }
 }
 

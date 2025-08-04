@@ -93,10 +93,10 @@ void CategoryDialog::m_cancelDialog() {
 }
 
 void CategoryDialog::m_confirmDialogCreation() {
-    if (DataBase::Instance()->OpenDBFile()) {
-        DataBase::Instance()->AddCategory(        //
+    if (DataBase::ref().OpenDBFile()) {
+        DataBase::ref().AddCategory(        //
             m_CategoryNameInputText.GetText());
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().CloseDBFile();
     }
 }
 
@@ -107,11 +107,11 @@ void CategoryDialog::m_drawContentCreation(const ImVec2& vPos) {
 }
 
 void CategoryDialog::m_confirmDialogUpdate() {
-    if (DataBase::Instance()->OpenDBFile()) {
-        DataBase::Instance()->UpdateCategory(     //
+    if (DataBase::ref().OpenDBFile()) {
+        DataBase::ref().UpdateCategory(     //
             m_Category.id,                        //
             m_CategoryNameInputText.GetText());
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().CloseDBFile();
     }
 }
 

@@ -116,15 +116,15 @@ void AccountDialog::m_cancelDialog() {
 }
 
 void AccountDialog::m_confirmDialogCreation() {
-    if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().OpenDBFile()) {
         AccountInput ai;
         ai.bank_agency = m_BankAgencyInputText.GetText();
         ai.type = m_AccountTypeInputText.GetText();
         ai.name = m_AccountNameInputText.GetText();
         ai.number = m_AccountNumberInputText.GetText();
         ai.base_solde = m_AccountBaseSoldeInputDouble;
-        DataBase::Instance()->AddAccount(m_BanksCombo.getText(), ai);
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().AddAccount(m_BanksCombo.getText(), ai);
+        DataBase::ref().CloseDBFile();
     }
 }
 
@@ -140,7 +140,7 @@ void AccountDialog::m_drawContentCreation(const ImVec2& vPos) {
 }
 
 void AccountDialog::m_confirmDialogUpdate() {
-    if (DataBase::Instance()->OpenDBFile()) {
+    if (DataBase::ref().OpenDBFile()) {
         AccountOutput ao;
         ao.bankName = m_BanksCombo.getText();
         ao.datas.bank_agency = m_BankAgencyInputText.GetText();
@@ -148,8 +148,8 @@ void AccountDialog::m_confirmDialogUpdate() {
         ao.datas.name = m_AccountNameInputText.GetText();
         ao.datas.number = m_AccountNumberInputText.GetText();
         ao.datas.base_solde = m_AccountBaseSoldeInputDouble;
-        DataBase::Instance()->UpdateAccount(m_Account.id, ao);
-        DataBase::Instance()->CloseDBFile();
+        DataBase::ref().UpdateAccount(m_Account.id, ao);
+        DataBase::ref().CloseDBFile();
     }
 }
 
@@ -173,7 +173,7 @@ void AccountDialog::m_drawContentDeletion(const ImVec2& vPos) {
 
 void AccountDialog::m_UpdateBanks() {
     m_BanksCombo.clear();
-    DataBase::Instance()->GetBanks(                                       //
+    DataBase::ref().GetBanks(                                       //
         [this](const BankOutput& vBankOutput) {  //
             m_BanksCombo.getArrayRef().push_back(vBankOutput.datas.name);
         });
