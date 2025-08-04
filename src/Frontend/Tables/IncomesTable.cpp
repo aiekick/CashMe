@@ -65,8 +65,8 @@ void IncomesTable::m_setupColumns() {
     ImGui::TableSetupScrollFreeze(0, 2);
     ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Start Date", ImGuiTableColumnFlags_WidthFixed);
-    ImGui::TableSetupColumn("End Date", ImGuiTableColumnFlags_WidthStretch);
-    ImGui::TableSetupColumn("Entity", ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableSetupColumn("End Date", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("Entity", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Min", ImGuiTableColumnFlags_WidthFixed);

@@ -19,6 +19,8 @@ public:
     bool DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened = nullptr, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
 
+    void Load();
+
 public:  // singleton
     static std::shared_ptr<BudgetPane> Instance() {
         static std::shared_ptr<BudgetPane> _instance = std::make_shared<BudgetPane>();

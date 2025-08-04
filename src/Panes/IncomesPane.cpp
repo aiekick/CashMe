@@ -6,6 +6,7 @@
 #include <Models/DataBase.h>
 #include <Project/ProjectFile.h>
 #include <Frontend/MainFrontend.h>
+#include <Panes/BudgetPane.h>
 
 IncomesPane::IncomesPane() = default;
 IncomesPane::~IncomesPane() {
@@ -62,9 +63,20 @@ bool IncomesPane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& 
     return false;
 }
 
-bool IncomesPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
-    ImGui::SetCurrentContext(vContextPtr);    
-    return false;
+bool IncomesPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& vRect, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+    ImGui::SetCurrentContext(vContextPtr);
+    const ImVec2 center = vRect.GetCenter();
+
+    bool ret = false;
+
+    ret |= m_IncomesTable.getIncomeDialogRef().draw(center);
+
+    if (ret) {
+        m_IncomesTable.load();
+        BudgetPane::Instance()->Load();
+    }
+
+    return ret;
 }
 
 bool IncomesPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
