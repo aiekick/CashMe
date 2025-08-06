@@ -10,6 +10,9 @@ bool DataBase::ComputeBudget(  //
     const BudgetProjectedDays& vProjectedDays,
     std::function<void(const BudgetOutput&)> vCallback) {
     bool ret = false;
+    if (vAccountID == 0) {
+        return ret;
+    }
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     const auto select_query = ez::str::toStr(R"(WITH RECURSIVE params AS (SELECT %u AS account_id, %u AS projection_days),)", vAccountID, vProjectedDays) +
@@ -25,9 +28,17 @@ mois_proj AS (
   SELECT DISTINCT strftime('%Y-%m-01', jour) AS premier_jour
   FROM jours
 ),
-
+incomes_base AS (
+  SELECT *
+  FROM incomes
+  WHERE account_id = (SELECT account_id FROM params)
+),
+transactions_base AS (
+  SELECT *
+  FROM transactions
+  WHERE account_id = (SELECT account_id FROM params)
+),
 -- ----------- COURBE MIN -----------
-
 income_min_dates AS (
     -- Dépenses (min_amount < 0) à min_day
     SELECT
@@ -253,6 +264,7 @@ income_max_dates AS (
 )
 
 SELECT
+    ROW_NUMBER() OVER (ORDER BY j.jour) AS id,
     j.jour,
     unixepoch(j.jour) AS epoch,
 
@@ -397,16 +409,17 @@ ORDER BY j.jour
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
                     BudgetOutput bo;
-                    bo.date = ez::sqlite::readStringColumn(stmt, 0);
-                    bo.dateEpoch = sqlite3_column_int64(stmt, 1);
-                    bo.delta.min = sqlite3_column_double(stmt, 2);
-                    bo.delta.max = sqlite3_column_double(stmt, 3);
-                    bo.solde.min = sqlite3_column_double(stmt, 4);
-                    bo.solde.max = sqlite3_column_double(stmt, 5);
-                    bo.incomesMin = ez::sqlite::readStringColumn(stmt, 6);
-                    bo.incomesMinAmount = ez::sqlite::readStringColumn(stmt, 7);
-                    bo.incomesMax = ez::sqlite::readStringColumn(stmt, 8);
-                    bo.incomesMaxAmount = ez::sqlite::readStringColumn(stmt, 9);
+                    bo.id = sqlite3_column_int(stmt, 0);
+                    bo.date = ez::sqlite::readStringColumn(stmt, 1);
+                    bo.dateEpoch = sqlite3_column_int64(stmt, 2);
+                    bo.delta.min = sqlite3_column_double(stmt, 3);
+                    bo.delta.max = sqlite3_column_double(stmt, 4);
+                    bo.solde.min = sqlite3_column_double(stmt, 5);
+                    bo.solde.max = sqlite3_column_double(stmt, 6);
+                    bo.incomesMin = ez::sqlite::readStringColumn(stmt, 7);
+                    bo.incomesMinAmount = ez::sqlite::readStringColumn(stmt, 8);
+                    bo.incomesMax = ez::sqlite::readStringColumn(stmt, 9);
+                    bo.incomesMaxAmount = ez::sqlite::readStringColumn(stmt, 10);
                     vCallback(bo);
                     ret = true;
                 }

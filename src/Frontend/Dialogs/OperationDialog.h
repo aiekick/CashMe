@@ -22,12 +22,6 @@ protected:
     void m_confirmDialog() override;
     void m_cancelDialog() override;
 
-    void m_confirmDialogCreation();
-    void m_drawContentCreation(const ImVec2& vPos);
-
     void m_confirmDialogUpdate();
     void m_drawContentUpdate(const ImVec2& vPos);
-
-    void m_confirmDialogDeletion();
-    void m_drawContentDeletion(const ImVec2& vPos);
 };

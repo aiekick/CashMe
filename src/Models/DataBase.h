@@ -35,6 +35,7 @@ private:
     std::string m_DataBaseFilePathName = "datas.db3";
     bool m_TransactionStarted = false;
     char* m_LastErrorMsg = nullptr;
+    static constexpr uint32_t m_maxInsertAttempts{50};
 
 public:
     // DATABASE FILE
@@ -47,9 +48,9 @@ public:
 
     // TRANSACTIONS
 
-    bool BeginTransaction();
-    void CommitTransaction();
-    void RollbackTransaction();
+    bool BeginDBTransaction();
+    void CommitDBTransaction();
+    void RollbackDBTransaction();
 
     // MISC
 
@@ -120,79 +121,33 @@ public:
     bool AddIncome(const RowID& vAccountID, const IncomeInput& vIncomeInput);
     bool GetIncomes(const RowID& vAccountID, std::function<void(const IncomeOutput&)> vCallback);
     bool UpdateIncome(const RowID& vRowID, const IncomeInput& vIncomeInput);
+    bool SearchIncomeInTransactions(const TransactionInput& vTransactionInput, RowID& vOutRowID);
     bool DeleteIncome(const RowID& vRowID);
     bool DeleteIncomes(const std::set<RowID>& vRowIDs);
     bool DeleteIncomes();
 
     // TRANSACTION
 
-    void AddTransaction(  //
-        const RowID& vAccountID,
-        const EntityName& vEntityName,
-        const CategoryName& vCategoryName,
-        const OperationName& vOperationName,
-        const SourceName& vSourceName,
-        const SourceType& vSourceType,
-        const SourceSha& vSourceSha,
-        const TransactionDate& vDate,
-        const TransactionDescription& vDescription,
-        const TransactionComment& vComment,
-        const TransactionAmount& vAmount,
-        const TransactionConfirmed& vConfirmed,
-        const TransactionSha& vSha);
-    void GetTransactions(  //
-        const RowID& vAccountID,
-        std::function<void(  //
-            const RowID&,
-            const EntityName&,
-            const CategoryName&,
-            const OperationName&,
-            const SourceName&,
-            const TransactionDate&,
-            const TransactionDateEpoch&,
-            const TransactionDescription&,
-            const TransactionComment&,
-            const TransactionAmount&,
-            const TransactionConfirmed&,
-            const TransactionSha&)> vCallback);
-    void GetGroupedTransactions(  //
+    bool AddTransaction(const RowID& vAccountID, const TransactionInput& vTransactionInput);
+    bool AddTransactionAutoSha(const RowID& vAccountID, const TransactionInput& vTransactionInput);
+    bool GetTransactions(const RowID& vAccountID, std::function<void(const TransactionOutput&)> vCallback);
+    bool GetGroupedTransactions(  //
         const RowID& vAccountID,
         const GroupBy& vGroupBy,
         const DateFormat& vGroupByDate,
-        std::function<void(  //
-            const RowID&,
-            const TransactionDate&,
-            const TransactionDescription&,
-            const EntityName&,
-            const CategoryName&,
-            const OperationName&,
-            const TransactionDebit&,
-            const TransactionCredit&)> vCallback);
+        std::function<void(const TransactionOutput&)> vCallback);
     std::string GetFormatDate(const DateFormat& vDateFormat);
-    void GetDuplicateTransactionsOnDatesAndAmount(  //
-        const RowID& vAccountID,                    //
+    bool GetDuplicateTransactionsOnDatesAndAmount(  
+        const RowID& vAccountID,                    
         std::function<void(const RowID&)> vCallback);
-    void GetUnConfirmedTransactions(  //
-        const RowID& vAccountID,      //
+    bool GetUnConfirmedTransactions(  
+        const RowID& vAccountID,      
         std::function<void(const RowID&)> vCallback);
-    void UpdateTransaction(  //
-        const RowID& vRowID,
-        const EntityName& vEntityName,
-        const CategoryName& vCategoryName,
-        const OperationName& vOperationName,
-        const SourceName& vSourceName,
-        const TransactionDate& vDate,
-        const TransactionDescription& vDescription,
-        const TransactionComment& vComment,
-        const TransactionAmount& vAmount,
-        const TransactionConfirmed& vConfirmed,
-        const TransactionSha& vSha);
-    void ConfirmTransaction(  //
-        const RowID& vRowID,
-        const TransactionConfirmed& vConfirmed);
-    void DeleteTransaction(const RowID& vRowID);
-    void DeleteTransactions();
-    void DeleteTransactions(const std::set<RowID>& vRowIDs);
+    bool UpdateTransaction(const RowID& vRowID, const TransactionInput& vTransactionInput);
+    bool ConfirmTransaction(const RowID& vRowID, const bool& vConfirmed);
+    bool DeleteTransaction(const RowID& vRowID);
+    bool DeleteTransactions(const std::set<RowID>& vRowIDs);
+    bool DeleteTransactions();
 
     // BUDGET
 
@@ -208,17 +163,17 @@ private:
     void m_CreateDBTables(const bool& vPrintLogs = true);
     bool m_EnableForeignKey();
     static int32_t m_debug_sqlite3_exec(  //
-        const char* vDebugLabel,
+        const std::string& vDebugLabel,
         sqlite3* db,                                 /* An open database */
-        const char* sql_query,                       /* SQL to be evaluated */
+        const std::string& sql_query,                /* SQL to be evaluated */
         int (*callback)(void*, int, char**, char**), /* Callback function */
         void* arg1,                                  /* 1st argument to callback */
         char** errmsg);
 
     static int32_t m_debug_sqlite3_prepare_v2(  //
-        const char* vDebugLabel,
+        const std::string& vDebugLabel,
         sqlite3* db,           /* Database handle. */
-        const char* sql_query, /* UTF-8 encoded SQL statement. */
+        const std::string& sql_query, /* UTF-8 encoded SQL statement. */
         int nBytes,            /* Length of zSql in bytes. */
         sqlite3_stmt** ppStmt, /* OUT: A pointer to the prepared statement */
         const char** pzTail);

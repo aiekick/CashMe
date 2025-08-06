@@ -5,7 +5,7 @@
 
 class IncomeDialog : public ADataDialog {
 private:
-    Income m_IncomeToUpdate;
+    IncomeOutput m_IncomeToUpdate;
 
     // widgets : Read Only
     SourceName m_SourceName;
@@ -13,8 +13,8 @@ private:
     SourceSha m_SourceSha;
 
     // widgets : Read / Write
-    IncomeAmount m_IncomeMinAmountInputDouble = 0.0;
-    IncomeAmount m_IncomeMaxAmountInputDouble = 0.0;
+    ImWidgets::InputValue<double> m_IncomeMinAmountInputDouble;
+    ImWidgets::InputValue<double> m_IncomeMaxAmountInputDouble;
     ImWidgets::QuickStringCombo m_AccountsCombo;
     ImWidgets::QuickStringEditCombo m_EntitiesCombo;
     ImWidgets::QuickStringEditCombo m_CategoriesCombo;
@@ -22,16 +22,16 @@ private:
     ImWidgets::InputText m_IncomeNameInputText;
     ImWidgets::InputText m_IncomeStartDateInputText;
     ImWidgets::InputText m_IncomeEndDateInputText;
-    IncomeDay m_IncomeMinDayInputInt32 = 0;
-    IncomeDay m_IncomeMaxDayInputInt32 = 0;
+    ImWidgets::InputValue<int32_t> m_IncomeMinDayInputInt32;
+    ImWidgets::InputValue<int32_t> m_IncomeMaxDayInputInt32;
     ImWidgets::InputText m_IncomeDescriptionInputText;
 
     // transactions to add as incomes
-    std::vector<Transaction> m_TransactionToAddAsIncomes;
+    std::vector<TransactionOutput> m_TransactionToAddAsIncomes;
 
     // transactions to update / delete
-    std::vector<Income> m_IncomesToUpdate;
-    std::vector<Income> m_IncomesToDelete;
+    std::vector<IncomeOutput> m_IncomesToUpdate;
+    std::vector<IncomeOutput> m_IncomesToDelete;
     ImGuiListClipper m_IncomesDeletionListClipper;
 
 public:
@@ -39,10 +39,10 @@ public:
     bool init() override;
     void unit() override;
 
-    void setTransactions(const std::vector<Transaction>& vTransactions);
-    void setIncome(const Income& vIncome);
-    void setIncomesToUpdate(const std::vector<Income>& vIncomes);
-    void setIncomesToDelete(const std::vector<Income>& vIncomes);
+    void setTransactions(const std::vector<TransactionOutput>& vTransactions);
+    void setIncome(const IncomeOutput& vIncome);
+    void setIncomesToUpdate(const std::vector<IncomeOutput>& vIncomes);
+    void setIncomesToDelete(const std::vector<IncomeOutput>& vIncomes);
 
 protected:
     void m_drawContent(const ImVec2& vPos) override;
@@ -56,14 +56,13 @@ protected:
     void m_drawContentCreation(const ImVec2& vPos);
 
     void m_confirmDialogUpdateOnce();
-    void m_confirmDialogUpdateAll();
     void m_drawContentUpdate(const ImVec2& vPos);
 
     void m_confirmDialogDeletion();
     void m_drawContentDeletion(const ImVec2& vPos);
 
-    void m_UpdateAccounts();
-    void m_UpdateEntities();
-    void m_UpdateOperations();
-    void m_UpdateCategories();
+    void m_updateAccounts();
+    void m_updateEntities();
+    void m_updateOperations();
+    void m_updateCategories();
 };

@@ -4,11 +4,12 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-
+#include <ezlibs/ezSingleton.hpp>
 #include <Frontend/Tables/IncomesTable.h>
 
 class ProjectFile;
 class IncomesPane : public AbstractPane {
+    IMPLEMENT_SHARED_SINGLETON(IncomesPane)
 private:
     IncomesTable m_IncomesTable;
 
@@ -19,14 +20,6 @@ public:
     bool DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened = nullptr, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
-
-    void Load();
-
-public:  // singleton
-    static std::shared_ptr<IncomesPane> Instance() {
-        static std::shared_ptr<IncomesPane> _instance = std::make_shared<IncomesPane>();
-        return _instance;
-    }
 
 public:
     IncomesPane();                             // Prevent construction

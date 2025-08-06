@@ -17,6 +17,7 @@ limitations under the License.
 #pragma once
 
 #include <ezlibs/ezXmlConfig.hpp>
+#include <ezlibs/ezSingleton.hpp>
 #include <string>
 
 enum class LanguageEnum
@@ -25,8 +26,8 @@ enum class LanguageEnum
 	EN
 };
 
-class TranslationHelper : public ez::xml::Config
-{
+class TranslationHelper : public ez::xml::Config {
+    IMPLEMENT_SINGLETON(TranslationHelper)
 public:
 	static LanguageEnum s_HelpLanguage;
 
@@ -53,13 +54,6 @@ public: // configuration
 	bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
 public:
-	static TranslationHelper* Instance()
-	{
-		static TranslationHelper _instance;
-		return &_instance;
-	}
-
-protected:
 	TranslationHelper(); // Prevent construction
 	TranslationHelper(const TranslationHelper&) {}; // Prevent construction by copying
 	TranslationHelper& operator =(const TranslationHelper&) { return *this; }; // Prevent assignment

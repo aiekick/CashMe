@@ -1,6 +1,7 @@
 #include "TransactionDialog.h"
 #include <Models/DataBase.h>
 #include <ezlibs/ezTools.hpp>
+#include <ezlibs/ezSha.hpp>
 
 #define MULTIPLE_VALUES "Many values"
 
@@ -15,15 +16,15 @@ void TransactionDialog::unit() {
 
 }
 
-void TransactionDialog::setTransaction(const Transaction& vTransaction) {
+void TransactionDialog::setTransaction(const TransactionOutput& vTransaction) {
     m_TransactionToUpdate = vTransaction;
 }
 
-void TransactionDialog::setTransactionsToUpdate(const std::vector<Transaction>& vTransactions) {
+void TransactionDialog::setTransactionsToUpdate(const std::vector<TransactionOutput>& vTransactions) {
     m_TransactionsToUpdate = vTransactions;
 }
 
-void TransactionDialog::setTransactionsToDelete(const std::vector<Transaction>& vTransactions) {
+void TransactionDialog::setTransactionsToDelete(const std::vector<TransactionOutput>& vTransactions) {
     m_TransactionsToDelete = vTransactions;
 }
 
@@ -52,9 +53,10 @@ void TransactionDialog::m_drawContentCreation(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayWithColumn(width, "Account", align);
-    m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
-    m_CategoriesCombo.displayWithColumn(width, "CategoryOutput", align);
-    m_OperationsCombo.displayWithColumn(width, "OperationOutput", align);
+    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_CategoriesCombo.displayWithColumn(width, "Category", align);
+    m_OperationsCombo.displayWithColumn(width, "Operation", align);
+    m_IncomesCombo.displayWithColumn(width, "Income", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
     m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
     m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", true, align);
@@ -66,9 +68,10 @@ void TransactionDialog::m_drawContentUpdate(const ImVec2& vPos) {
     const auto align = 125.0f;
     const auto width = 400.0f;
     m_AccountsCombo.displayWithColumn(width, "Account", align);
-    m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
-    m_CategoriesCombo.displayWithColumn(width, "CategoryOutput", align);
-    m_OperationsCombo.displayWithColumn(width, "OperationOutput", align);
+    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_CategoriesCombo.displayWithColumn(width, "Category", align);
+    m_OperationsCombo.displayWithColumn(width, "Operation", align);
+    m_IncomesCombo.displayWithColumn(width, "Income", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
     m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
     m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", true, align);
@@ -120,25 +123,25 @@ void TransactionDialog::m_drawContentDeletion(const ImVec2& vPos) {
                 }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text("%s", t.date.c_str()); }
+                { ImGui::Text("%s", t.datas.date.c_str()); }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text("%s", t.description.c_str()); }
+                { ImGui::Text("%s", t.datas.description.c_str()); }
 
                 ImGui::TableNextColumn();
                 {
-                    if (t.debit < 0.0) {
+                    if (t.amounts.debit < 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-                        ImGui::Text("%.2f", t.debit);
+                        ImGui::Text("%.2f", t.amounts.debit);
                         ImGui::PopStyleColor();
                     }
                 }
 
                 ImGui::TableNextColumn();
                 {
-                    if (t.credit > 0.0) {
+                    if (t.amounts.credit > 0.0) {
                         ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-                        ImGui::Text("%.2f", t.credit);
+                        ImGui::Text("%.2f", t.amounts.credit);
                         ImGui::PopStyleColor();
                     }
                 }
@@ -154,49 +157,54 @@ void TransactionDialog::m_drawContentDeletion(const ImVec2& vPos) {
 }
 
 void TransactionDialog::m_prepare() {
-    m_UpdateAccounts();
-    m_UpdateEntities();
-    m_UpdateOperations();
-    m_UpdateCategories();
+    m_updateAccounts();
+    m_updateEntities();
+    m_updateOperations();
+    m_updateCategories();
+    m_updateIncomes();
     m_TransactionConfirmedManyValues = false;
     if (getCurrentMode() == DataDialogMode::MODE_UPDATE_ALL) {
         if (!m_TransactionsToUpdate.empty()) {
             m_TransactionToUpdate = m_TransactionsToUpdate.at(0);
             for (const auto& t : m_TransactionsToUpdate) {
-                if (m_TransactionToUpdate.entity != t.entity) {
-                    m_TransactionToUpdate.entity = "Many values";
+                if (m_TransactionToUpdate.datas.entity.name != t.datas.entity.name) {
+                    m_TransactionToUpdate.datas.entity.name = "Many values";
                 }
-                if (m_TransactionToUpdate.category != t.category) {
-                    m_TransactionToUpdate.category = "Many values";
+                if (m_TransactionToUpdate.datas.category.name != t.datas.category.name) {
+                    m_TransactionToUpdate.datas.category.name = "Many values";
                 }
-                if (m_TransactionToUpdate.operation != t.operation) {
-                    m_TransactionToUpdate.operation = "Many values";
+                if (m_TransactionToUpdate.datas.operation.name != t.datas.operation.name) {
+                    m_TransactionToUpdate.datas.operation.name = "Many values";
                 }
-                if (m_TransactionToUpdate.date != t.date) {
-                    m_TransactionToUpdate.date = "Many values";
+                if (m_TransactionToUpdate.datas.income.name != t.datas.income.name) {
+                    m_TransactionToUpdate.datas.income.name = "Many values";
                 }
-                if (m_TransactionToUpdate.description != t.description) {
-                    m_TransactionToUpdate.description = "Many values";
+                if (m_TransactionToUpdate.datas.date != t.datas.date) {
+                    m_TransactionToUpdate.datas.date = "Many values";
                 }
-                if (m_TransactionToUpdate.comment != t.comment) {
-                    m_TransactionToUpdate.comment = "Many values";
+                if (m_TransactionToUpdate.datas.description != t.datas.description) {
+                    m_TransactionToUpdate.datas.description = "Many values";
                 }
-                if (m_TransactionToUpdate.confirmed != t.confirmed) {
+                if (m_TransactionToUpdate.datas.comment != t.datas.comment) {
+                    m_TransactionToUpdate.datas.comment = "Many values";
+                }
+                if (m_TransactionToUpdate.datas.confirmed != t.datas.confirmed) {
                     m_TransactionConfirmedManyValues = true;
                 }
             }
         }
     }
-    m_SourceName = m_TransactionToUpdate.source;
-    m_AccountsCombo.select(m_TransactionToUpdate.account);
-    m_EntitiesCombo.setText(m_TransactionToUpdate.entity);
-    m_CategoriesCombo.setText(m_TransactionToUpdate.category);
-    m_OperationsCombo.setText(m_TransactionToUpdate.operation);
-    m_TransactionDateInputText.SetText(m_TransactionToUpdate.date);
-    m_TransactionDescriptionInputText.SetText(m_TransactionToUpdate.description);
-    m_TransactionCommentInputText.SetText(m_TransactionToUpdate.comment);
-    m_TransactionAmountInputDouble = m_TransactionToUpdate.amount;
-    m_TransactionConfirmed = m_TransactionToUpdate.confirmed;
+    m_SourceName = m_TransactionToUpdate.datas.source.name;
+    m_AccountsCombo.select(m_TransactionToUpdate.accountNumber);
+    m_EntitiesCombo.setText(m_TransactionToUpdate.datas.entity.name);
+    m_CategoriesCombo.setText(m_TransactionToUpdate.datas.category.name);
+    m_OperationsCombo.setText(m_TransactionToUpdate.datas.operation.name);
+    m_IncomesCombo.setText(m_TransactionToUpdate.datas.income.name);
+    m_TransactionDateInputText.SetText(m_TransactionToUpdate.datas.date);
+    m_TransactionDescriptionInputText.SetText(m_TransactionToUpdate.datas.description);
+    m_TransactionCommentInputText.SetText(m_TransactionToUpdate.datas.comment);
+    m_TransactionAmountInputDouble = m_TransactionToUpdate.datas.amount;
+    m_TransactionConfirmed = m_TransactionToUpdate.datas.confirmed;
 }
 
 const char* TransactionDialog::m_getTitle() const {
@@ -267,28 +275,21 @@ void TransactionDialog::m_confirmDialogCreation() {
     RowID account_id = 0U;
     if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::ref().OpenDBFile()) {
-            const auto sha = ez::str::toStr(  //
-                "%s_%s_%f",               //
-                m_TransactionDateInputText.GetText().c_str(),
-                // un fichier ofc ne peut pas avoir des labels de longueur > a 30
-                // alors on limite le sha a utiliser un label de 30
-                // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
-                m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
-                m_TransactionAmountInputDouble);              // must be unique per oepration
-            DataBase::ref().AddTransaction(             //
-                account_id,                                   //
-                m_EntitiesCombo.getText(),                    //
-                m_CategoriesCombo.getText(),                  //
-                m_OperationsCombo.getText(),                  //
-                m_SourceName,                                 //
-                m_SourceType,                                 //
-                m_SourceSha,                                  //
-                m_TransactionDateInputText.GetText(),         //
-                m_TransactionDescriptionInputText.GetText(),  //
-                m_TransactionCommentInputText.GetText(),      //
-                m_TransactionAmountInputDouble,               //
-                false,                                        //
-                sha);
+            TransactionInput ti;
+            ti.entity.name = m_EntitiesCombo.getText();
+            ti.category.name = m_CategoriesCombo.getText();
+            ti.operation.name = m_OperationsCombo.getText();
+            ti.income.name = m_IncomesCombo.getText();
+            ti.incomeConfirmed = true;
+            ti.source.name = m_SourceName;
+            ti.source.type = m_SourceType;
+            ti.source.sha = m_SourceSha;
+            ti.date = m_TransactionDateInputText.GetText();
+            ti.description = m_TransactionDescriptionInputText.GetText();
+            ti.comment = m_TransactionCommentInputText.GetText();
+            ti.amount = m_TransactionAmountInputDouble;
+            ti.confirmed = false;
+            DataBase::ref().AddTransactionAutoSha(account_id, ti);
             DataBase::ref().CloseDBFile();
         }
     }
@@ -298,14 +299,6 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
     RowID account_id = 0U;
     if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::ref().OpenDBFile()) {
-            const auto sha = ez::str::toStr(  //
-                "%s_%s_%f",                   //
-                m_TransactionDateInputText.GetText().c_str(),
-                // un fichier ofc ne peut pas avoir des labels de longueur > a 30
-                // alors on limite le sha a utiliser un label de 30
-                // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
-                m_TransactionDescriptionInputText.GetText().substr(0, 30).c_str(),
-                m_TransactionAmountInputDouble);  // must be unique per operation
             EntityInput ei;
             ei.name = m_EntitiesCombo.getText();
             DataBase::ref().AddEntity(ei);
@@ -315,18 +308,33 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
             OperationInput oi;
             oi.name = m_OperationsCombo.getText();
             DataBase::ref().AddOperation(oi);
-            DataBase::ref().UpdateTransaction(                //
-                m_TransactionToUpdate.id,                     //
-                m_EntitiesCombo.getText(),                    //
-                m_CategoriesCombo.getText(),                  //
-                m_OperationsCombo.getText(),                  //
-                m_SourceName,                                 //
-                m_TransactionDateInputText.GetText(),         //
-                m_TransactionDescriptionInputText.GetText(),  //
-                m_TransactionCommentInputText.GetText(),      //
-                m_TransactionAmountInputDouble,               //
-                false,                                        //
-                sha);
+            IncomeInput ii;
+            ii.name = m_IncomesCombo.getText();
+            DataBase::ref().AddIncome(account_id, ii);
+            TransactionInput ti;
+            ti.entity = ei;
+            ti.category = ci;
+            ti.operation = oi;
+            ti.income = ii;
+            ti.incomeConfirmed = true;
+            ti.source.name = m_SourceName + "/User";
+            ti.date = m_TransactionDateInputText.GetText();
+            ti.description = m_TransactionDescriptionInputText.GetText();
+            ti.comment = m_TransactionCommentInputText.GetText();
+            ti.amount = m_TransactionAmountInputDouble;
+            ti.confirmed = false;
+            ti.sha =        //
+                ez::sha1()  //
+                    .add(ti.date)
+                    // un fichier ofc ne peut pas avoir des description de longueur > a 30
+                    // alors on limite le sha a utiliser un description de 30
+                    // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                    .add(ti.description.substr(0, 30))
+                    // must be unique per oepration
+                    .addValue(ti.amount)
+                    .finalize()
+                    .getHex();
+            DataBase::ref().UpdateTransaction(m_TransactionToUpdate.id, ti);
             DataBase::ref().CloseDBFile();
         }
     }
@@ -336,52 +344,47 @@ void TransactionDialog::m_confirmDialogUpdateAll() {
     RowID account_id = 0U;
     if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::ref().OpenDBFile()) {
-            if (DataBase::ref().BeginTransaction()) {
+            if (DataBase::ref().BeginDBTransaction()) {
                 for (auto t : m_TransactionsToUpdate) {
+                    TransactionInput ti = t.datas;
                     if (m_EntitiesCombo.getText() != MULTIPLE_VALUES) {
-                        t.entity = m_EntitiesCombo.getText();
-                        EntityInput ei;
-                        ei.name = t.entity;
-                        DataBase::ref().AddEntity(ei);
+                        ti.entity.name = m_EntitiesCombo.getText();
+                        DataBase::ref().AddEntity(ti.entity);
                     }
                     if (m_CategoriesCombo.getText() != MULTIPLE_VALUES) {
-                        t.category = m_CategoriesCombo.getText();
-                        CategoryInput ci;
-                        ci.name = t.category;
-                        DataBase::ref().AddCategory(ci);
+                        ti.category.name = m_CategoriesCombo.getText();
+                        DataBase::ref().AddCategory(ti.category);
                     }
                     if (m_OperationsCombo.getText() != MULTIPLE_VALUES) {
-                        t.operation = m_OperationsCombo.getText();
-                        OperationInput oi;
-                        oi.name = t.operation;
-                        DataBase::ref().AddOperation(oi);
+                        ti.operation.name = m_OperationsCombo.getText();
+                        DataBase::ref().AddOperation(ti.operation);
                     }
                     if (m_TransactionDateInputText.GetText() != MULTIPLE_VALUES) {
-                        t.date = m_TransactionDateInputText.GetText();
+                        ti.date = m_TransactionDateInputText.GetText();
                     }
                     if (m_TransactionDescriptionInputText.GetText() != MULTIPLE_VALUES) {
-                        t.description = m_TransactionDescriptionInputText.GetText();
+                        ti.description = m_TransactionDescriptionInputText.GetText();
                     }
                     if (m_TransactionCommentInputText.GetText() != MULTIPLE_VALUES) {
-                        t.comment = m_TransactionCommentInputText.GetText();
+                        ti.comment = m_TransactionCommentInputText.GetText();
                     }
                     if (!m_TransactionConfirmedManyValues) {
-                        t.confirmed = m_TransactionConfirmed;
+                        ti.confirmed = m_TransactionConfirmed;
                     }
-                    DataBase::ref().UpdateTransaction(  //
-                        t.id,                                 //
-                        t.entity,                             //
-                        t.category,                           //
-                        t.operation,                          //
-                        t.source,                             //
-                        t.date,                               //
-                        t.description,                        //
-                        t.comment,                            //
-                        t.amount,                             //
-                        t.confirmed,                          //
-                        t.sha);
+                    ti.sha =        //
+                        ez::sha1()  //
+                            .add(ti.date)
+                            // un fichier ofc ne peut pas avoir des description de longueur > a 30
+                            // alors on limite le sha a utiliser un description de 30
+                            // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+                            .add(ti.description.substr(0, 30))
+                            // must be unique per oepration
+                            .addValue(ti.amount)
+                            .finalize()
+                            .getHex();
+                    DataBase::ref().UpdateTransaction(t.id, ti);
                 }
-                DataBase::ref().CommitTransaction();
+                DataBase::ref().CommitDBTransaction();
             }
             DataBase::ref().CloseDBFile();
         }
@@ -398,7 +401,7 @@ void TransactionDialog::m_confirmDialogDeletion() {
     }
 }
 
-void TransactionDialog::m_UpdateAccounts() {
+void TransactionDialog::m_updateAccounts() {
     m_AccountsCombo.clear();
     DataBase::ref().GetAccounts(                 //
         [this](const AccountOutput& vAccountOutput) {  //
@@ -407,7 +410,7 @@ void TransactionDialog::m_UpdateAccounts() {
     m_AccountsCombo.getIndexRef() = 0;
 }
 
-void TransactionDialog::m_UpdateEntities() {
+void TransactionDialog::m_updateEntities() {
     m_EntitiesCombo.clear();
     DataBase::ref().GetEntities(         //
         [this](const EntityOutput& vEntityOutput) {  //
@@ -417,7 +420,7 @@ void TransactionDialog::m_UpdateEntities() {
     m_EntitiesCombo.finalize();
 }
 
-void TransactionDialog::m_UpdateOperations() {
+void TransactionDialog::m_updateOperations() {
     m_OperationsCombo.clear();
     DataBase::ref().GetOperations(               //
         [this](const OperationOutput& vOperationOutput) {  //
@@ -427,7 +430,7 @@ void TransactionDialog::m_UpdateOperations() {
     m_OperationsCombo.finalize();
 }
 
-void TransactionDialog::m_UpdateCategories() {
+void TransactionDialog::m_updateCategories() {
     m_CategoriesCombo.clear();
     DataBase::ref().GetCategories(             //
         [this](const CategoryOutput& vCategoryOutput) {  //
@@ -435,4 +438,18 @@ void TransactionDialog::m_UpdateCategories() {
         });
     m_CategoriesCombo.getIndexRef() = 0;
     m_CategoriesCombo.finalize();
+}
+
+void TransactionDialog::m_updateIncomes() {
+    RowID account_id = 0U;
+    if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
+        m_IncomesCombo.clear();
+        DataBase::ref().GetIncomes(  //
+            account_id,
+            [this](const IncomeOutput& vIncomeOutput) {  //
+                m_IncomesCombo.getArrayRef().push_back(vIncomeOutput.datas.name);
+            });
+        m_IncomesCombo.getIndexRef() = 0;
+        m_IncomesCombo.finalize();
+    }
 }

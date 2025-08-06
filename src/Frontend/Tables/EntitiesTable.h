@@ -6,15 +6,12 @@
 class EntitiesTable : public ADataBarsTable {
 private:
     std::vector<EntityOutput> m_Entities;
-    EntityDialog m_EntityDialog;
 
 public:
     EntitiesTable();
     ~EntitiesTable() = default;
 
-    bool load() final;
-    void unload() final;
-    bool drawMenu() final;
+    void refreshDatas() final;
 
 protected:
     size_t m_getItemsCount() const final;
@@ -24,7 +21,5 @@ protected:
     void m_setupColumns() final;
     void m_drawContextMenuContent() final;
     void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) final;
-
-private:
-    void m_updateEntities();
+    bool m_drawMenu() final;
 };

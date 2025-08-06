@@ -18,19 +18,21 @@ limitations under the License.
 
 #include <apis/CashMePluginApi.h>
 #include <ezlibs/ezXmlConfig.hpp>
+#include <ezlibs/ezSingleton.hpp>
 #include <string>
 #include <memory>
 
 class ProjectFile : public Cash::ProjectInterface, public ez::xml::Config {
+    IMPLEMENT_SHARED_SINGLETON(ProjectFile)
 private:  // to save
     std::string m_ProjectFilePathName;
     std::string m_ProjectFileName;
     std::string m_ProjectFilePath;
 
 private:  // dont save
-    bool m_IsLoaded = false;
+    bool m_isLoaded = false;
     bool m_NeverSaved = false;
-    bool m_IsThereAnyChanges = false;
+    bool m_isThereAnyChanges = false;
     bool m_WasJustSaved = false;
     size_t m_WasJustSavedFrameCounter = 0U;  // the state of m_WasJustSaved will be keeped during two frames
 
@@ -64,10 +66,4 @@ public: // features
 public:
     ez::xml::Nodes getXmlNodes(const std::string& vUserDatas = "") override;
     bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
-
-public:
-    static std::shared_ptr<ProjectFile> Instance() {
-        static auto _instancePtr = std::make_shared<ProjectFile>();
-        return _instancePtr;
-    }
 };

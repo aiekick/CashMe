@@ -9,7 +9,7 @@
 #include <Project/ProjectFile.h>
 
 bool SettingsDialog::init() {
-    const auto& pluginSettings = PluginManager::Instance()->GetPluginSettings();
+    const auto& pluginSettings = PluginManager::ref().GetPluginSettings();
     for (const auto& s : pluginSettings) {
         auto ptr = s.settings.lock();
         if (ptr != nullptr) {
@@ -55,7 +55,7 @@ bool SettingsDialog::Draw() {
     return false;
 }
 const bool& SettingsDialog::isHiddenMode() {
-    return m_IsHiddenMode;
+    return m_isHiddenMode;
 }
 
 void SettingsDialog::m_DrawCategoryPanes() {
@@ -113,7 +113,7 @@ bool SettingsDialog::m_Save() {
             ptr->SaveSettings();
         }
     }
-    ProjectFile::Instance()->SetProjectChange();
+    ProjectFile::ref()->SetProjectChange();
     return false;
 }
 

@@ -3,11 +3,9 @@
 
 #include <Panes/CategoriesPane.h>
 
-#include <cinttypes>  // printf zu
-
 #include <Models/DataBase.h>
-
 #include <Project/ProjectFile.h>
+#include <Frontend/MainFrontend.h>
 
 CategoriesPane::CategoriesPane() = default;
 CategoriesPane::~CategoriesPane() {
@@ -15,15 +13,16 @@ CategoriesPane::~CategoriesPane() {
 }
 
 bool CategoriesPane::Init() {
-    return true;
+    bool ret = true;
+    if (ProjectFile::ref()->IsProjectLoaded()) {
+        ret &= m_CategoriesTable.load();
+    }
+    return ret;
 }
 
 void CategoriesPane::Unit() {
 }
 
-void CategoriesPane::Load() {
-    m_CategoriesTable.load();
-}
 
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
@@ -43,8 +42,7 @@ bool CategoriesPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImG
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
 
-            if (ProjectFile::Instance()->IsProjectLoaded()) {
-                m_CategoriesTable.drawMenu();
+            if (ProjectFile::ref()->IsProjectLoaded()) {
                 m_CategoriesTable.draw(ImGui::GetContentRegionAvail());
             }
         }

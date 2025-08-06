@@ -1,40 +1,27 @@
 #pragma once
 
 #include <Frontend/Tables/abstract/ADataTable.h>
-
-#include <Systems/FrameActionSystem.h>
-
-#include <Threads/ImportWorkerThread.h>
+#include <Frontend/Graph/BudgetGraph.h>
 
 class BudgetTable : public ADataTable {
 private:
+    bool m_showTable{true};
+    bool m_showGraph{true};
+    BudgetGraph m_budgetGraph;
     std::vector<BudgetOutput> m_budgets;
 
 public:
     BudgetTable();
     ~BudgetTable() = default;
 
-    bool init();
-    void unit();
-
-    bool load() final;
-    void unload() final;
-    bool drawMenu() final;
-
     void clear();
-    void refreshDatas();
-    void drawDebugMenu(FrameActionSystem& vFrameActionSystem);
-    void drawAccountsMenu(FrameActionSystem& vFrameActionSystem);
+    void refreshDatas() final;
 
 protected:
     size_t m_getItemsCount() const final;
     RowID m_getItemRowID(const size_t& vIdx) const final;
     void m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) final;
     void m_setupColumns() final;
-    void m_drawContextMenuContent() final;
-    void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) final;
-    void m_refreshDatas() final;
-    void m_updateDatas(const RowID& vAccountID) final;
-
-    void m_UpdateBudget();
+    bool m_drawMenu() final;
+    void m_draw(const ImVec2& vSize) final;
 };

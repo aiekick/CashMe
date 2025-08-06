@@ -1,17 +1,20 @@
 #pragma once
 
-#include <imguipack.h>
-#include <cstdint>
 #include <memory>
 #include <string>
+#include <cstdint>
+
+#include <imguipack.h>
 #include <ezlibs/ezSingleton.hpp>
-#include <Frontend/Tables/BudgetTable.h>
+#include <Systems/FrameActionSystem.h>
+#include <Threads/ImportWorkerThread.h>
+#include <Frontend/Tables/TransactionsTable.h>
 
 class ProjectFile;
-class BudgetPane : public AbstractPane {
-    IMPLEMENT_SHARED_SINGLETON(BudgetPane)
+class TransactionsPane : public AbstractPane {
+    IMPLEMENT_SHARED_SINGLETON(TransactionsPane)
 private:
-    BudgetTable m_BudgetTable;
+    TransactionsTable m_TransactionsTable;
 
 public:
     bool Init() override;
@@ -22,10 +25,10 @@ public:
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
 
 public:
-    BudgetPane();                             // Prevent construction
-    BudgetPane(const BudgetPane&) = delete;  // Prevent construction by copying
-    BudgetPane& operator=(const BudgetPane&) {
+    TransactionsPane();                              // Prevent construction
+    TransactionsPane(const TransactionsPane&) = delete;  // Prevent construction by copying
+    TransactionsPane& operator=(const TransactionsPane&) {
         return *this;
-    };                      // Prevent assignment
-    virtual ~BudgetPane();  // Prevent unwanted destruction};
+    };                       // Prevent assignment
+    virtual ~TransactionsPane();  // Prevent unwanted destruction};
 };

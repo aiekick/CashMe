@@ -85,36 +85,6 @@ enum SearchColumns {  //
     SEARCH_COLUMN_Count
 };
 
-struct AmountStats {
-    TransactionDebit debit = 0.0;
-    TransactionCredit credit = 0.0;
-    TransactionAmount amount = 0.0;
-};
-
-struct Transaction {
-    RowID id = 0;
-    AccountNumber account;
-    EntityName entity;
-    CategoryName category;
-    OperationName operation;
-    SourceName source;
-    TransactionDate date;
-    TransactionDateEpoch epoch = 0;
-    TransactionDescription description;
-    TransactionComment comment;
-    size_t comment_first_line_end_pos = 0;
-    TransactionDebit debit = 0.0;
-    TransactionCredit credit = 0.0;
-    TransactionAmount amount = 0.0;
-    TransactionSolde solde = 0.0;
-    TransactionConfirmed confirmed = false;
-    TransactionSha sha;
-    std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> optimized;  //
-    bool isOk() {
-        return id != 0;
-    }
-};
-
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 ////////////// NOUVELLES STRUCTURES ///////////////////////////
@@ -205,9 +175,9 @@ struct OperationOutput {
 struct IncomeInput {
     RowID account_id = 0;
     std::string name;
-    std::string entityName;
-    std::string categoryName;
-    std::string operationName;
+    EntityInput entity;
+    CategoryInput category;
+    OperationInput operation;
     std::string startDate;
     std::string endDate;
     double minAmount = 0.0;
@@ -215,12 +185,13 @@ struct IncomeInput {
     int32_t minDay = 0U;
     uint32_t maxDay = 0U;
     std::string description;
+    std::string comment;
     std::string sha;
 };
 
 struct IncomeOutput {
     RowID id = 0;
-    AccountNumber accountNumber;
+    std::string accountNumber;
     IncomeInput datas;
     DateEpoch startEpoch;
     DateEpoch endEpoch;
@@ -228,31 +199,45 @@ struct IncomeOutput {
     uint32_t count = 0;
 };
 
+// SOURCE
+
+struct SourceInput {
+    std::string name;
+    std::string type;
+    std::string sha;
+};
+
+struct SourceOutput {
+    RowID id = 0;
+    SourceInput datas;
+};
+
 // TRANSACTION
 
 struct TransactionInput {
-    RowID accountID = 0;
-    RowID operationID = 0;
-    RowID categoryID = 0;
-    RowID enitityID = 0;
-    RowID sourceID = 0;
+    EntityInput entity;
+    CategoryInput category;
+    OperationInput operation;
+    SourceInput source;
+    IncomeInput income;
+    bool incomeConfirmed = false;
     std::string date;
     std::string description;
     std::string comment;
     double amount = 0.0;
-    int32_t confirmed = 0;
+    bool confirmed = 0;
     std::string sha;
 };
 
 struct TransactionOutput {
     RowID id = 0;
-    std::string accountBranchNumber;
-    std::string entityName;
-    std::string categoryName;
-    std::string operationName;
-    std::string sourceName;
-    std::string dateEpoch;
-    std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> optimized;  //
+    std::string accountNumber;
+    DateEpoch dateEpoch;
+    TransactionInput datas;
+
+    size_t comment_first_line_end_pos = 0;
+    Amounts amounts;
+    std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> optimized;
     bool isOk() { return id != 0; }
 };
 

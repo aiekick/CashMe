@@ -3,11 +3,10 @@
 
 #include <Panes/AccountsPane.h>
 
-#include <cinttypes>  // printf zu
-
 #include <Models/DataBase.h>
-#include <Panes/StatementsPane.h>
 #include <Project/ProjectFile.h>
+#include <Frontend/MainFrontend.h>
+#include <Panes/TransactionsPane.h>
 
 AccountsPane::AccountsPane() = default;
 AccountsPane::~AccountsPane() {
@@ -15,14 +14,14 @@ AccountsPane::~AccountsPane() {
 }
 
 bool AccountsPane::Init() {
-    return true;
+    bool ret = true;
+    if (ProjectFile::ref()->IsProjectLoaded()) {
+        ret &= m_AccountsTable.load();
+    }
+    return ret;
 }
 
 void AccountsPane::Unit() {
-}
-
-void AccountsPane::Load() {
-    m_AccountsTable.load();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -43,8 +42,7 @@ bool AccountsPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGui
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus /*| ImGuiWindowFlags_MenuBar*/;
 #endif
 
-            if (ProjectFile::Instance()->IsProjectLoaded()) {
-                m_AccountsTable.drawMenu();
+            if (ProjectFile::ref()->IsProjectLoaded()) {
                 m_AccountsTable.draw(ImGui::GetContentRegionAvail());
             }
         }
@@ -64,13 +62,6 @@ bool AccountsPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const
     const ImVec2 center = vRect.GetCenter();
 
     bool ret = false;
-
-    ret |= m_AccountsTable.getAccountDialogRef().draw(center);
-
-    if (ret) {
-        m_AccountsTable.load();
-        StatementsPane::Instance()->Load();
-    }
 
     return ret;  
 }

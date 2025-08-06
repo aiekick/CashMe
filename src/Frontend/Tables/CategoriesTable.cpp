@@ -1,25 +1,27 @@
 #include <Frontend/Tables/CategoriesTable.h>
 #include <Models/DataBase.h>
+#include <Frontend/MainFrontend.h>
 
 CategoriesTable::CategoriesTable() : ADataBarsTable("CategoriesTable", 6) {
 }
 
-bool CategoriesTable::load() {
-    ADataBarsTable::load();
-    m_updateCategories();
-    return true;
-}
-
-void CategoriesTable::unload() {
-    ADataBarsTable::unload();
-}
-
-bool CategoriesTable::drawMenu() {
-    if (m_drawAccountMenu()) {
-        m_updateCategories();
-        return true;
+bool CategoriesTable::m_drawMenu() {
+    bool ret = false;
+    if (ImGui::MenuItem("Refresh")) {
+        refreshDatas();
+        ret = true;
     }
-    return false;
+    return ret;
+}
+
+void CategoriesTable::refreshDatas() {
+    m_Categories.clear();
+    m_updateAccounts();
+    DataBase::ref().GetCategoriesStats(                  //
+        m_getAccountID(),                                //
+        [this](const CategoryOutput& vCategoryOutput) {  //
+            m_Categories.push_back(vCategoryOutput);
+        });
 }
 
 size_t CategoriesTable::m_getItemsCount() const {
@@ -59,21 +61,23 @@ void CategoriesTable::m_setupColumns() {
 }
 
 void CategoriesTable::m_drawContextMenuContent() {
-    EZ_TOOLS_DEBUG_BREAK;
+    if (!m_getSelectedRows().empty()) {
+        if (ImGui::MenuItem("Update")) {
+            std::vector<CategoryOutput> entities_to_update;
+            for (const auto& e : m_Categories) {
+                if (m_isRowSelected(e.id)) {
+                    entities_to_update.push_back(e);
+                }
+            }
+            MainFrontend::ref().getCategoryDialogRef().setCategory(entities_to_update.front());
+            MainFrontend::ref().getCategoryDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
+        }
+    }
 }
 
 void CategoriesTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-    EZ_TOOLS_DEBUG_BREAK;
-}
-
-void CategoriesTable::m_updateCategories() {
-    const auto account_id = m_getAccountID();
-    if (account_id > 0) {
-        m_Categories.clear();
-        DataBase::ref().GetCategoriesStats(                  //
-            account_id,                                      //
-            [this](const CategoryOutput& vCategoryOutput) {  //
-                m_Categories.push_back(vCategoryOutput);
-            });
-    }
+    auto category = m_Categories.at(vIdx);
+    category.id = vRowID;
+    MainFrontend::ref().getCategoryDialogRef().setCategory(category);
+    MainFrontend::ref().getCategoryDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
 }

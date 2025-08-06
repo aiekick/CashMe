@@ -175,13 +175,13 @@ private:
     double m_EndSolde = 0.0;
 
 public:
-    Cash::AccountStatements compute(const TokenContainer &vContainer, const std::string &vSourceName) {
+    Cash::AccountTransactions compute(const TokenContainer &vContainer, const std::string &vSourceName) {
         const auto tbl = fillTable(vContainer);
         const auto stms = solveTableColumns(tbl);
 #if _DEBUG
         // printTable(stms);
 #endif
-        return extractStatements(stms, vSourceName);
+        return extractTransactions(stms, vSourceName);
     }
 
 private:
@@ -460,8 +460,8 @@ private:
         return true;
     }
 
-    Cash::AccountStatements extractStatements(const StatementRows &vStms, const std::string &vSourceName) {
-        Cash::AccountStatements ret;
+    Cash::AccountTransactions extractTransactions(const StatementRows &vStms, const std::string &vSourceName) {
+        Cash::AccountTransactions ret;
 
         std::map<std::string, TransDoublon> transactions;
 
@@ -615,8 +615,8 @@ std::string PdfAccountStatementModule::getFileExt() const {
     return ".pdf";
 }
 
-Cash::AccountStatements PdfAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
-    Cash::AccountStatements ret{};
+Cash::AccountTransactions PdfAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
+    Cash::AccountTransactions ret{};
     auto ps = ez::file::parsePathFileName(vFilePathName);
     if (ps.isOk) {
         globalParams = new GlobalParams(nullptr);                                             // globalParams ios a extern and is used by pdf_doc_ptr...

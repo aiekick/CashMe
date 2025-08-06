@@ -8,10 +8,10 @@ bool DataBase::AddCategory(const CategoryInput& vCategoryInput) {
     auto insert_query =             //
         ez::sqlite::QueryBuilder()  //
             .setTable("categories")
-            .addField("name", vCategoryInput.name)
+            .addOrSetField("name", vCategoryInput.name)
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a category in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a category in database : %s (%s)", m_LastErrorMsg, insert_query);
         ret = false;
     }
     return ret;
@@ -72,6 +72,9 @@ bool DataBase::GetCategoriesStats(
     std::function<void(  
         const CategoryOutput&)> vCallback) {
     bool ret = false;
+    if (vAccountID == 0) {
+        return ret;
+    }
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     const auto& select_query = ez::str::toStr(
@@ -124,7 +127,7 @@ ORDER BY
 bool DataBase::UpdateCategory(const RowID& vRowID, const CategoryInput& vCategoryInput) {
     bool ret = true;
     auto insert_query = ez::str::toStr(u8R"(UPDATE categories SET name = "%s" WHERE id = %u;)", vCategoryInput.name.c_str(), vRowID);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a category in database : %s", m_LastErrorMsg);
         ret = true;
     }
@@ -136,7 +139,7 @@ bool DataBase::DeleteCategories() {
     if (m_OpenDB()) {
         ret = true;
         auto insert_query = ez::str::toStr(u8R"(DELETE FROM categories;)");
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of categories table in database : %s", m_LastErrorMsg);
             ret = false;
         }

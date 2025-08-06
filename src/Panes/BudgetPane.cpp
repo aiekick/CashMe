@@ -3,11 +3,9 @@
 
 #include <Panes/BudgetPane.h>
 
-#include <cinttypes>  // printf zu
-
 #include <Models/DataBase.h>
-
 #include <Project/ProjectFile.h>
+#include <Frontend/MainFrontend.h>
 
 BudgetPane::BudgetPane() = default;
 BudgetPane::~BudgetPane() {
@@ -15,14 +13,14 @@ BudgetPane::~BudgetPane() {
 }
 
 bool BudgetPane::Init() {
-    return true;
+    bool ret = true;
+    if (ProjectFile::ref()->IsProjectLoaded()) {
+        ret &= m_BudgetTable.load();
+    }
+    return ret;
 }
 
 void BudgetPane::Unit() {
-}
-
-void BudgetPane::Load() {
-   m_BudgetTable.load();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -43,8 +41,7 @@ bool BudgetPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiCo
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
 
-            if (ProjectFile::Instance()->IsProjectLoaded()) {
-                m_BudgetTable.drawMenu();
+            if (ProjectFile::ref()->IsProjectLoaded()) {
                 m_BudgetTable.draw(ImGui::GetContentRegionAvail());
             }
         }

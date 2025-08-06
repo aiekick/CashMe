@@ -2,19 +2,26 @@
 
 #include <imguipack.h>
 
+#include <Headers/DatasDef.h>
+
 #include <ezlibs/ezApp.hpp>
 #include <ezlibs/ezTools.hpp>
 #include <ezlibs/ezXmlConfig.hpp>
+#include <ezlibs/ezSingleton.hpp>
 
-#include <string>
+#include <map>
 #include <memory>
 #include <array>
+#include <string>
 #include <vector>
 #include <functional>
 #include <unordered_map>
 
+#include <Threads/ImportWorkerThread.h>
+
 struct GLFWwindow;
 class MainBackend : public ez::xml::Config {
+    IMPLEMENT_SINGLETON(MainBackend)
 private:
     GLFWwindow* m_MainWindowPtr = nullptr;
     const char* m_GlslVersion = "";
@@ -40,13 +47,13 @@ private:
     std::function<void(std::set<std::string>)> m_ChangeFunc;
     std::set<std::string> m_PathsToTrack;
 
+    ImportWorkerThread m_importThread;
+    DataBrockerContainer m_dataBrokerModules;
+    Cash::BankStatementModuleWeak m_selectedBroker;
+
 public:  // getters
-    ImVec2 GetDisplayPos() {
-        return ImVec2((float)m_DisplayPos.x, (float)m_DisplayPos.y);
-    }
-    ImVec2 GetDisplaySize() {
-        return ImVec2((float)m_DisplaySize.x, (float)m_DisplaySize.y);
-    }
+    ImVec2 GetDisplayPos() { return ImVec2((float)m_DisplayPos.x, (float)m_DisplayPos.y); }
+    ImVec2 GetDisplaySize() { return ImVec2((float)m_DisplaySize.x, (float)m_DisplaySize.y); }
 
 public:
     virtual ~MainBackend();
@@ -76,6 +83,11 @@ public:
     ez::dvec2 GetMousePos();
     int GetMouseButton(int vButton);
 
+    void selectDataBrocker(const Cash::BankStatementModuleWeak& vDatabrocker);
+    void importFromFiles(const std::vector<std::string>& vFiles);
+    const DataBrockerContainer& getDataBrockers();
+    ImportWorkerThread& getImportWorkerThreadRef();
+
 public:  // configuration
     ez::xml::Nodes getXmlNodes(const std::string& vUserDatas = "") override;
     bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
@@ -86,6 +98,8 @@ public:  // configuration
 
 private:
     void m_RenderOffScreen();
+    void m_getAvailableDataBrokers();
+    void m_clearDataBrokers();
 
     bool m_InitWindow();
     bool m_InitImGui();
@@ -104,12 +118,6 @@ private:
     void m_UnitSettings();
 
     void m_MainLoop();
-    void m_Update();
+    void m_update();
     void m_IncFrame();
-
-public:  // singleton
-    static MainBackend* Instance() {
-        static MainBackend _instance;
-        return &_instance;
-    }
 };

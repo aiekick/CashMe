@@ -8,6 +8,7 @@
 #include <ezlibs/ezTools.hpp>
 #include <ezlibs/ezXmlConfig.hpp>
 #include <ezlibs/ezPlugin.hpp>
+#include <ezlibs/ezSingleton.hpp>
 
 #include <imguipack.h>
 
@@ -40,6 +41,7 @@ public:
 };
 
 class PluginManager : public Cash::PluginBridge {
+    IMPLEMENT_SINGLETON(PluginManager)
 private:
     std::map<std::string, PluginInstancePtr> m_Plugins;
 
@@ -56,12 +58,6 @@ private:
     void m_DisplayLoadedPlugins();
 
 public:
-    static PluginManager* Instance() {
-        static PluginManager _instance;
-        return &_instance;
-    }
-
-protected:
     PluginManager() = default;                      // Prevent construction
     PluginManager(const PluginManager&) = delete;  // Prevent construction by copying
     PluginManager& operator=(const PluginManager&) {

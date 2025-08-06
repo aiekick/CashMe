@@ -23,7 +23,15 @@ limitations under the License.
 #include <ezlibs/ezXmlConfig.hpp>
 #include <Systems/FrameActionSystem.h>
 
-#include <Backend/MainBackend.h>
+#include <Frontend/Dialogs/BankDialog.h>
+#include <Frontend/Dialogs/AccountDialog.h>
+#include <Frontend/Dialogs/EntityDialog.h>
+#include <Frontend/Dialogs/CategoryDialog.h>
+#include <Frontend/Dialogs/OperationDialog.h>
+#include <Frontend/Dialogs/TransactionDialog.h>
+#include <Frontend/Dialogs/IncomeDialog.h>
+
+#include <ezlibs/ezSingleton.hpp>
 
 #include <functional>
 #include <string>
@@ -102,16 +110,27 @@ confirmation dialog for close font :
 */
 
 class MainFrontend : public ez::xml::Config {
+    IMPLEMENT_SINGLETON(MainFrontend)
 private:
     bool m_ShowImGui = false;
     bool m_ShowImPlot = false;
     bool m_ShowMetric = false;
-    ImFont* m_ToolbarFontPtr = nullptr;
-    ImRect m_DisplayRect = ImRect(ImVec2(0, 0), ImVec2(1280, 720));
     bool m_ShowAboutDialog = false;          // show about dlg
     bool m_SaveDialogIfRequired = false;     // open save options dialog (save / save as / continue without saving / cancel)
     bool m_SaveDialogActionWasDone = false;  // if action was done by save options dialog
+
+    ImFont* m_ToolbarFontPtr = nullptr;
+    ImRect m_DisplayRect = ImRect(ImVec2(0, 0), ImVec2(1280, 720));
+    
     FrameActionSystem m_ActionSystem;
+
+    BankDialog m_BankDialog;
+    AccountDialog m_AccountDialog;
+    EntityDialog m_EntityDialog;
+    CategoryDialog m_CategoryDialog;
+    OperationDialog m_OperationDialog;
+    IncomeDialog m_IncomeDialog;
+    TransactionDialog m_TransactionDialog;
 
 public:
     static bool sCentralWindowHovered;
@@ -133,9 +152,14 @@ public:
 
     void OpenAboutDialog();
 
-    FrameActionSystem& GetActionSystemRef() {
-        return m_ActionSystem;
-    }
+    BankDialog& getBankDialogRef();
+    AccountDialog& getAccountDialogRef();
+    EntityDialog& getEntityDialogRef();
+    CategoryDialog& getCategoryDialogRef();
+    OperationDialog& getOperationDialogRef();
+    IncomeDialog& getIncomeDialogRef();
+    TransactionDialog& getTransactionDialogRef();
+    FrameActionSystem& GetActionSystemRef();
 
 public:                         // save : on quit or project loading
     void IWantToCloseTheApp();  // user want close app, but we want to ensure its saved
@@ -181,10 +205,4 @@ private:
     bool m_build_themes();
     void m_drawMainMenuBar();
     void m_drawMainStatusBar();
-
-public:  // singleton
-    static MainFrontend* Instance() {
-        static MainFrontend _instance;
-        return &_instance;
-    };
 };

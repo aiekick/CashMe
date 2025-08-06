@@ -7,37 +7,37 @@
 bool DataBase::AddIncome(const RowID& vAccountID, const IncomeInput& vIncomeInput) {
     bool ret = true;
     EntityInput ei;
-    ei.name = vIncomeInput.entityName;
+    ei.name = vIncomeInput.entity.name;
     AddEntity(ei);
     OperationInput oi;
-    oi.name = vIncomeInput.operationName;
+    oi.name = vIncomeInput.operation.name;
     AddOperation(oi);
     CategoryInput ci;
-    ci.name = vIncomeInput.categoryName;
+    ci.name = vIncomeInput.category.name;
     AddCategory(ci);
     auto insert_query =  //
         ez::sqlite::QueryBuilder()
             .setTable("incomes")
-            .addField("account_id", vAccountID)
-            .addField("name", vIncomeInput.name)
-            .addFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vIncomeInput.entityName.c_str())
-            .addFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vIncomeInput.categoryName.c_str())
-            .addFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vIncomeInput.operationName.c_str())
-            .addField("start_date", vIncomeInput.startDate)
-            .addField("end_date", vIncomeInput.endDate)
-            .addField("min_amount", vIncomeInput.minAmount)
-            .addField("max_amount", vIncomeInput.maxAmount)
-            .addField("min_day", vIncomeInput.minDay)
-            .addField("max_day", vIncomeInput.maxDay)
-            .addField("description", vIncomeInput.description)
-            .addField(
+            .addOrSetField("account_id", vAccountID)
+            .addOrSetField("name", vIncomeInput.name)
+            .addOrSetFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vIncomeInput.entity.name.c_str())
+            .addOrSetFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vIncomeInput.category.name.c_str())
+            .addOrSetFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vIncomeInput.operation.name.c_str())
+            .addOrSetField("start_date", vIncomeInput.startDate)
+            .addOrSetField("end_date", vIncomeInput.endDate)
+            .addOrSetField("min_amount", vIncomeInput.minAmount)
+            .addOrSetField("max_amount", vIncomeInput.maxAmount)
+            .addOrSetField("min_day", vIncomeInput.minDay)
+            .addOrSetField("max_day", vIncomeInput.maxDay)
+            .addOrSetField("description", vIncomeInput.description)
+            .addOrSetField(
                 "sha",
                 ez::sha1()
                     .addValue(vAccountID)
                     .add(vIncomeInput.name)
-                    .add(vIncomeInput.entityName)
-                    .add(vIncomeInput.categoryName)
-                    .add(vIncomeInput.operationName)
+                    .add(vIncomeInput.entity.name)
+                    .add(vIncomeInput.category.name)
+                    .add(vIncomeInput.operation.name)
                     .add(vIncomeInput.startDate)
                     .add(vIncomeInput.endDate)
                     .addValue(vIncomeInput.minAmount)
@@ -48,8 +48,8 @@ bool DataBase::AddIncome(const RowID& vAccountID, const IncomeInput& vIncomeInpu
                     .finalize()
                     .getHex())
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert an income in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert an income in database : %s (%s)", m_LastErrorMsg, insert_query);
         ret = false;
     }
     return ret;
@@ -57,6 +57,9 @@ bool DataBase::AddIncome(const RowID& vAccountID, const IncomeInput& vIncomeInpu
 
 bool DataBase::GetIncomes(const RowID& vAccountID, std::function<void(const IncomeOutput&)> vCallback) {
     bool ret = false;
+    if (vAccountID == 0) {
+        return ret;
+    }
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     auto select_query = ez::str::toStr(
@@ -104,9 +107,9 @@ ORDER BY
                     io.id = sqlite3_column_int(stmt, 0);
                     io.datas.account_id = sqlite3_column_int(stmt, 1);
                     io.datas.name = ez::sqlite::readStringColumn(stmt, 2);
-                    io.datas.entityName = ez::sqlite::readStringColumn(stmt, 3);
-                    io.datas.categoryName = ez::sqlite::readStringColumn(stmt, 4);
-                    io.datas.operationName = ez::sqlite::readStringColumn(stmt, 5);
+                    io.datas.entity.name = ez::sqlite::readStringColumn(stmt, 3);
+                    io.datas.category.name = ez::sqlite::readStringColumn(stmt, 4);
+                    io.datas.operation.name = ez::sqlite::readStringColumn(stmt, 5);
                     io.datas.startDate = ez::sqlite::readStringColumn(stmt, 6);
                     io.startEpoch = sqlite3_column_int64(stmt, 7);
                     io.datas.endDate = ez::sqlite::readStringColumn(stmt, 8);
@@ -132,26 +135,27 @@ bool DataBase::UpdateIncome(const RowID& vRowID, const IncomeInput& vIncomeInput
     auto insert_query =  //
         ez::sqlite::QueryBuilder()
             .setTable("incomes")
-            .addField("account_id", vIncomeInput.account_id)
-            .addField("name", vIncomeInput.name)
-            .addFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vIncomeInput.entityName.c_str())
-            .addFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vIncomeInput.categoryName.c_str())
-            .addFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vIncomeInput.operationName.c_str())
-            .addField("start_date", vIncomeInput.startDate)
-            .addField("end_date", vIncomeInput.endDate)
-            .addField("min_amount", vIncomeInput.minAmount)
-            .addField("max_amount", vIncomeInput.maxAmount)
-            .addField("min_day", vIncomeInput.minDay)
-            .addField("max_day", vIncomeInput.maxDay)
-            .addField("description", vIncomeInput.description)
-            .addField(
+            .addOrSetField("account_id", vIncomeInput.account_id)
+            .addOrSetField("name", vIncomeInput.name)
+            .addOrSetFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vIncomeInput.entity.name.c_str())
+            .addOrSetFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vIncomeInput.category.name.c_str())
+            .addOrSetFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vIncomeInput.operation.name.c_str())
+            .addOrSetField("start_date", vIncomeInput.startDate)
+            .addOrSetField("end_date", vIncomeInput.endDate)
+            .addOrSetField("min_amount", vIncomeInput.minAmount)
+            .addOrSetField("max_amount", vIncomeInput.maxAmount)
+            .addOrSetField("min_day", vIncomeInput.minDay)
+            .addOrSetField("max_day", vIncomeInput.maxDay)
+            .addOrSetField("description", vIncomeInput.description)
+            .addOrSetField("comment", vIncomeInput.comment)
+            .addOrSetField(
                 "sha",
                 ez::sha1()
                     .addValue(vIncomeInput.account_id)
                     .add(vIncomeInput.name)
-                    .add(vIncomeInput.entityName)
-                    .add(vIncomeInput.categoryName)
-                    .add(vIncomeInput.operationName)
+                    .add(vIncomeInput.entity.name)
+                    .add(vIncomeInput.category.name)
+                    .add(vIncomeInput.operation.name)
                     .add(vIncomeInput.startDate)
                     .add(vIncomeInput.endDate)
                     .addValue(vIncomeInput.minAmount)
@@ -163,10 +167,15 @@ bool DataBase::UpdateIncome(const RowID& vRowID, const IncomeInput& vIncomeInput
                     .getHex())
             .addWhere(R"(incomes.id = %u)", vRowID)
             .build(ez::sqlite::QueryType::UPDATE);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a account in database : %s", m_LastErrorMsg);
         ret = false;
     }
+    return ret;
+}
+
+bool DataBase::SearchIncomeInTransactions(const TransactionInput& vTransactionInput, RowID& vOutRowID) {
+    bool ret = false;
     return ret;
 }
 
@@ -182,7 +191,7 @@ WHERE
         vRowID);
     if (m_OpenDB()) {
         ret = true;
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete a transaction in database : %s", m_LastErrorMsg);
             ret = false;
         }
@@ -193,12 +202,12 @@ WHERE
 
 bool DataBase::DeleteIncomes(const std::set<RowID>& vRowIDs) {
     bool ret = false;
-    if (BeginTransaction()) {
+    if (BeginDBTransaction()) {
         ret = true;
         for (const auto& row_id : vRowIDs) {
             ret &= DeleteIncome(row_id);
         }
-        CommitTransaction();
+        CommitDBTransaction();
     }
     return ret;
 }

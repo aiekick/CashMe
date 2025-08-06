@@ -13,14 +13,17 @@ private:
     struct Datas {
         std::vector<AccountOutput> accounts;
         std::vector<AccountNumber> accountNumbers;
-        std::vector<Income> incomes;
+        std::vector<IncomeOutput> incomes;
+        double minAmount = 0.0;
+        double maxAmount = 0.0;
         void clear() {
             accounts.clear();
             accountNumbers.clear();
             incomes.clear();
+            minAmount = 0.0;
+            maxAmount = 0.0;
         }
     } m_Datas;
-    IncomeDialog m_IncomeDialog;
     // accounts display
     std::map<BankName, std::map<BankAgency, std::map<AccountNumber, AccountOutput>>> m_Accounts;
 
@@ -30,17 +33,9 @@ public:
 
     bool init();
     void unit();
-
-    bool load() final;
-    void unload() final;
-    bool drawMenu() final;
-
-    IncomeDialog& getIncomeDialogRef();
-
     void clear();
-    void refreshDatas();
-    void drawDebugMenu(FrameActionSystem& vFrameActionSystem);
-    void drawAccountsMenu(FrameActionSystem& vFrameActionSystem);
+
+    void refreshDatas() final;
 
 protected:
     size_t m_getItemsCount() const final;
@@ -49,7 +44,5 @@ protected:
     void m_setupColumns() final;
     void m_drawContextMenuContent() final;
     void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) final;
-
-    void m_UpdateAccounts();
-    void m_UpdateIncomes(const RowID& vAccountID);
+    bool m_drawMenu() final;
 };

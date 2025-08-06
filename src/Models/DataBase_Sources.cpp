@@ -7,12 +7,12 @@ void DataBase::AddSource(const SourceName& vSourceName, const SourceType& vSourc
     auto insert_query =             //
         ez::sqlite::QueryBuilder()  //
             .setTable("sources")
-            .addField("name", vSourceName)
-            .addField("type", vSourceType)
-            .addField("sha", vSourceSha)
+            .addOrSetField("name", vSourceName)
+            .addOrSetField("type", vSourceType)
+            .addOrSetField("sha", vSourceSha)
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a entity in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a entity in database : %s (%s)", m_LastErrorMsg, insert_query);
     }
 }
 
@@ -65,7 +65,7 @@ void DataBase::GetSources(std::function<void(const SourceName&)> vCallback) {
 
 void DataBase::UpdateSource(const RowID& vRowID, const SourceName& vSourceName) {
     auto insert_query = ez::str::toStr(u8R"(UPDATE sources SET name = "%s" WHERE id = %u;)", vSourceName.c_str(), vRowID);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a source in database : %s", m_LastErrorMsg);
     }
 }
@@ -73,7 +73,7 @@ void DataBase::UpdateSource(const RowID& vRowID, const SourceName& vSourceName) 
 void DataBase::DeleteSources() {
     if (m_OpenDB()) {
         auto insert_query = ez::str::toStr(u8R"(DELETE FROM sources;)");
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of sources table in database : %s", m_LastErrorMsg);
         }
         m_CloseDB();

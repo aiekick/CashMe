@@ -12,5 +12,5 @@ public:
 public:
     virtual ~OfcAccountStatementModule() = default;
     std::string getFileExt() const override;
-    Cash::AccountStatements importBankStatement(const std::string& vFilePathName) final;
+    Cash::AccountTransactions importBankStatement(const std::string& vFilePathName) final;
 };

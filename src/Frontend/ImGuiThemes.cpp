@@ -109,8 +109,8 @@ ImGuiTheme GetOrangeBlueTheme() {
 }
 
 bool MainFrontend::m_build_themes() {
-    ImGuiThemeHelper::Instance()->AddTheme("Orange/Blue", GetOrangeBlueTheme());
-    ImGuiThemeHelper::Instance()->SetDefaultTheme("Orange/Blue");
-    ImGuiThemeHelper::Instance()->ApplyDefaultTheme();
+    ImGuiThemeHelper::ref().AddTheme("Orange/Blue", GetOrangeBlueTheme());
+    ImGuiThemeHelper::ref().SetDefaultTheme("Orange/Blue");
+    ImGuiThemeHelper::ref().ApplyDefaultTheme();
     return true;
 }

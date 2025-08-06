@@ -1,25 +1,26 @@
 #include <Frontend/Tables/OperationsTable.h>
 #include <Models/DataBase.h>
+#include <Frontend/MainFrontend.h>
 
-OperationsTable::OperationsTable() : ADataBarsTable("OperationsTable", 6) {
-}
+OperationsTable::OperationsTable() : ADataBarsTable("OperationsTable", 6) {}
 
-bool OperationsTable::load() {
-    ADataBarsTable::load();
-    m_updateOperations();
-    return true;
-}
-
-void OperationsTable::unload() {
-    ADataBarsTable::unload();
-}
-
-bool OperationsTable::drawMenu() {
-    if (m_drawAccountMenu()) {
-        m_updateOperations();
-        return true;
+bool OperationsTable::m_drawMenu() {
+    bool ret = false;
+    if (ImGui::MenuItem("Refresh")) {
+        refreshDatas();
+        ret = true;
     }
-    return false;
+    return ret;
+}
+
+void OperationsTable::refreshDatas() {
+    m_Operations.clear();
+    m_updateAccounts();
+    DataBase::ref().GetOperationsStats(                    //
+        m_getAccountID(),                                  //
+        [this](const OperationOutput& vOperationOutput) {  //
+            m_Operations.push_back(vOperationOutput);
+        });
 }
 
 size_t OperationsTable::m_getItemsCount() const {
@@ -58,22 +59,25 @@ void OperationsTable::m_setupColumns() {
     ImGui::TableHeadersRow();
 }
 
+/* only one at a time */
 void OperationsTable::m_drawContextMenuContent() {
-    EZ_TOOLS_DEBUG_BREAK;
+    if (!m_getSelectedRows().empty()) {
+        if (ImGui::MenuItem("Update")) {
+            size_t idx = 0;
+            for (const auto& e : m_Operations) {
+                if (m_isRowSelected(e.id)) {
+                    m_doActionOnDblClick(idx, e.id);
+                    break;
+                }
+                ++idx;
+            }
+        }
+    }
 }
 
 void OperationsTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-    EZ_TOOLS_DEBUG_BREAK;
-}
-
-void OperationsTable::m_updateOperations() {
-    const auto account_id = m_getAccountID();
-    if (account_id > 0) {
-        m_Operations.clear();
-        DataBase::ref().GetOperationsStats(                    //
-            account_id,                                        //
-            [this](const OperationOutput& vOperationOutput) {  //
-                m_Operations.push_back(vOperationOutput);
-            });
-    }
+    auto operation = m_Operations.at(vIdx);
+    operation.id = vRowID;
+    MainFrontend::ref().getOperationDialogRef().setOperation(operation);
+    MainFrontend::ref().getOperationDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
 }

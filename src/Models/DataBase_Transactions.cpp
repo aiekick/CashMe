@@ -2,67 +2,106 @@
 #include <sqlite3.hpp>
 #include <ezlibs/ezSqlite.hpp>
 #include <ezlibs/ezLog.hpp>
+#include <ezlibs/ezSha.hpp>
 
-void DataBase::AddTransaction(  //
-    const RowID& vAccountID,
-    const EntityName& vEntityName,
-    const CategoryName& vCategoryName,
-    const OperationName& vOperationName,
-    const SourceName& vSourceName,
-    const SourceType& vSourceType,
-    const SourceSha& vSourceSha,
-    const TransactionDate& vDate,
-    const TransactionDescription& vDescription,
-    const TransactionComment& vComment,
-    const TransactionAmount& vAmount,
-    const TransactionConfirmed& vConfirmed,
-    const TransactionSha& vSha) {
-    EntityInput ei;
-    ei.name = vEntityName;
-    AddEntity(ei);
-    OperationInput oi;
-    oi.name = vOperationName;
-    AddOperation(oi);
-    CategoryInput ci;
-    ci.name = vCategoryName;
-    AddCategory(ci);
-    AddSource(vSourceName, vSourceType, vSourceSha);
-    auto insert_query =             //
-        ez::sqlite::QueryBuilder()  //
-            .setTable("transactions")
-            .addField("account_id", ez::str::toStr("%u", vAccountID))
-            .addFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vEntityName.c_str())
-            .addFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vOperationName.c_str())
-            .addFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vCategoryName.c_str())
-            .addFieldQuery("source_id", R"(SELECT id FROM sources WHERE sources.sha = "%s")", vSourceSha.c_str())
-            .addField("date", vDate)
-            .addField("description", vDescription)
-            .addField("comment", vComment)
-            .addField("amount", ez::str::toStr("%.6f", vAmount))
-            .addField("confirmed", ez::str::toStr("%u", vConfirmed))
-            .addField("sha", vSha)
-            .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a transaction in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+bool DataBase::AddTransaction(const RowID& vAccountID, const TransactionInput& vTransactionInput) {
+    bool ret = true;
+    AddEntity(vTransactionInput.entity);
+    AddOperation(vTransactionInput.operation);
+    AddCategory(vTransactionInput.category);
+    AddSource(vTransactionInput.source.name, vTransactionInput.source.type, vTransactionInput.source.sha);
+    RowID incomeID{};
+    if (SearchIncomeInTransactions(vTransactionInput, incomeID)) {
     }
+    auto insert_query =  //
+        ez::sqlite::QueryBuilder()
+            .setTable("transactions")
+            .addOrSetField("account_id", vAccountID)
+            .addOrSetFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vTransactionInput.entity.name.c_str())
+            .addOrSetFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vTransactionInput.operation.name.c_str())
+            .addOrSetFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vTransactionInput.category.name.c_str())
+            .addOrSetFieldQuery("source_id", R"(SELECT id FROM sources WHERE sources.sha = "%s")", vTransactionInput.source.sha.c_str())
+            //.addOrSetFieldQuery("income_id", R"(SELECT id FROM incomes WHERE incomes.sha = "%s")", vTransactionInput.income.sha.c_str())
+            .addOrSetField("date", vTransactionInput.date)
+            .addOrSetField("description", vTransactionInput.description)
+            .addOrSetField("comment", vTransactionInput.comment)
+            .addOrSetField("amount", vTransactionInput.amount)
+            .addOrSetField("confirmed", vTransactionInput.confirmed)
+            .addOrSetField("sha", vTransactionInput.sha)
+            .build(ez::sqlite::QueryType::INSERT);
+    const auto rc = m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg);
+    if (rc != SQLITE_OK) {
+        LogVarError("Fail to insert a transaction in database : %s (%s)", m_LastErrorMsg, insert_query);
+        ret = false;
+    } 
+    return ret;
 }
 
-void DataBase::GetTransactions(  //
-    const RowID& vAccountID,
-    std::function<void(  //
-        const RowID&,
-        const EntityName&,
-        const CategoryName&,
-        const OperationName&,
-        const SourceName&,
-        const TransactionDate&,
-        const TransactionDateEpoch&,
-        const TransactionDescription&,
-        const TransactionComment&,
-        const TransactionAmount&,
-        const TransactionConfirmed&,
-        const TransactionSha&)> vCallback) {
+bool DataBase::AddTransactionAutoSha(const RowID& vAccountID, const TransactionInput& vTransactionInput) {
+    bool ret = true;
+    AddEntity(vTransactionInput.entity);
+    AddOperation(vTransactionInput.operation);
+    AddCategory(vTransactionInput.category);
+    AddSource(vTransactionInput.source.name, vTransactionInput.source.type, vTransactionInput.source.sha);
+    RowID incomeID{};
+    if (SearchIncomeInTransactions(vTransactionInput, incomeID)) {
+    }
+    auto insertBuilder =  //
+        ez::sqlite::QueryBuilder()
+            .setTable("transactions")
+            .addOrSetField("account_id", vAccountID)
+            .addOrSetFieldQuery("entity_id", R"(SELECT id FROM entities WHERE entities.name = "%s")", vTransactionInput.entity.name.c_str())
+            .addOrSetFieldQuery("operation_id", R"(SELECT id FROM operations WHERE operations.name = "%s")", vTransactionInput.operation.name.c_str())
+            .addOrSetFieldQuery("category_id", R"(SELECT id FROM categories WHERE categories.name = "%s")", vTransactionInput.category.name.c_str())
+            .addOrSetFieldQuery("source_id", R"(SELECT id FROM sources WHERE sources.sha = "%s")", vTransactionInput.source.sha.c_str())
+            //.addOrSetFieldQuery("income_id", R"(SELECT id FROM incomes WHERE incomes.sha = "%s")", vTransactionInput.income.sha.c_str())
+            .addOrSetField("date", vTransactionInput.date)
+            .addOrSetField("description", vTransactionInput.description)
+            .addOrSetField("comment", vTransactionInput.comment)
+            .addOrSetField("amount", vTransactionInput.amount)
+            .addOrSetField("confirmed", vTransactionInput.confirmed);
+    std::string baseSha =  //
+        ez::sha1()         //
+            .add(vTransactionInput.date)
+            // un fichier ofc ne peut pas avoir des description de longueur > a 30
+            // alors on limite le sha a utiliser un description de 30
+            // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
+            .add(vTransactionInput.description.substr(0, 30))
+            // must be unique per oepration
+            .addValue(vTransactionInput.amount)
+            .finalize()
+            .getHex();
+    uint32_t attempt = 0;
+    while (attempt < m_maxInsertAttempts) {
+        const auto& insert_query = insertBuilder.addOrSetField("sha", baseSha + "_" + std::to_string(attempt)).build(ez::sqlite::QueryType::INSERT);
+        const auto rc = m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg);
+        if (rc == SQLITE_OK) {
+            ret = true;
+            break;
+        } else {
+            if ((rc == SQLITE_CONSTRAINT) &&  //
+                (sqlite3_extended_errcode(m_SqliteDB) == SQLITE_CONSTRAINT_UNIQUE)) {
+                ++attempt;  // retry abd we will increment suffix
+            } else {
+                LogVarError("Fail to insert a transaction in database : %s (%s)", m_LastErrorMsg, insert_query);
+                ret = false;
+                break;
+            }
+        }
+    }
+    if (attempt == m_maxInsertAttempts) {
+        LogVarError("Fail to insert transaction: more than (%u) collisions on sha (%s)", m_maxInsertAttempts, baseSha.c_str());
+        ret = false;
+    }
+    return ret;
+}
+
+bool DataBase::GetTransactions(const RowID& vAccountID, std::function<void(const TransactionOutput&)> vCallback) {
+    bool ret = false;
     // no interest to call that without a callback for retrieve datas
+    if (vAccountID == 0) {
+        return ret;
+    }
     assert(vCallback);
     auto select_query = ez::str::toStr(
         u8R"(
@@ -101,26 +140,28 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    vCallback(
-                        sqlite3_column_int(stmt, 0),            // RowID
-                        ez::sqlite::readStringColumn(stmt, 1),  // EntityName
-                        ez::sqlite::readStringColumn(stmt, 2),  // CategoryName
-                        ez::sqlite::readStringColumn(stmt, 3),  // OperationName
-                        ez::sqlite::readStringColumn(stmt, 4),  // SourceName
-                        ez::sqlite::readStringColumn(stmt, 5),  // TransactionDate
-                        sqlite3_column_int64(stmt, 6),          // TransactionDateEpoch
-                        ez::sqlite::readStringColumn(stmt, 7),  // TransactionDescription
-                        ez::sqlite::readStringColumn(stmt, 8),  // TransactionComment
-                        sqlite3_column_double(stmt, 9),         // TransactionAmount
-                        sqlite3_column_int(stmt, 10),           // TransactionConfirmed
-                        ez::sqlite::readStringColumn(stmt, 11)  // TransactionSha
-                    );
+                    TransactionOutput to;
+                    to.id = sqlite3_column_int(stmt, 0);
+                    to.datas.entity.name = ez::sqlite::readStringColumn(stmt, 1);
+                    to.datas.category.name = ez::sqlite::readStringColumn(stmt, 2);
+                    to.datas.operation.name = ez::sqlite::readStringColumn(stmt, 3);
+                    to.datas.source.name = ez::sqlite::readStringColumn(stmt, 4);
+                    to.datas.date = ez::sqlite::readStringColumn(stmt, 5);
+                    to.dateEpoch = sqlite3_column_int64(stmt, 6);
+                    to.datas.description = ez::sqlite::readStringColumn(stmt, 7);
+                    to.datas.comment = ez::sqlite::readStringColumn(stmt, 8);
+                    to.datas.amount = sqlite3_column_double(stmt, 9);
+                    to.datas.confirmed = static_cast<bool>(!!sqlite3_column_int(stmt, 10));
+                    to.datas.sha = ez::sqlite::readStringColumn(stmt, 11);
+                    vCallback(to);
+                    ret = true;
                 }
             }
         }
         sqlite3_finalize(stmt);
         m_CloseDB();
     }
+    return ret;
 }
 
 std::string DataBase::GetFormatDate(const DateFormat& vDateFormat) {
@@ -141,19 +182,17 @@ std::string DataBase::GetFormatDate(const DateFormat& vDateFormat) {
     return ret;
 }
 
-void DataBase::GetGroupedTransactions(  //
+bool DataBase::GetGroupedTransactions(  //
     const RowID& vAccountID,
     const GroupBy& vGroupBy,
     const DateFormat& vDateFormat,
     std::function<void(  //
-        const RowID&,
-        const TransactionDate&,
-        const TransactionDescription&,
-        const EntityName&,
-        const CategoryName&,
-        const OperationName&,
-        const TransactionDebit&,
-        const TransactionCredit&)> vCallback) {  // no interest to call that without a callback for retrieve datas
+        const TransactionOutput&)> vCallback) {
+    bool ret = false;
+    // no interest to call that without a callback for retrieve datas
+    if (vAccountID == 0) {
+        return ret;
+    }
     assert(vCallback);
     const auto& format_date = GetFormatDate(vDateFormat);
     std::string group_by;
@@ -192,7 +231,8 @@ SELECT
   categories.name AS new_category,
   operations.name AS new_operation,
   ROUND(SUM(CASE WHEN transactions.amount < 0 THEN amount ELSE 0 END), 2) AS new_debit,
-  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS new_credit
+  ROUND(SUM(CASE WHEN transactions.amount > 0 THEN amount ELSE 0 END), 2) AS new_credit,
+  SUM(transactions.amount) AS new_amounx
 FROM
   transactions
   LEFT JOIN entities ON transactions.entity_id = entities.id
@@ -218,47 +258,42 @@ ORDER BY
             while (res == SQLITE_OK || res == SQLITE_ROW) {
                 res = sqlite3_step(stmt);
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
-                    RowID id = sqlite3_column_int(stmt, 0);
-                    std::string date;
+                    TransactionOutput to;
+                    to.id = sqlite3_column_int(stmt, 0);
                     if (vGroupBy == GroupBy::DATES) {
-                        date = ez::sqlite::readStringColumn(stmt, 1);
+                        to.datas.date = ez::sqlite::readStringColumn(stmt, 1);
                     }
-                    std::string description;
                     if (vGroupBy == GroupBy::DESCRIPTIONS) {
-                        description = ez::sqlite::readStringColumn(stmt, 2);
+                        to.datas.description = ez::sqlite::readStringColumn(stmt, 2);
                     }
-                    std::string entity;
                     if (vGroupBy == GroupBy::ENTITIES) {
-                        entity = ez::sqlite::readStringColumn(stmt, 3);
+                        to.datas.entity.name = ez::sqlite::readStringColumn(stmt, 3);
                     }
-                    std::string category;
                     if (vGroupBy == GroupBy::CATEGORIES) {
-                        category = ez::sqlite::readStringColumn(stmt, 4);
+                        to.datas.category.name = ez::sqlite::readStringColumn(stmt, 4);
                     }
-                    std::string operation;
                     if (vGroupBy == GroupBy::OPERATIONS) {
-                        operation = ez::sqlite::readStringColumn(stmt, 5);
+                        to.datas.operation.name = ez::sqlite::readStringColumn(stmt, 5);
                     }
-                    TransactionDebit debit = sqlite3_column_double(stmt, 6);
-                    TransactionCredit credit = sqlite3_column_double(stmt, 7);
-                    vCallback(        //
-                        id,           // RowID
-                        date,         // TransactionDate
-                        description,  // TransactionDescription
-                        entity,       // EntityName
-                        category,     // CategoryName
-                        operation,    // OperationName
-                        debit,        // TransactionDebit
-                        credit);      // TransactionCredit
+                    to.amounts.debit = sqlite3_column_double(stmt, 6);
+                    to.amounts.credit = sqlite3_column_double(stmt, 7);
+                    to.amounts.amount = sqlite3_column_double(stmt, 8);
+                    vCallback(to);
+                    ret = true;
                 }
             }
         }
         sqlite3_finalize(stmt);
         m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::GetDuplicateTransactionsOnDatesAndAmount(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
+bool DataBase::GetDuplicateTransactionsOnDatesAndAmount(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
+    bool ret = false;
+    if (vAccountID == 0) {
+        return ret;
+    }
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     auto select_query = ez::str::toStr(
@@ -289,15 +324,21 @@ ORDER BY t.date, t.amount;
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
                     RowID id = sqlite3_column_int(stmt, 0);
                     vCallback(id);
+                    ret = true;
                 }
             }
         }
         sqlite3_finalize(stmt);
         m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::GetUnConfirmedTransactions(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
+bool DataBase::GetUnConfirmedTransactions(const RowID& vAccountID, std::function<void(const RowID&)> vCallback) {
+    bool ret = false;
+    if (vAccountID == 0) {
+        return ret;
+    }
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     auto select_query = ez::str::toStr(
@@ -323,26 +364,18 @@ AND
                 if (res == SQLITE_OK || res == SQLITE_ROW) {
                     RowID id = sqlite3_column_int(stmt, 0);
                     vCallback(id);
+                    ret = true;
                 }
             }
         }
         sqlite3_finalize(stmt);
         m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::UpdateTransaction(  //
-    const RowID& vRowID,
-    const EntityName& vEntityName,
-    const CategoryName& vCategoryName,
-    const OperationName& vOperationName,
-    const SourceName& vSourceName,
-    const TransactionDate& vDate,
-    const TransactionDescription& vDescription,
-    const TransactionComment& vComment,
-    const TransactionAmount& vAmount,
-    const TransactionConfirmed& vConfirmed,
-    const TransactionSha& vSha) {
+bool DataBase::UpdateTransaction(const RowID& vRowID, const TransactionInput& vTransactionInput) {
+    bool ret = true;
     auto insert_query = ez::str::toStr(
         u8R"(
 UPDATE 
@@ -361,23 +394,26 @@ SET
 WHERE
   transactions.id = %u;
 )",
-        vEntityName.c_str(),
-        vCategoryName.c_str(),
-        vOperationName.c_str(),
-        vSourceName.c_str(),
-        vDate.c_str(),
-        vDescription.c_str(),
-        vComment.c_str(),
-        vAmount,
-        vConfirmed,
-        vSha.c_str(),
+        vTransactionInput.entity.name.c_str(),
+        vTransactionInput.category.name.c_str(),
+        vTransactionInput.operation.name.c_str(),
+        vTransactionInput.source.name.c_str(),
+        vTransactionInput.date.c_str(),
+        vTransactionInput.description.c_str(),
+        vTransactionInput.comment.c_str(),
+        vTransactionInput.amount,
+        vTransactionInput.confirmed,
+        vTransactionInput.sha.c_str(),
         vRowID);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a transaction in database : %s", m_LastErrorMsg);
+        ret = false;
     }
+    return ret;
 }
 
-void DataBase::ConfirmTransaction(const RowID& vRowID, const TransactionConfirmed& vConfirmed) {
+bool DataBase::ConfirmTransaction(const RowID& vRowID, const bool& vConfirmed) {
+    bool ret = false;
     auto insert_query = ez::str::toStr(
         u8R"(
 UPDATE 
@@ -390,14 +426,18 @@ WHERE
         vConfirmed,
         vRowID);
     if (m_OpenDB()) {
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        ret = true;
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to confirm a transaction in database : %s", m_LastErrorMsg);
+            ret = false;
         }
         m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::DeleteTransaction(const RowID& vRowID) {
+bool DataBase::DeleteTransaction(const RowID& vRowID) {
+    bool ret = false;
     auto insert_query = ez::str::toStr(
         u8R"(
 DELETE FROM 
@@ -407,25 +447,34 @@ WHERE
 )",
         vRowID);
     if (m_OpenDB()) {
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        ret = true;
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete a transaction in database : %s", m_LastErrorMsg);
+            ret = false;
         }
         m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::DeleteTransactions() {
+bool DataBase::DeleteTransactions() {
+    bool ret = false;
     if (m_OpenDB()) {
+        ret = true;
         auto delete_query = ez::str::toStr(u8R"(DELETE FROM transactions;)");
         if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, delete_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of transactions table in database : %s", m_LastErrorMsg);
+            ret = false;
         }
         m_CloseDB();
     }
+    return ret;
 }
 
-void DataBase::DeleteTransactions(const std::set<RowID>& vRowIDs) {
-    if (BeginTransaction()) {
+bool DataBase::DeleteTransactions(const std::set<RowID>& vRowIDs) {
+    bool ret = false;
+    if (BeginDBTransaction()) {
+        ret = true;
         for (const auto& row_id : vRowIDs) {
             auto insert_query = ez::str::toStr(
                 u8R"(
@@ -435,10 +484,12 @@ WHERE
   transactions.id = %u;
 )",
                 row_id);
-            if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
                 LogVarError("Fail to delete a transaction in database : %s", m_LastErrorMsg);
+                ret = false;
             }
         }
-        CommitTransaction();
+        CommitDBTransaction();
     }
+    return ret;
 }

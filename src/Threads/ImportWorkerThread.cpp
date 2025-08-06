@@ -160,11 +160,11 @@ void ImportWorkerThread::m_worker(  //
     if (ptr != nullptr) {
         if (!vFiles.empty()) {
             // N Files for Parsing
-            // + N Files for DB writing 
+            // + N Files for DB writing
             // + 1 Transaction Commit
             // => N Files * 2U + 1
             const float progress_steps = 1.0f / static_cast<float>(vFiles.size() * 2U + 1U);
-            std::vector<Cash::AccountStatements> stmts;
+            std::vector<Cash::AccountTransactions> stmts;
             // 1) parsing
             if (vWorking) {
                 m_setCurrentPhase("Parsing");
@@ -181,29 +181,29 @@ void ImportWorkerThread::m_worker(  //
                     }
                 }
             }
-            m_setCurrentParsedFile({}); // clear current file
+            m_setCurrentParsedFile({});  // clear current file
             // 2) database writing
             if (vWorking && !stmts.empty()) {
                 m_setCurrentPhase("DataBase Transaction Insertion");
-                if (DataBase::ref().BeginTransaction()) {
+                if (DataBase::ref().BeginDBTransaction()) {
                     for (const auto& stmt : stmts) {
                         RowID account_id = 0U;
                         if (DataBase::ref().GetAccount(stmt.account.number, account_id)) {
                             for (const auto& stm : stmt.statements) {
-                                DataBase::ref().AddTransaction(  //
-                                    account_id,
-                                    stm.entity,
-                                    stm.category,
-                                    stm.operation,
-                                    stm.source,
-                                    stm.source_type,
-                                    stm.source_sha1,
-                                    stm.date,
-                                    stm.description,
-                                    stm.comment,
-                                    stm.amount,
-                                    stm.confirmed,
-                                    stm.sha);
+                                TransactionInput ti;
+                                ti.entity.name = stm.entity;
+                                ti.category.name = stm.category;
+                                ti.operation.name = stm.operation;
+                                ti.source.name = stm.source;
+                                ti.source.type = stm.source_type;
+                                ti.source.sha = stm.source_sha1;
+                                ti.date = stm.date;
+                                ti.description = stm.description;
+                                ti.comment = stm.comment;
+                                ti.amount = stm.amount;
+                                ti.confirmed = stm.confirmed;
+                                ti.sha = stm.sha;
+                                DataBase::ref().AddTransaction(account_id, ti);
                                 vGenerationTime = (ez::time::getTicks() - mt0) / 1000.0f;
                                 if (!vWorking) {
                                     break;
@@ -222,7 +222,7 @@ void ImportWorkerThread::m_worker(  //
                         }
                     }
                     m_setCurrentPhase("DataBase Transaction Commit");
-                    DataBase::ref().CommitTransaction();
+                    DataBase::ref().CommitDBTransaction();
                 }
             }
         }

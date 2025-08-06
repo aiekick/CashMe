@@ -14,15 +14,16 @@ IncomesPane::~IncomesPane() {
 }
 
 bool IncomesPane::Init() {
-    return true;
+    bool ret = true;
+    if (ProjectFile::ref()->IsProjectLoaded()) {
+        ret &= m_IncomesTable.load();
+    }
+    return ret;
 }
 
 void IncomesPane::Unit() {
 }
 
-void IncomesPane::Load() {
-    m_IncomesTable.load();
-}
 
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
@@ -42,13 +43,7 @@ bool IncomesPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiC
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
 
-            if (ProjectFile::Instance()->IsProjectLoaded()) {
-                if (ImGui::BeginMenuBar()) {
-                    auto& actionSystemRef = MainFrontend::Instance()->GetActionSystemRef();
-                    m_IncomesTable.drawAccountsMenu(actionSystemRef);
-                    m_IncomesTable.drawDebugMenu(actionSystemRef);
-                    ImGui::EndMenuBar();
-                }
+            if (ProjectFile::ref()->IsProjectLoaded()) {
                 m_IncomesTable.draw(ImGui::GetContentRegionAvail());
             }
         }
@@ -68,13 +63,6 @@ bool IncomesPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const 
     const ImVec2 center = vRect.GetCenter();
 
     bool ret = false;
-
-    ret |= m_IncomesTable.getIncomeDialogRef().draw(center);
-
-    if (ret) {
-        m_IncomesTable.load();
-        BudgetPane::Instance()->Load();
-    }
 
     return ret;
 }

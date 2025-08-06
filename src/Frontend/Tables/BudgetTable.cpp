@@ -5,37 +5,28 @@
 
 BudgetTable::BudgetTable() : ADataTable("BudgetTable", 9) {}
 
-bool BudgetTable::init() {
-    return true;
-}
-
-void BudgetTable::unit() {
-    clear();
-}
-
-bool BudgetTable::load() {
-    if (ADataTable::load()) {
-        refreshDatas();
-        return true;
-    }
-    return false;
-}
-
-void BudgetTable::unload() {
-    ADataTable::unload();
-    clear();
-}
-
-bool BudgetTable::drawMenu() {
+bool BudgetTable::m_drawMenu() {
+    bool ret = false;
     if (ImGui::MenuItem("Refresh")) {
         refreshDatas();
+        ret = true;
     }
-    if (m_drawAccountMenu()) {
-        m_UpdateBudget();
-        return true;
+    ImGui::MenuItem("Table", nullptr, &m_showTable);
+    ImGui::MenuItem("Graph", nullptr, &m_showGraph);
+    return ret;
+}
+
+void BudgetTable::m_draw(const ImVec2& vSize) {
+    if (m_showGraph) {
+        auto size = vSize;
+        if (m_showTable) {
+            size = ImVec2(-1, 0);
+        }
+        m_budgetGraph.draw(size);
     }
-    drawDebugMenu();
-    return false;
+    if (m_showTable) {
+        ADataTable::m_draw(vSize);
+    }
 }
 
 void BudgetTable::clear() {
@@ -43,17 +34,16 @@ void BudgetTable::clear() {
 }
 
 void BudgetTable::refreshDatas() {
+    m_budgets.clear();
     m_updateAccounts();
+    DataBase::ref().ComputeBudget(  //
+        m_getAccountID(),           //
+        190,
+        [this](const BudgetOutput& vBudgetOutput) {  //
+            m_budgets.push_back(vBudgetOutput);
+        });
+    m_budgetGraph.prepare(m_budgets);
 }
-
-void BudgetTable::drawDebugMenu(FrameActionSystem& vFrameActionSystem) {
-#ifdef _DEBUG
-    if (ImGui::BeginMenu("Debug")) {
-        ImGui::EndMenu();
-    }
-#endif
-}
-
 
 size_t BudgetTable::m_getItemsCount() const {
     return m_budgets.size();
@@ -80,37 +70,15 @@ void BudgetTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmoun
 }
 
 void BudgetTable::m_setupColumns() {
-    ImGui::TableSetupScrollFreeze(0, 2);
+    ImGui::TableSetupScrollFreeze(0, 1);
     ImGui::TableSetupColumn("Date", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Delta min", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Delta max", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Solde min", ImGuiTableColumnFlags_WidthFixed);
-    ImGui::TableSetupColumn("Solde min", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("Solde max", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Income Min", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Income Min Amounts", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Income Max", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Income Min Amounts", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableHeadersRow();
 }
-
-void BudgetTable::m_drawContextMenuContent() {
-
-}
-
-void BudgetTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-
-}
-
-void BudgetTable::m_UpdateBudget() {
-    const auto account_id = m_getAccountID();
-    if (account_id > 0) {
-        clear();
-        DataBase::ref().ComputeBudget(                  //
-            account_id,                                      //
-            190,
-            [this](const BudgetOutput& vBudgetOutput) {  //
-                m_budgets.push_back(vBudgetOutput);
-            });
-    }
-}
-

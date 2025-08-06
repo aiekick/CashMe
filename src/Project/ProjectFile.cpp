@@ -25,14 +25,14 @@ limitations under the License.
 #include <Models/DataBase.h>
 
 #include <LayoutManager.h>
-#include <Panes/StatsPane.h>
-#include <Panes/StatementsPane.h>
+#include <Panes/TransactionsPane.h>
 #include <Panes/BanksPane.h>
 #include <Panes/AccountsPane.h>
 #include <Panes/EntitiesPane.h>
 #include <Panes/IncomesPane.h>
 #include <Panes/CategoriesPane.h>
 #include <Panes/OperationsPane.h>
+#include <Panes/BudgetPane.h>
 
 #include <Plugins/PluginManager.h>
 #include <Systems/SettingsDialog.h>
@@ -54,9 +54,9 @@ void ProjectFile::Clear() {
     m_ProjectFilePathName.clear();
     m_ProjectFileName.clear();
     m_ProjectFilePath.clear();
-    m_IsLoaded = false;
-    m_IsThereAnyChanges = false;
-    Messaging::Instance()->Clear();
+    m_isLoaded = false;
+    m_isThereAnyChanges = false;
+    Messaging::ref().Clear();
 }
 
 void ProjectFile::ClearDatas() {
@@ -66,7 +66,7 @@ void ProjectFile::ClearDatas() {
 void ProjectFile::New() {
     Clear();
     ClearDatas();
-    m_IsLoaded = true;
+    m_isLoaded = true;
     m_NeverSaved = true;
     SetProjectChange(true);
 }
@@ -81,7 +81,7 @@ void ProjectFile::New(const std::string& vFilePathName) {
         m_ProjectFileName = ps.name;
         m_ProjectFilePath = ps.path;
     }
-    m_IsLoaded = true;
+    m_isLoaded = true;
     SetProjectChange(false);
 }
 
@@ -106,15 +106,15 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                         m_ProjectFileName = ps.name;
                         m_ProjectFilePath = ps.path;
                     }
-                    m_IsLoaded = true;
-                    StatementsPane::Instance()->Load();
-                    StatsPane::Instance()->Load();
-                    BanksPane::Instance()->Load();
-                    AccountsPane::Instance()->Load();
-                    EntitiesPane::Instance()->Load();
-                    CategoriesPane::Instance()->Load();
-                    OperationsPane::Instance()->Load();
-                    IncomesPane::Instance()->Load();
+                    m_isLoaded = true;
+                    TransactionsPane::ref()->Init();
+                    BanksPane::ref()->Init();
+                    AccountsPane::ref()->Init();
+                    EntitiesPane::ref()->Init();
+                    CategoriesPane::ref()->Init();
+                    OperationsPane::ref()->Init();
+                    IncomesPane::ref()->Init();
+                    BudgetPane::ref()->Init();
                     SetProjectChange(false);
                 } else {
                     Clear();
@@ -124,7 +124,7 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
             }
         }
     }
-    return m_IsLoaded;
+    return m_isLoaded;
 }
 
 bool ProjectFile::Save() {
@@ -158,7 +158,7 @@ bool ProjectFile::SaveAs(const std::string& vFilePathName) {
 }
 
 bool ProjectFile::IsProjectLoaded() const {
-    return m_IsLoaded;
+    return m_isLoaded;
 }
 
 bool ProjectFile::IsProjectNeverSaved() const {
@@ -166,11 +166,11 @@ bool ProjectFile::IsProjectNeverSaved() const {
 }
 
 bool ProjectFile::IsThereAnyProjectChanges() const {
-    return m_IsThereAnyChanges;
+    return m_isThereAnyChanges;
 }
 
 void ProjectFile::SetProjectChange(bool vChange) {
-    m_IsThereAnyChanges = vChange;
+    m_isThereAnyChanges = vChange;
     m_WasJustSaved = true;
     m_WasJustSavedFrameCounter = 2U;
 }
@@ -194,8 +194,8 @@ std::string ProjectFile::GetProjectFilepathName() const {
 ez::xml::Nodes ProjectFile::getXmlNodes(const std::string& vUserDatas) {
     ez::xml::Node node;
     node.setName("project");
-    node.addChilds(LayoutManager::Instance()->getXmlNodes(vUserDatas));
-    node.addChilds(SettingsDialog::Instance()->getXmlNodes(vUserDatas));
+    node.addChilds(LayoutManager::ref().getXmlNodes(vUserDatas));
+    node.addChilds(SettingsDialog::ref().getXmlNodes(vUserDatas));
     return node.getChildren();
 }
 
@@ -206,8 +206,8 @@ bool ProjectFile::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Nod
     if (strName == "config") {
         return true;
     } else if (strName == "project") {
-        LayoutManager::Instance()->RecursParsingConfig(vNode, vParent, vUserDatas);
-        SettingsDialog::Instance()->RecursParsingConfig(vNode, vParent, vUserDatas);
+        LayoutManager::ref().RecursParsingConfig(vNode, vParent, vUserDatas);
+        SettingsDialog::ref().RecursParsingConfig(vNode, vParent, vUserDatas);
     }
     return true;
 }

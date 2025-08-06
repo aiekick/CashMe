@@ -3,11 +3,9 @@
 
 #include <Panes/OperationsPane.h>
 
-#include <cinttypes>  // printf zu
-
 #include <Models/DataBase.h>
-
 #include <Project/ProjectFile.h>
+#include <Frontend/MainFrontend.h>
 
 OperationsPane::OperationsPane() = default;
 OperationsPane::~OperationsPane() {
@@ -15,14 +13,14 @@ OperationsPane::~OperationsPane() {
 }
 
 bool OperationsPane::Init() {
-    return true;
+    bool ret = true;
+    if (ProjectFile::ref()->IsProjectLoaded()) {
+        ret &= m_OperationsTable.load();
+    }
+    return ret;
 }
 
 void OperationsPane::Unit() {
-}
-
-void OperationsPane::Load() {
-    m_OperationsTable.load();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -43,8 +41,7 @@ bool OperationsPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImG
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
 
-            if (ProjectFile::Instance()->IsProjectLoaded()) {
-                m_OperationsTable.drawMenu();
+            if (ProjectFile::ref()->IsProjectLoaded()) {
                 m_OperationsTable.draw(ImGui::GetContentRegionAvail());
             }
         }
