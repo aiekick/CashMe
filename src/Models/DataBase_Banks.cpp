@@ -9,12 +9,12 @@ bool DataBase::AddBank(const BankInput& vBankInput) {
     auto insert_query =             //
         ez::sqlite::QueryBuilder()  //
             .setTable("banks")
-            .addField("name", vBankInput.name)
-            .addField("url", vBankInput.url)
-            .addField("sha", ez::sha1().add(vBankInput.name).add(vBankInput.url).finalize().getHex())
+            .addOrSetField("name", vBankInput.name)
+            .addOrSetField("url", vBankInput.url)
+            .addOrSetField("sha", ez::sha1().add(vBankInput.name).add(vBankInput.url).finalize().getHex())
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a bank in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a bank in database : %s (%s)", m_LastErrorMsg, insert_query);
         ret = false;
     }
     return ret;
@@ -124,7 +124,7 @@ ORDER BY banks.name;
 bool DataBase::UpdateBank(const RowID& vRowID, const BankInput& vBankInput) {
     bool ret = true;
     auto insert_query = ez::str::toStr(u8R"(UPDATE banks SET name = "%s", url = "%s" WHERE id = %u;)", vBankInput.name.c_str(), vBankInput.url.c_str(), vRowID);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a bank in database : %s", m_LastErrorMsg);
         ret = false;
     }
@@ -136,7 +136,7 @@ bool DataBase::DeleteBanks() {
     if (m_OpenDB()) {
         ret = true;
         auto insert_query = ez::str::toStr(u8R"(DELETE FROM banks;)");
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of banks table in database : %s", m_LastErrorMsg);
             ret = false;
         }

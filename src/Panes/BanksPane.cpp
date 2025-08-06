@@ -5,9 +5,8 @@
 
 #include <Models/DataBase.h>
 #include <Project/ProjectFile.h>
-#include <Panes/StatementsPane.h>
-
-#include <cinttypes>  // printf zu
+#include <Frontend/MainFrontend.h>
+#include <Panes/TransactionsPane.h>
 
 BanksPane::BanksPane() = default;
 BanksPane::~BanksPane() {
@@ -15,14 +14,14 @@ BanksPane::~BanksPane() {
 }
 
 bool BanksPane::Init() {
-    return true;
+    bool ret = true;
+    if (ProjectFile::ref()->IsProjectLoaded()) {
+        ret &= m_BanksTable.load();
+    }
+    return ret;
 }
 
 void BanksPane::Unit() {
-}
-
-void BanksPane::Load() {
-    m_BanksTable.load();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -43,8 +42,7 @@ bool BanksPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiCon
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus /* | ImGuiWindowFlags_MenuBar*/;
 #endif
 
-            if (ProjectFile::Instance()->IsProjectLoaded()) {
-                m_BanksTable.drawMenu();
+            if (ProjectFile::ref()->IsProjectLoaded()) {
                 m_BanksTable.draw(ImGui::GetContentRegionAvail());
             }
         }
@@ -64,13 +62,6 @@ bool BanksPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const Im
     const ImVec2 center = vRect.GetCenter();
 
     bool ret = false;
-
-    ret |= m_BanksTable.getBankDialogRef().draw(center);
-
-    if (ret) {
-        m_BanksTable.load();
-        StatementsPane::Instance()->Load();
-    }
 
     return ret;
 }

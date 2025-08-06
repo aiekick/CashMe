@@ -1,23 +1,22 @@
 #include <Frontend/Tables/AccountsTable.h>
+#include <Frontend/MainFrontend.h>
 #include <Models/DataBase.h>
 
 AccountsTable::AccountsTable() : ADataBarsTable("AccountsTable", 11) {}
 
-bool AccountsTable::load() {
-    m_updateAccounts();
-    return true;
-}
-
-void AccountsTable::unload() {
-    ADataBarsTable::unload();
-}
-
 bool AccountsTable::drawMenu() {
+    if (ImGui::MenuItem("Refresh")) {
+        refreshDatas();
+    }
     return false;
 }
 
-AccountDialog& AccountsTable::getAccountDialogRef() {
-    return m_AccountDialog;
+void AccountsTable::refreshDatas() {
+    m_Accounts.clear();
+    DataBase::ref().GetAccountsStats(                  //
+        [this](const AccountOutput& vAccountOutput) {  //
+            m_Accounts.push_back(vAccountOutput);
+        });
 }
 
 size_t AccountsTable::m_getItemsCount() const {
@@ -71,25 +70,17 @@ void AccountsTable::m_drawContextMenuContent() {
         if (ImGui::MenuItem("Update selection")) {
             AccountOutput account_to_update;
             for (const auto& acc : m_Accounts) {
-                if (m_IsRowSelected(acc.id)) {
+                if (m_isRowSelected(acc.id)) {
                     account_to_update = acc;
                 }
             }
-            m_AccountDialog.setAccount(account_to_update);
-            m_AccountDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
+            MainFrontend::ref().getAccountDialogRef().setAccount(account_to_update);
+            MainFrontend::ref().getAccountDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
         }
     }
 }
 
 void AccountsTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-    m_AccountDialog.setAccount(m_Accounts.at(vIdx));
-    m_AccountDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
-}
-
-void AccountsTable::m_updateAccounts() {
-    m_Accounts.clear();
-    DataBase::ref().GetAccountsStats(  //
-        [this](const AccountOutput& vAccountOutput) {  //
-            m_Accounts.push_back(vAccountOutput);
-        });
+    MainFrontend::ref().getAccountDialogRef().setAccount(m_Accounts.at(vIdx));
+    MainFrontend::ref().getAccountDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
 }

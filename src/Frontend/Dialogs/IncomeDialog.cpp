@@ -15,19 +15,19 @@ void IncomeDialog::unit() {
 
 }
 
-void IncomeDialog::setTransactions(const std::vector<Transaction>& vTransactions) {
+void IncomeDialog::setTransactions(const std::vector<TransactionOutput>& vTransactions) {
     m_TransactionToAddAsIncomes = vTransactions;
 }
 
-void IncomeDialog::setIncome(const Income& vIncome) {
+void IncomeDialog::setIncome(const IncomeOutput& vIncome) {
     m_IncomeToUpdate = vIncome;
 }
 
-void IncomeDialog::setIncomesToUpdate(const std::vector<Income>& vIncomes) {
+void IncomeDialog::setIncomesToUpdate(const std::vector<IncomeOutput>& vIncomes) {
     m_IncomesToUpdate = vIncomes;
 }
 
-void IncomeDialog::setIncomesToDelete(const std::vector<Income>& vIncomes) {
+void IncomeDialog::setIncomesToDelete(const std::vector<IncomeOutput>& vIncomes) {
     m_IncomesToDelete = vIncomes;
 }
 
@@ -53,56 +53,56 @@ void IncomeDialog::m_drawContent(const ImVec2& vPos) {
 }
 
 void IncomeDialog::m_prepare() {
-    m_UpdateAccounts();
-    m_UpdateEntities();
-    m_UpdateOperations();
-    m_UpdateCategories();
+    m_updateAccounts();
+    m_updateEntities();
+    m_updateOperations();
+    m_updateCategories();
     const auto& mode = getCurrentMode();
     assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
         case DataDialogMode::MODE_CREATION: {
             if (!m_TransactionToAddAsIncomes.empty()) {
                 const auto& trans = m_TransactionToAddAsIncomes.at(0);
-                m_IncomeToUpdate.account = trans.account;
-                m_IncomeToUpdate.category = trans.category;
-                m_IncomeToUpdate.entity = trans.entity;
-                m_IncomeToUpdate.operation = trans.operation;
-                m_IncomeToUpdate.description = trans.description;
-                m_IncomeToUpdate.maxAmount = trans.amount;
-                m_IncomeToUpdate.minAmount = trans.amount;
-                m_IncomeToUpdate.startDate = trans.date;
-                m_IncomeToUpdate.startDateEpoch = trans.epoch;
-                m_IncomeToUpdate.minDay = ez::time::decomposeEpoch(trans.epoch).tm_mday;
-                m_IncomeToUpdate.maxDay = m_IncomeToUpdate.minDay;
+                m_IncomeToUpdate.accountNumber = trans.accountNumber;
+                m_IncomeToUpdate.datas.category.name = trans.datas.category.name;
+                m_IncomeToUpdate.datas.entity.name = trans.datas.entity.name;
+                m_IncomeToUpdate.datas.operation.name = trans.datas.operation.name;
+                m_IncomeToUpdate.datas.description = trans.datas.description;
+                m_IncomeToUpdate.datas.minAmount = trans.datas.amount;
+                m_IncomeToUpdate.datas.maxAmount = trans.datas.amount;
+                m_IncomeToUpdate.datas.startDate = trans.datas.date;
+                m_IncomeToUpdate.startEpoch = trans.dateEpoch;
+                m_IncomeToUpdate.datas.minDay = ez::time::decomposeEpoch(trans.dateEpoch).tm_mday;
+                m_IncomeToUpdate.datas.maxDay = m_IncomeToUpdate.datas.minDay;
                 for (const auto& t : m_TransactionToAddAsIncomes) {
-                    if (m_IncomeToUpdate.entity != t.entity) {
-                        m_IncomeToUpdate.entity = "Many values";
+                    if (m_IncomeToUpdate.datas.entity.name != t.datas.entity.name) {
+                        m_IncomeToUpdate.datas.entity.name = "Many values";
                     }
-                    if (m_IncomeToUpdate.category != t.category) {
-                        m_IncomeToUpdate.category = "Many values";
+                    if (m_IncomeToUpdate.datas.category.name != t.datas.category.name) {
+                        m_IncomeToUpdate.datas.category.name = "Many values";
                     }
-                    if (m_IncomeToUpdate.operation != t.operation) {
-                        m_IncomeToUpdate.operation = "Many values";
+                    if (m_IncomeToUpdate.datas.operation.name != t.datas.operation.name) {
+                        m_IncomeToUpdate.datas.operation.name = "Many values";
                     }
-                    if (m_IncomeToUpdate.description != t.description) {
-                        m_IncomeToUpdate.description = "Many values";
+                    if (m_IncomeToUpdate.datas.description != t.datas.description) {
+                        m_IncomeToUpdate.datas.description = "Many values";
                     }
-                    if (t.amount < m_IncomeToUpdate.minAmount) {
-                        m_IncomeToUpdate.minAmount = t.amount;
+                    if (t.datas.amount < m_IncomeToUpdate.datas.minAmount) {
+                        m_IncomeToUpdate.datas.minAmount = t.datas.amount;
                     }
-                    if (t.amount > m_IncomeToUpdate.maxAmount) {
-                        m_IncomeToUpdate.maxAmount = t.amount;
+                    if (t.datas.amount > m_IncomeToUpdate.datas.maxAmount) {
+                        m_IncomeToUpdate.datas.maxAmount = t.datas.amount;
                     }
-                    if (t.epoch < m_IncomeToUpdate.startDateEpoch) {
-                        m_IncomeToUpdate.startDateEpoch = t.epoch;
-                        m_IncomeToUpdate.startDate = t.date;
+                    if (t.dateEpoch < m_IncomeToUpdate.startEpoch) {
+                        m_IncomeToUpdate.startEpoch = t.dateEpoch;
+                        m_IncomeToUpdate.datas.startDate = t.datas.date;
                     }
-                    auto day = ez::time::decomposeEpoch(t.epoch).tm_mday;
-                    if (day < m_IncomeToUpdate.minDay) {
-                        m_IncomeToUpdate.minDay = day;
+                    auto day = ez::time::decomposeEpoch(t.dateEpoch).tm_mday;
+                    if (day < m_IncomeToUpdate.datas.minDay) {
+                        m_IncomeToUpdate.datas.minDay = day;
                     }
-                    if (day > m_IncomeToUpdate.maxDay) {
-                        m_IncomeToUpdate.maxDay = day;
+                    if (day > m_IncomeToUpdate.datas.maxDay) {
+                        m_IncomeToUpdate.datas.maxDay = day;
                     }
                 }
             }
@@ -117,18 +117,18 @@ void IncomeDialog::m_prepare() {
         case DataDialogMode::MODE_NONE:
         default: break;
     }
-    m_IncomeNameInputText.SetText(m_IncomeToUpdate.name);
-    m_AccountsCombo.select(m_IncomeToUpdate.account);
-    m_EntitiesCombo.setText(m_IncomeToUpdate.entity);
-    m_CategoriesCombo.setText(m_IncomeToUpdate.category);
-    m_OperationsCombo.setText(m_IncomeToUpdate.operation);
-    m_IncomeStartDateInputText.SetText(m_IncomeToUpdate.startDate);
-    m_IncomeEndDateInputText.SetText(m_IncomeToUpdate.endDate);
-    m_IncomeMinDayInputInt32 = m_IncomeToUpdate.minDay;
-    m_IncomeMaxDayInputInt32 = m_IncomeToUpdate.maxDay;
-    m_IncomeMinAmountInputDouble = m_IncomeToUpdate.minAmount;
-    m_IncomeMaxAmountInputDouble = m_IncomeToUpdate.maxAmount;
-    m_IncomeDescriptionInputText.SetText(m_IncomeToUpdate.description);
+    m_IncomeNameInputText.SetText(m_IncomeToUpdate.datas.name);
+    m_AccountsCombo.select(m_IncomeToUpdate.accountNumber);
+    m_EntitiesCombo.setText(m_IncomeToUpdate.datas.entity.name);
+    m_CategoriesCombo.setText(m_IncomeToUpdate.datas.category.name);
+    m_OperationsCombo.setText(m_IncomeToUpdate.datas.operation.name);
+    m_IncomeStartDateInputText.SetText(m_IncomeToUpdate.datas.startDate);
+    m_IncomeEndDateInputText.SetText(m_IncomeToUpdate.datas.endDate);
+    m_IncomeMinDayInputInt32 = m_IncomeToUpdate.datas.minDay;
+    m_IncomeMaxDayInputInt32 = m_IncomeToUpdate.datas.maxDay;
+    m_IncomeMinAmountInputDouble = m_IncomeToUpdate.datas.minAmount;
+    m_IncomeMaxAmountInputDouble = m_IncomeToUpdate.datas.maxAmount;
+    m_IncomeDescriptionInputText.SetText(m_IncomeToUpdate.datas.description);
 }
 
 void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
@@ -136,45 +136,56 @@ void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
     const auto width = 400.0f;
     m_IncomeNameInputText.DisplayInputText(width, "Name", "", false, align);
     m_AccountsCombo.displayWithColumn(width, "Account", align);
-    m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
-    m_CategoriesCombo.displayWithColumn(width, "CategoryOutput", align);
-    m_OperationsCombo.displayWithColumn(width, "OperationOutput", align);
+    m_EntitiesCombo.displayWithColumn(width, "Entity", align);
+    m_CategoriesCombo.displayWithColumn(width, "Category", align);
+    m_OperationsCombo.displayWithColumn(width, "Operation", align);
     m_IncomeStartDateInputText.DisplayInputText(width, "Start date", "", false, align);
     m_IncomeEndDateInputText.DisplayInputText(width, "End date", "", false, align);
-    ImGui::DisplayAlignedWidget(width, "Min amount", align, [this]() { ImGui::InputDouble("##MinAmount", &m_IncomeMinAmountInputDouble); });
-    ImGui::DisplayAlignedWidget(width, "Max amount", align, [this]() { ImGui::InputDouble("##MaxAmount", &m_IncomeMaxAmountInputDouble); });
-    ImGui::DisplayAlignedWidget(width, "Min day", align, [this]() { ImGui::InputInt("##MinDay", &m_IncomeMinDayInputInt32); });
-    ImGui::DisplayAlignedWidget(width, "Max day", align, [this]() { ImGui::InputInt("##MaxDay", &m_IncomeMaxDayInputInt32); });
+    m_IncomeMinAmountInputDouble.displayInputValue(width, "Min amount", 0.0, 0.1, 1.0, "%.6f", align, [this](double vDefaultValue, double vValue) {
+        return (m_IncomeMaxAmountInputDouble.get() >= vValue);
+    });
+    m_IncomeMaxAmountInputDouble.displayInputValue(width, "Max amount", 0.0, 0.1, 1.0, "%.6f", align, [this](double vDefaultValue, double vValue) {
+        return (m_IncomeMinAmountInputDouble.get() <= vValue);
+    });
+    m_IncomeMinDayInputInt32.displayInputValue(width, "Min day", 0, 1, 1, "%i", align, [this](int32_t& vDefaultValue, int32_t& vValue) {
+        if (vValue < -31) {
+            vValue = -31;
+        }
+        if (vValue > 31) {
+            vValue = 31;
+        }
+        return (m_IncomeMaxDayInputInt32.get() >= vValue);
+    });
+    m_IncomeMaxDayInputInt32.displayInputValue(width, "Max day", 0, 1, 1, "%i", align, [this](int32_t& vDefaultValue, int32_t& vValue) {
+        if (vValue < 0) {
+            vValue = 0;
+        }
+        if (vValue > 31) {
+            vValue = 31;
+        }
+        return (m_IncomeMinDayInputInt32.get() <= vValue);
+    });
     m_IncomeDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
 }
 
 void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
-    const auto align = 125.0f;
-    const auto width = 400.0f;
-    m_IncomeNameInputText.DisplayInputText(width, "Name", "", false, align);
-    m_AccountsCombo.displayWithColumn(width, "Account", align);
-    m_EntitiesCombo.displayWithColumn(width, "EntityOutput", align);
-    m_CategoriesCombo.displayWithColumn(width, "CategoryOutput", align);
-    m_OperationsCombo.displayWithColumn(width, "OperationOutput", align);
-    m_IncomeStartDateInputText.DisplayInputText(width, "Start date", "", false, align);
-    m_IncomeEndDateInputText.DisplayInputText(width, "End date", "", false, align);
-    ImGui::DisplayAlignedWidget(width, "Min amount", align, [this]() { ImGui::InputDouble("##MinAmount", &m_IncomeMinAmountInputDouble); });
-    ImGui::DisplayAlignedWidget(width, "Max amount", align, [this]() { ImGui::InputDouble("##MaxAmount", &m_IncomeMaxAmountInputDouble); });
-    ImGui::DisplayAlignedWidget(width, "Min day", align, [this]() { ImGui::InputInt("##MinDay", &m_IncomeMinDayInputInt32); });
-    ImGui::DisplayAlignedWidget(width, "Max day", align, [this]() { ImGui::InputInt("##MaxDay", &m_IncomeMaxDayInputInt32); });
-    m_IncomeDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
+    m_drawContentCreation(vPos);
 }
 
 void IncomeDialog::m_drawContentDeletion(const ImVec2& vPos) {
-    /*const auto& displaySize = ImGui::GetIO().DisplaySize * 0.5f;
+    const auto& displaySize = ImGui::GetIO().DisplaySize * 0.5f;
     static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("##IncomesToDelete", 5, flags, displaySize)) {
+    if (ImGui::BeginTable("##IncomesToDelete", 9, flags, displaySize)) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("StartDate", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("EndDate", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("MinDay", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("MaxDay", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("MinAmount", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("MaxAmount", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("Descriptions", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
         int32_t idx = 0;
         int32_t idx_to_delete = -1;
@@ -193,35 +204,55 @@ void IncomeDialog::m_drawContentDeletion(const ImVec2& vPos) {
                 ImGui::TableNextRow();
 
                 ImGui::TableNextColumn();
-                {
-                    if (ImGui::SmallContrastedButton("-")) {
-                        idx_to_delete = idx;
-                    }
+                if (ImGui::SmallContrastedButton("-")) {
+                    idx_to_delete = idx;
                 }
 
                 ImGui::TableNextColumn();
-                { ImGui::Text(t.date.c_str()); }
+                ImGui::Text("%s", t.datas.name.c_str());
 
                 ImGui::TableNextColumn();
-                { ImGui::Text(t.description.c_str()); }
+                ImGui::Text("%s", t.datas.startDate.c_str());
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", t.datas.endDate.c_str());
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%i", t.datas.minDay);
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%u", t.datas.maxDay);
 
                 ImGui::TableNextColumn();
                 {
-                    if (t.debit < 0.0) {
-                        ImGui::PushStyleColor(ImGuiCol_Text, bad_color);
-                        ImGui::Text("%.2f", t.debit);
-                        ImGui::PopStyleColor();
+                    ImU32 color = ImGui::GetColorU32(ImGui::GetStyleColorVec4(ImGuiCol_Text));
+                    if (t.datas.minAmount < 0.0) {
+                        color = bad_color;
+                    } else if (t.datas.minAmount > 0.0) {
+                        color = good_color;
                     }
+
+                    ImGui::PushStyleColor(ImGuiCol_Text, color);
+                    ImGui::Text("%.2f", t.datas.minAmount);
+                    ImGui::PopStyleColor();
                 }
 
                 ImGui::TableNextColumn();
                 {
-                    if (t.credit > 0.0) {
-                        ImGui::PushStyleColor(ImGuiCol_Text, good_color);
-                        ImGui::Text("%.2f", t.credit);
-                        ImGui::PopStyleColor();
+                    ImU32 color = ImGui::GetColorU32(ImGui::GetStyleColorVec4(ImGuiCol_Text));
+                    if (t.datas.maxAmount < 0.0) {
+                        color = bad_color;
+                    } else if (t.datas.maxAmount > 0.0) {
+                        color = good_color;
                     }
+
+                    ImGui::PushStyleColor(ImGuiCol_Text, color);
+                    ImGui::Text("%.2f", t.datas.maxAmount);
+                    ImGui::PopStyleColor();
                 }
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", t.datas.description.c_str());
             }
         }
         m_IncomesDeletionListClipper.End();
@@ -230,7 +261,7 @@ void IncomeDialog::m_drawContentDeletion(const ImVec2& vPos) {
         if (idx_to_delete > -1) {
             m_IncomesToDelete.erase(m_IncomesToDelete.begin() + idx_to_delete);
         }
-    }*/
+    }
 }
 
 const char* IncomeDialog::m_getTitle() const {
@@ -259,11 +290,17 @@ bool IncomeDialog::m_canConfirm() {
     const auto& mode = getCurrentMode();
     assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
-        case DataDialogMode::MODE_CREATION: return true;
         case DataDialogMode::MODE_DELETE_ONCE:
         case DataDialogMode::MODE_DELETE_ALL: return !m_IncomesToDelete.empty();
+        case DataDialogMode::MODE_CREATION:
         case DataDialogMode::MODE_UPDATE_ONCE:
-        case DataDialogMode::MODE_UPDATE_ALL: return true;
+        case DataDialogMode::MODE_UPDATE_ALL: {
+            if ((m_IncomeMaxAmountInputDouble.get() < m_IncomeMinAmountInputDouble.get()) ||  //
+                (m_IncomeMinDayInputInt32.get() > m_IncomeMaxDayInputInt32.get())) {
+                return false;
+            }
+        }
+            return true;
         case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
@@ -285,9 +322,7 @@ void IncomeDialog::m_confirmDialog() {
         case DataDialogMode::MODE_UPDATE_ONCE: {
             m_confirmDialogUpdateOnce();
         } break;
-        case DataDialogMode::MODE_UPDATE_ALL: {
-            m_confirmDialogUpdateAll();
-        } break;
+        case DataDialogMode::MODE_UPDATE_ALL:
         case DataDialogMode::MODE_MERGE_ALL:
         case DataDialogMode::MODE_NONE:
         default: break;
@@ -301,117 +336,59 @@ void IncomeDialog::m_confirmDialogCreation() {
     RowID account_id = 0U;
     if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::ref().OpenDBFile()) {
-            DataBase::ref().AddIncome(  //
-                account_id,
-                m_IncomeNameInputText.GetText(),
-                m_EntitiesCombo.getText(),
-                m_CategoriesCombo.getText(),
-                m_OperationsCombo.getText(),
-                m_IncomeStartDateInputText.GetText(),
-                m_IncomeEndDateInputText.GetText(),
-                m_IncomeMinAmountInputDouble,
-                m_IncomeMaxAmountInputDouble,
-                m_IncomeMinDayInputInt32,
-                m_IncomeMaxDayInputInt32,
-                m_IncomeDescriptionInputText.GetText());
+            IncomeInput ii;
+            ii.account_id = account_id;
+            ii.name = m_IncomeNameInputText.GetText();
+            ii.category.name = m_CategoriesCombo.getText();
+            ii.entity.name = m_EntitiesCombo.getText();
+            ii.operation.name = m_OperationsCombo.getText();
+            ii.description = m_IncomeDescriptionInputText.GetText();
+            ii.minAmount = m_IncomeMinAmountInputDouble.get();
+            ii.maxAmount = m_IncomeMaxAmountInputDouble.get();
+            ii.startDate = m_IncomeStartDateInputText.GetText();
+            ii.endDate = m_IncomeEndDateInputText.GetText();
+            ii.minDay = m_IncomeMinDayInputInt32.get();
+            ii.maxDay = m_IncomeMaxDayInputInt32.get();
+            DataBase::ref().AddIncome(account_id, ii);
             DataBase::ref().CloseDBFile();
         }
     }
 }
 
 void IncomeDialog::m_confirmDialogUpdateOnce() {
-    /*RowID account_id = 0U;
+    RowID account_id = 0U;
     if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
         if (DataBase::ref().OpenDBFile()) {
-            const auto sha = ez::str::toStr(  //
-                "%s_%s_%f",               //
-                m_IncomeDateInputText.GetText().c_str(),
-                // un fichier ofc ne peut pas avoir des labels de longueur > a 30
-                // alors on limite le sha a utiliser un label de 30
-                // comme cela un ofc ne rentrera pas en collision avec un autre type de fichier comme les pdf par ex
-                m_IncomeDescriptionInputText.GetText().substr(0, 30).c_str(),
-                m_IncomeAmountInputDouble);  // must be unique per operation
-            DataBase::ref().AddEntity(m_EntitiesCombo.getText());
-            DataBase::ref().AddCategory(m_CategoriesCombo.getText());
-            DataBase::ref().AddOperation(m_OperationsCombo.getText());
-            DataBase::ref().UpdateIncome(          //
-                m_IncomeToUpdate.id,                     //
-                m_EntitiesCombo.getText(),                    //
-                m_CategoriesCombo.getText(),                  //
-                m_OperationsCombo.getText(),                  //
-                m_SourceName,                                 //
-                m_IncomeDateInputText.GetText(),         //
-                m_IncomeDescriptionInputText.GetText(),  //
-                m_IncomeCommentInputText.GetText(),      //
-                m_IncomeAmountInputDouble,               //
-                false,                                        //
-                sha);
+            IncomeInput ii;
+            ii.account_id = account_id;
+            ii.name = m_IncomeNameInputText.GetText();
+            ii.category.name = m_CategoriesCombo.getText();
+            ii.entity.name = m_EntitiesCombo.getText();
+            ii.operation.name = m_OperationsCombo.getText();
+            ii.description = m_IncomeDescriptionInputText.GetText();
+            ii.minAmount = m_IncomeMinAmountInputDouble.get();
+            ii.maxAmount = m_IncomeMaxAmountInputDouble.get();
+            ii.startDate = m_IncomeStartDateInputText.GetText();
+            ii.endDate = m_IncomeEndDateInputText.GetText();
+            ii.minDay = m_IncomeMinDayInputInt32.get();
+            ii.maxDay = m_IncomeMaxDayInputInt32.get();
+            DataBase::ref().UpdateIncome(m_IncomeToUpdate.id, ii);
             DataBase::ref().CloseDBFile();
         }
-    }*/
-}
-
-void IncomeDialog::m_confirmDialogUpdateAll() {
-    /*RowID account_id = 0U;
-    if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
-        if (DataBase::ref().OpenDBFile()) {
-            if (DataBase::ref().BeginIncome()) {
-                for (auto t : m_IncomesToUpdate) {
-                    if (m_EntitiesCombo.getText() != MULTIPLE_VALUES) {
-                        t.entity = m_EntitiesCombo.getText();
-                        DataBase::ref().AddEntity(t.entity);
-                    }
-                    if (m_CategoriesCombo.getText() != MULTIPLE_VALUES) {
-                        t.category = m_CategoriesCombo.getText();
-                        DataBase::ref().AddCategory(t.category);
-                    }
-                    if (m_OperationsCombo.getText() != MULTIPLE_VALUES) {
-                        t.operation = m_OperationsCombo.getText();
-                        DataBase::ref().AddOperation(t.operation);
-                    }
-                    if (m_IncomeDateInputText.GetText() != MULTIPLE_VALUES) {
-                        t.date = m_IncomeDateInputText.GetText();
-                    }
-                    if (m_IncomeDescriptionInputText.GetText() != MULTIPLE_VALUES) {
-                        t.description = m_IncomeDescriptionInputText.GetText();
-                    }
-                    if (m_IncomeCommentInputText.GetText() != MULTIPLE_VALUES) {
-                        t.comment = m_IncomeCommentInputText.GetText();
-                    }
-                    if (!m_IncomeConfirmedManyValues) {
-                        t.confirmed = m_IncomeConfirmed;
-                    }
-                    DataBase::ref().UpdateIncome(  //
-                        t.id,                                 //
-                        t.entity,                             //
-                        t.operation,                          //
-                        t.category,                           //
-                        t.source,                             //
-                        t.date,                               //
-                        t.description,                        //
-                        t.comment,                            //
-                        t.amount,                             //
-                        t.confirmed,                          //
-                        t.sha);
-                }
-                DataBase::ref().CommitIncome();
-            }
-            DataBase::ref().CloseDBFile();
-        }
-    }*/
+    }
 }
 
 void IncomeDialog::m_confirmDialogDeletion() {
-    /*std::set<RowID> m_rows;
+    std::set<RowID> m_rows;
     for (const auto& t : m_IncomesToDelete) {
         m_rows.emplace(t.id);
     }
     if (!m_rows.empty()) {
         DataBase::ref().DeleteIncomes(m_rows);
-    }*/
+    }
 }
 
-void IncomeDialog::m_UpdateAccounts() {
+void IncomeDialog::m_updateAccounts() {
     m_AccountsCombo.clear();
     DataBase::ref().GetAccounts(  //
         [this](const AccountOutput& vAccountOutput) {  //
@@ -420,7 +397,7 @@ void IncomeDialog::m_UpdateAccounts() {
     m_AccountsCombo.getIndexRef() = 0;
 }
 
-void IncomeDialog::m_UpdateEntities() {
+void IncomeDialog::m_updateEntities() {
     m_EntitiesCombo.clear();
     DataBase::ref().GetEntities(           //
         [this](const EntityOutput& vEntityOutput) {  //
@@ -430,7 +407,7 @@ void IncomeDialog::m_UpdateEntities() {
     m_EntitiesCombo.finalize();
 }
 
-void IncomeDialog::m_UpdateOperations() {
+void IncomeDialog::m_updateOperations() {
     m_OperationsCombo.clear();
     DataBase::ref().GetOperations(               //
         [this](const OperationOutput& vOperationOutput) {  //
@@ -440,7 +417,7 @@ void IncomeDialog::m_UpdateOperations() {
     m_OperationsCombo.finalize();
 }
 
-void IncomeDialog::m_UpdateCategories() {
+void IncomeDialog::m_updateCategories() {
     m_CategoriesCombo.clear();
     DataBase::ref().GetCategories(             //
         [this](const CategoryOutput& vOperationOutput) {  //

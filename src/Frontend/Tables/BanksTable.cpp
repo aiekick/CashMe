@@ -1,24 +1,23 @@
 #include <Frontend/Tables/BanksTable.h>
 #include <Models/DataBase.h>
+#include <Frontend/MainFrontend.h>
 
 BanksTable::BanksTable() : ADataBarsTable("BanksTable", 7) {
 }
 
-bool BanksTable::load() {
-    m_updateBanks();
-    return true;
-}
-
-void BanksTable::unload() {
-    ADataBarsTable::unload();
-}
-
 bool BanksTable::drawMenu() {
+    if (ImGui::MenuItem("Refresh")) {
+        refreshDatas();
+    }
     return false;
 }
 
-BankDialog& BanksTable::getBankDialogRef() {
-    return m_BankDialog;
+void BanksTable::refreshDatas() {
+    m_Banks.clear();
+    DataBase::ref().GetBanksStats(               //
+        [this](const BankOutput& vBankOutput) {  //
+            m_Banks.push_back(vBankOutput);
+        });
 }
 
 size_t BanksTable::m_getItemsCount() const {
@@ -64,25 +63,17 @@ void BanksTable::m_drawContextMenuContent() {
         if (ImGui::MenuItem("Update selection")) {
             BankOutput bank_to_update;
             for (const auto& bank : m_Banks) {
-                if (m_IsRowSelected(bank.id)) {
+                if (m_isRowSelected(bank.id)) {
                     bank_to_update = bank;
                 }
             }
-            m_BankDialog.setBank(bank_to_update);
-            m_BankDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
+            MainFrontend::ref().getBankDialogRef().setBank(bank_to_update);
+            MainFrontend::ref().getBankDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
         }
     }
 }
 
 void BanksTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-    m_BankDialog.setBank(m_Banks.at(vIdx));
-    m_BankDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
-}
-
-void BanksTable::m_updateBanks() {
-    m_Banks.clear();
-    DataBase::ref().GetBanksStats(         //
-        [this](const BankOutput& vBankOutput) {  //
-            m_Banks.push_back(vBankOutput);
-        });
+    MainFrontend::ref().getBankDialogRef().setBank(m_Banks.at(vIdx));
+    MainFrontend::ref().getBankDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
 }

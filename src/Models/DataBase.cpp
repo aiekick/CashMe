@@ -74,7 +74,7 @@ void DataBase::CloseDBFile() {
     m_CloseDB();
 }
 
-bool DataBase::BeginTransaction() {
+bool DataBase::BeginDBTransaction() {
     if (m_OpenDB()) {
         if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, "BEGIN TRANSACTION;", nullptr, nullptr, &m_LastErrorMsg) == SQLITE_OK) {
             m_TransactionStarted = true;
@@ -85,7 +85,7 @@ bool DataBase::BeginTransaction() {
     return false;
 }
 
-void DataBase::CommitTransaction() {
+void DataBase::CommitDBTransaction() {
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, "COMMIT;", nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to commit : %s", m_LastErrorMsg);
     }
@@ -94,7 +94,7 @@ void DataBase::CommitTransaction() {
     m_CloseDB();
 }
 
-void DataBase::RollbackTransaction() {
+void DataBase::RollbackDBTransaction() {
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, "ROLLBACK;", nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to ROLLBACK : %s", m_LastErrorMsg);
     }
@@ -126,7 +126,7 @@ bool DataBase::SetSettingsXMLDatas(const std::string& vXMLDatas) {
         } else {
             insert_query = "UPDATE settings SET xml = \"" + vXMLDatas + "\" WHERE rowid = 1;";
         }
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
 #ifdef _DEBUG
             ez::file::saveStringToFile(insert_query, "insert_query.txt");
             ez::file::saveStringToFile(m_LastErrorMsg, "last_error_msg.txt");
@@ -266,6 +266,7 @@ CREATE TABLE incomes (
     min_day INTEGER, -- min day from the first day of month, can be negative (for represent last month days)
     max_day INTEGER, -- max day from the first day of month, can be the same as min 
     description TEXT,
+    comment TEXT,
     sha TEXT NOT NULL UNIQUE,
     -- links
     FOREIGN KEY (account_id) REFERENCES accounts(id),
@@ -329,9 +330,9 @@ void DataBase::m_CloseDB() {
 }
 
 int32_t DataBase::m_debug_sqlite3_exec(  //
-    const char* vDebugLabel,
+    const std::string& vDebugLabel,
     sqlite3* db,                                 /* An open database */
-    const char* sql_query,                       /* SQL to be evaluated */
+    const std::string& sql_query,                       /* SQL to be evaluated */
     int (*callback)(void*, int, char**, char**), /* Callback function */
     void* arg1,                                  /* 1st argument to callback */
     char** errmsg) {                             /* Error msg written here */
@@ -343,13 +344,13 @@ int32_t DataBase::m_debug_sqlite3_exec(  //
         ez::file::correctSlashTypeForFilePathName(  //
             ez::str::toStr("sqlite3/%s.sql", func_name.c_str())));
 #endif
-    return sqlite3_exec(db, sql_query, callback, arg1, errmsg);
+    return sqlite3_exec(db, sql_query.c_str(), callback, arg1, errmsg);
 }
 
 int32_t DataBase::m_debug_sqlite3_prepare_v2(  //
-    const char* vDebugLabel,
+    const std::string& vDebugLabel,
     sqlite3* db,           /* Database handle. */
-    const char* sql_query, /* UTF-8 encoded SQL statement. */
+    const std::string& sql_query, /* UTF-8 encoded SQL statement. */
     int nBytes,            /* Length of zSql in bytes. */
     sqlite3_stmt** ppStmt, /* OUT: A pointer to the prepared statement */
     const char** pzTail) { /* OUT: End of parsed string */
@@ -361,5 +362,5 @@ int32_t DataBase::m_debug_sqlite3_prepare_v2(  //
         ez::file::correctSlashTypeForFilePathName(  //
             ez::str::toStr("sqlite3/%s.sql", func_name.c_str())));
 #endif
-    return sqlite3_prepare_v2(db, sql_query, nBytes, ppStmt, pzTail);
+    return sqlite3_prepare_v2(db, sql_query.c_str(), nBytes, ppStmt, pzTail);
 }

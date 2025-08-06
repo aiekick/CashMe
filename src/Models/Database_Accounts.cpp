@@ -12,13 +12,13 @@ bool DataBase::AddAccount(const BankName& vBankName, const AccountInput& vAccoun
     auto insert_query =  //
         ez::sqlite::QueryBuilder()
             .setTable("accounts")
-            .addFieldQuery("bank_id", R"(SELECT id FROM banks WHERE banks.name = "%s")", vBankName.c_str())
-            .addField("bank_agency", vAccountInput.bank_agency)
-            .addField("type", vAccountInput.type)
-            .addField("name", vAccountInput.name)
-            .addField("number", vAccountInput.number)
-            .addField("base_solde", "%.2f", vAccountInput.base_solde)
-            .addField(
+            .addOrSetFieldQuery("bank_id", R"(SELECT id FROM banks WHERE banks.name = "%s")", vBankName.c_str())
+            .addOrSetField("bank_agency", vAccountInput.bank_agency)
+            .addOrSetField("type", vAccountInput.type)
+            .addOrSetField("name", vAccountInput.name)
+            .addOrSetField("number", vAccountInput.number)
+            .addOrSetField("base_solde", "%.2f", vAccountInput.base_solde)
+            .addOrSetField(
                 "sha",
                 ez::sha1()
                     .add(vBankName)
@@ -30,8 +30,8 @@ bool DataBase::AddAccount(const BankName& vBankName, const AccountInput& vAccoun
                     .finalize()
                     .getHex())
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a Bank Account in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a Bank Account in database : %s (%s)", m_LastErrorMsg, insert_query);
         ret = false;
     }
     return ret;
@@ -202,7 +202,7 @@ WHERE
         vAccountInput.base_solde,
         vAccountInput.sha.c_str(),
         vRowID);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a account in database : %s", m_LastErrorMsg);
         ret = false;
     }
@@ -221,7 +221,7 @@ WHERE
         vRowID);
     if (m_OpenDB()) {
         ret = true;
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete a account in database : %s", m_LastErrorMsg);
             ret = false;
         }
@@ -235,7 +235,7 @@ bool DataBase::DeleteAccounts() {
     if (m_OpenDB()) {
         ret = true;
         auto insert_query = ez::str::toStr(u8R"(DELETE FROM accounts;)");
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of accounts table in database : %s", m_LastErrorMsg);
             ret = false;
         }

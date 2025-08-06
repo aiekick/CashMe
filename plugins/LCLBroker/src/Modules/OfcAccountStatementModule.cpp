@@ -22,8 +22,8 @@ std::string OfcAccountStatementModule::getFileExt() const {
     return "Bank Account files (*.ofc *.ofx){.ofc,.ofx}";
 }
 
-Cash::AccountStatements OfcAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
-    Cash::AccountStatements ret;
+Cash::AccountTransactions OfcAccountStatementModule::importBankStatement(const std::string& vFilePathName) {
+    Cash::AccountTransactions ret;
 
     struct TransDoublon {
         uint32_t doublons = 1U;

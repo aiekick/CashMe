@@ -39,7 +39,7 @@ void AccountDialog::m_drawContent(const ImVec2& vPos) {
 }
 
 void AccountDialog::m_prepare() {
-    m_UpdateBanks();
+    m_updateBanks();
     const auto& mode = getCurrentMode();
     assert(mode != DataDialogMode::MODE_MERGE_ALL);  // not supported, make no sense
     switch (mode) {
@@ -170,7 +170,7 @@ void AccountDialog::m_drawContentDeletion(const ImVec2& vPos) {
     EZ_TOOLS_DEBUG_BREAK;
 }
 
-void AccountDialog::m_UpdateBanks() {
+void AccountDialog::m_updateBanks() {
     m_BanksCombo.clear();
     DataBase::ref().GetBanks(                                       //
         [this](const BankOutput& vBankOutput) {  //

@@ -26,48 +26,62 @@ limitations under the License.
 
 //#define ENABLE_MEM_CHECK
 
+// The following macros set and clear, respectively, given bits
+// of the C runtime library debug flag, as specified by a bitmask.
+#ifdef _DEBUG
+#ifdef ENABLE_MEM_CHECK
+#define SET_CRT_DEBUG_FIELD(a) _CrtSetDbgFlag((a) | _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
+#define CLEAR_CRT_DEBUG_FIELD(a) _CrtSetDbgFlag(~(a) & _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
+#endif 
+#endif
+
 int main(int argc, char** argv) {
-	int res = EXIT_SUCCESS;
-	
+    int res = EXIT_SUCCESS;
+
 #ifdef _MSC_VER
 #ifdef _DEBUG
 #ifdef ENABLE_MEM_CHECK
     // active memory leak detector
     // https://stackoverflow.com/questions/4790564/finding-memory-leaks-in-a-c-application-with-visual-studio
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_CRT_DF);
-    _CrtMemState sOld;
-    _CrtMemCheckpoint(&sOld);  // take a snapshot
+    // Send all reports to STDOUT
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
+    // Set the debug heap to report memory leaks when the process terminates,
+    // and to keep freed blocks in the linked list.
+    SET_CRT_DEBUG_FIELD(_CRTDBG_LEAK_CHECK_DF | _CRTDBG_DELAY_FREE_MEM_DF);
 #endif
 #endif
 #endif
 
     {
+        ez::Log::initSingleton();
+
         try {
             App app;
-            app.run(argc, argv);
+            if (app.init()) {
+                app.run(argc, argv);
+                app.unit();
+            }
         } catch (const std::exception& e) {
             LogVarLightInfo("Exception %s", e.what());
             res = EXIT_FAILURE;
             EZ_TOOLS_DEBUG_BREAK;
         }
 
-        ez::Log::Instance()->close();
+        ez::Log::ref().close();
+        ez::Log::unitSingleton();
     }
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
 #ifdef ENABLE_MEM_CHECK
-    _CrtMemState sNew;
-    _CrtMemCheckpoint(&sNew);  // take a snapshot
-    _CrtMemState sDiff;
-    if (_CrtMemDifference(&sDiff, &sOld, &sNew))  // if there is a difference
-    {
-        std::cout << "-----------_CrtMemDumpStatistics ---------" << std::endl;
-        _CrtMemDumpStatistics(&sDiff);
-        std::cout << "-----------_CrtMemDumpAllObjectsSince ---------" << std::endl;
-        _CrtMemDumpAllObjectsSince(&sOld);
-        std::cout << "-----------_CrtDumpMemoryLeaks ---------" << std::endl;
-        _CrtDumpMemoryLeaks();
+    _CrtCheckMemory();
+    if (_CrtDumpMemoryLeaks() == TRUE) {
+        EZ_TOOLS_DEBUG_BREAK;
     }
 #endif
 #endif

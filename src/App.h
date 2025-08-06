@@ -7,6 +7,8 @@ public:
 public:
     App() = default;   // Prevent construction
     virtual ~App() = default;  // Prevent unwanted destruction
+    bool init();
+    void unit();
 
 private:
     void m_InitMessaging();

@@ -4,11 +4,30 @@
 #include "App.h"
 
 #include <Headers/CashMeBuild.h>
-#include <Backend/MainBackend.h>
 
 #include <ezlibs/ezApp.hpp>
 #include <ezlibs/ezFile.hpp>
 #include <ezlibs/ezLog.hpp>
+
+#include <Backend/MainBackend.h>
+#include <Frontend/MainFrontend.h>
+
+#include <Models/DataBase.h>
+
+#include <imguipack.h>
+
+#include <Panes/AccountsPane.h>
+#include <Panes/BanksPane.h>
+#include <Panes/BudgetPane.h>
+#include <Panes/CategoriesPane.h>
+#include <Panes/ConsolePane.h>
+#include <Panes/EntitiesPane.h>
+#include <Panes/IncomesPane.h>
+#include <Panes/OperationsPane.h>
+#include <Panes/TransactionsPane.h>
+
+#include <Helpers/TranslationHelper.h>
+#include <Systems/SettingsDialog.h>
 
 // messaging
 #define MESSAGING_CODE_INFOS 0
@@ -24,6 +43,20 @@
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
+bool App::init() {
+    bool ret = true;
+    ret &= (MainBackend::initSingleton() != nullptr);
+    ret &= (LayoutManager::initSingleton() != nullptr);
+    ret &= (Messaging::initSingleton() != nullptr);
+    return true;
+}
+
+void App::unit() {
+    Messaging::unitSingleton();
+    LayoutManager::unitSingleton();
+    MainBackend::unitSingleton();
+}
+
 int App::run(int argc, char** argv) {
     ez::App app(argc, argv);
     printf("-----------\n");
@@ -35,20 +68,20 @@ int App::run(int argc, char** argv) {
 
     m_InitMessaging();
 
-    MainBackend::Instance()->run(app);
+    MainBackend::ref().run(app);
 
     return 0;
 }
 
 void App::m_InitMessaging() {
-    Messaging::Instance()->AddCategory(MESSAGING_CODE_INFOS, "Infos(s)", MESSAGING_LABEL_INFOS, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
-    Messaging::Instance()->AddCategory(MESSAGING_CODE_WARNINGS, "Warnings(s)", MESSAGING_LABEL_WARNINGS, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
-    Messaging::Instance()->AddCategory(MESSAGING_CODE_ERRORS, "Errors(s)", MESSAGING_LABEL_ERRORS, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
-    Messaging::Instance()->AddCategory(MESSAGING_CODE_DEBUG, "Debug(s)", MESSAGING_LABEL_DEBUG, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
-    Messaging::Instance()->SetLayoutManager(LayoutManager::Instance());
-    ez::Log::Instance()->setStandardLogMessageFunctor([](const int& vType, const std::string& vMessage) {
+    Messaging::ref().AddCategory(MESSAGING_CODE_INFOS, "Infos(s)", MESSAGING_LABEL_INFOS, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
+    Messaging::ref().AddCategory(MESSAGING_CODE_WARNINGS, "Warnings(s)", MESSAGING_LABEL_WARNINGS, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
+    Messaging::ref().AddCategory(MESSAGING_CODE_ERRORS, "Errors(s)", MESSAGING_LABEL_ERRORS, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+    Messaging::ref().AddCategory(MESSAGING_CODE_DEBUG, "Debug(s)", MESSAGING_LABEL_DEBUG, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
+    Messaging::ref().SetLayoutManager(&LayoutManager::ref());
+    ez::Log::ref().setStandardLogMessageFunctor([](const int& vType, const std::string& vMessage) {
         MessageData msg_datas;
         const auto& type = vType;
-        Messaging::Instance()->AddMessage(vMessage, type, false, msg_datas, {});
+        Messaging::ref().AddMessage(vMessage, type, false, msg_datas, {});
     });
 }

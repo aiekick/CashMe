@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Frontend/Tables/abstract/ADataBarsTable.h>
+#include <Frontend/Dialogs/OperationDialog.h>
 
 class OperationsTable : public ADataBarsTable {
 private:
@@ -10,9 +11,7 @@ public:
     OperationsTable();
     ~OperationsTable() = default;
 
-    bool load() final;
-    void unload() final;
-    bool drawMenu() final;
+    void refreshDatas() final;
 
 protected:
     size_t m_getItemsCount() const final;
@@ -22,7 +21,5 @@ protected:
     void m_setupColumns() final;
     void m_drawContextMenuContent() final;
     void m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) final;
-
-private:
-    void m_updateOperations();
+    bool m_drawMenu() final;
 };

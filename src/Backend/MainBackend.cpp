@@ -1,7 +1,12 @@
 ﻿#include "MainBackend.h"
+#include <ezlibs/ezOS.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#ifdef WINDOWS_OS
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#endif
 
 #include <Headers/CashMeBuild.h>
 
@@ -17,7 +22,6 @@
 #include <algorithm>  // std::min, std::max
 #include <stdexcept>  // std::exception
 
-#include <Backend/MainBackend.h>
 #include <Plugins/PluginManager.h>
 #include <Project/ProjectFile.h>
 
@@ -31,11 +35,11 @@
 #include <Frontend/MainFrontend.h>
 
 #include <Panes/ConsolePane.h>
-#include <Panes/StatementsPane.h>
 
 #include <Models/DataBase.h>
 
 #include <Systems/SettingsDialog.h>
+#include <Panes/TransactionsPane.h>
 
 // we include the cpp just for embedded fonts
 #include <Res/fontIcons.cpp>
@@ -54,7 +58,7 @@ static void glfw_error_callback(int error, const char* description) {
 
 static void glfw_window_close_callback(GLFWwindow* window) {
     glfwSetWindowShouldClose(window, GLFW_FALSE);  // block app closing
-    MainFrontend::Instance()->Action_Window_CloseApp();
+    MainFrontend::ref().Action_Window_CloseApp();
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -77,9 +81,9 @@ bool MainBackend::init(const ez::App& vApp) {
 #else
     SetConsoleVisibility(false);
 #endif
+    m_InitModels();
     if (m_InitWindow() && m_InitImGui()) {
         m_InitPlugins(vApp);
-        m_InitModels();
         m_InitSystems();
         m_InitPanes();
         m_InitSettings();
@@ -93,11 +97,11 @@ bool MainBackend::init(const ez::App& vApp) {
 void MainBackend::unit() {
     SaveConfigFile("config.xml", "app", "config");
     m_UnitSystems();
-    m_UnitModels();
+    m_UnitSettings();  // before plugins and gui since containing weak ptr to plugins
     m_UnitImGui();     // before plugins since containing weak ptr to plugins
-    m_UnitSettings();  // after gui but before plugins since containing weak ptr to plugins
     m_UnitPlugins();
     m_UnitWindow();
+    m_UnitModels();
 }
 
 bool MainBackend::isThereAnError() const {
@@ -119,27 +123,27 @@ void MainBackend::NeedToCloseProject() {
 }
 
 bool MainBackend::SaveProject() {
-    return ProjectFile::Instance()->Save();
+    return ProjectFile::ref()->Save();
 }
 
 void MainBackend::SaveAsProject(const std::string& vFilePathName) {
-    ProjectFile::Instance()->SaveAs(vFilePathName);
+    ProjectFile::ref()->SaveAs(vFilePathName);
 }
 
 // actions to do after rendering
 void MainBackend::PostRenderingActions() {
     if (m_NeedToNewProject) {
-        ProjectFile::Instance()->Clear();
-        ProjectFile::Instance()->New(m_ProjectFileToLoad);
+        ProjectFile::ref()->Clear();
+        ProjectFile::ref()->New(m_ProjectFileToLoad);
         m_ProjectFileToLoad.clear();
         m_NeedToNewProject = false;
     }
 
     if (m_NeedToLoadProject) {
         if (!m_ProjectFileToLoad.empty()) {
-            if (ProjectFile::Instance()->LoadAs(m_ProjectFileToLoad)) {
+            if (ProjectFile::ref()->LoadAs(m_ProjectFileToLoad)) {
                 setAppTitle(m_ProjectFileToLoad);
-                ProjectFile::Instance()->SetProjectChange(false);
+                ProjectFile::ref()->SetProjectChange(false);
             } else {
                 LogVarError("Failed to load project %s", m_ProjectFileToLoad.c_str());
             }
@@ -150,12 +154,12 @@ void MainBackend::PostRenderingActions() {
     }
 
     if (m_NeedToCloseProject) {
-        ProjectFile::Instance()->Clear();
+        ProjectFile::ref()->Clear();
         m_NeedToCloseProject = false;
     }
 
-    // Backend operation, cant be blocked if a imgui item is not displayed
-    StatementsPane::Instance()->DoBackend();
+    // Backend operation, cannot be blocked if a imgui item is not displayed
+    m_importThread.finishIfNeeded();
 }
 
 bool MainBackend::IsNeedToCloseApp() {
@@ -194,6 +198,27 @@ int MainBackend::GetMouseButton(int vButton) {
     return glfwGetMouseButton(m_MainWindowPtr, vButton);
 }
 
+void MainBackend::importFromFiles(const std::vector<std::string>& vFiles) {
+    m_importThread.start(  //
+        "Import Datas",
+        m_selectedBroker,
+        vFiles,
+        [this]() { TransactionsPane::ref()->Init(); },
+        nullptr);
+}
+
+void MainBackend::selectDataBrocker(const Cash::BankStatementModuleWeak& vDatabrocker) {
+    m_selectedBroker = vDatabrocker;
+}
+
+const DataBrockerContainer& MainBackend::getDataBrockers() {
+    return m_dataBrokerModules;
+}
+
+ImportWorkerThread& MainBackend::getImportWorkerThreadRef() {
+    return m_importThread;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// CONSOLE ///////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -225,6 +250,30 @@ bool MainBackend::GetConsoleVisibility() {
     return m_ConsoleVisiblity;
 }
 
+///////////////////////////////////////////////////////
+//// CONFIGURATION ////////////////////////////////////
+///////////////////////////////////////////////////////
+
+ez::xml::Nodes MainBackend::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    node.addChilds(MainFrontend::ref().getXmlNodes(vUserDatas));
+    node.addChilds(SettingsDialog::ref().getXmlNodes(vUserDatas));
+    node.addChild("project").setContent(ProjectFile::ref()->GetProjectFilepathName());
+    return node.getChildren();
+}
+
+bool MainBackend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    const auto& strName = vNode.getName();
+    const auto& strValue = vNode.getContent();
+    const auto& strParentName = vParent.getName();
+    if (strName == "project") {
+        NeedToLoadProject(strValue);
+    }
+    MainFrontend::ref().setFromXmlNodes(vNode, vParent, vUserDatas);
+    SettingsDialog::ref().setFromXmlNodes(vNode, vParent, vUserDatas);
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// RENDER ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -233,11 +282,29 @@ void MainBackend::m_RenderOffScreen() {
     // m_DisplaySizeQuadRendererPtr->SetImageInfos(m_MergerRendererPtr->GetBackDescriptorImageInfo(0U));
 }
 
+void MainBackend::m_getAvailableDataBrokers() {
+    m_clearDataBrokers();
+    auto modules = PluginManager::ref().GetPluginModulesInfos();
+    for (const auto& mod : modules) {
+        if (mod.type == Cash::PluginModuleType::DATA_BROKER) {
+            auto ptr = std::dynamic_pointer_cast<Cash::BankStatementImportModule>(PluginManager::ref().CreatePluginModule(mod.label));
+            if (ptr != nullptr) {
+                m_dataBrokerModules[mod.path][mod.label] = ptr;
+            }
+        }
+    }
+}
+
+void MainBackend::m_clearDataBrokers() {  // must be reset before quit since point on the memory of a plugin
+    m_selectedBroker.reset();
+    m_dataBrokerModules.clear();
+}
+
 void MainBackend::m_MainLoop() {
     int display_w, display_h;
     ImRect viewRect;
     while (!glfwWindowShouldClose(m_MainWindowPtr)) {
-        ProjectFile::Instance()->NewFrame();
+        ProjectFile::ref()->NewFrame();
 
         // maintain active, prevent user change via imgui dialog
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;    // Enable Docking
@@ -247,7 +314,7 @@ void MainBackend::m_MainLoop() {
 
         glfwGetFramebufferSize(m_MainWindowPtr, &display_w, &display_h);
 
-        m_Update();  // to do absolutly before imgui rendering
+        m_update();  // to do absolutly before imgui rendering
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -261,7 +328,7 @@ void MainBackend::m_MainLoop() {
             viewRect.Max = ImVec2((float)display_w, (float)display_h);
         }
 
-        MainFrontend::Instance()->Display(m_CurrentFrame, viewRect);
+        MainFrontend::ref().Display(m_CurrentFrame, viewRect);
 
         ImGui::Render();
 
@@ -293,36 +360,12 @@ void MainBackend::m_MainLoop() {
     }
 }
 
-void MainBackend::m_Update() {
+void MainBackend::m_update() {
 
 }
 
 void MainBackend::m_IncFrame() {
     ++m_CurrentFrame;
-}
-
-///////////////////////////////////////////////////////
-//// CONFIGURATION ////////////////////////////////////
-///////////////////////////////////////////////////////
-
-ez::xml::Nodes MainBackend::getXmlNodes(const std::string& vUserDatas) {
-    ez::xml::Node node;
-    node.addChilds(MainFrontend::Instance()->getXmlNodes(vUserDatas));
-    node.addChilds(SettingsDialog::Instance()->getXmlNodes(vUserDatas));
-    node.addChild("project").setContent(ProjectFile::Instance()->GetProjectFilepathName());
-    return node.getChildren();
-}
-
-bool MainBackend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
-    const auto& strName = vNode.getName();
-    const auto& strValue = vNode.getContent();
-    const auto& strParentName = vParent.getName();
-    if (strName == "project") {
-        NeedToLoadProject(strValue);
-    } 
-    MainFrontend::Instance()->setFromXmlNodes(vNode, vParent, vUserDatas);
-    SettingsDialog::Instance()->setFromXmlNodes(vNode, vParent, vUserDatas);
-    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -355,6 +398,11 @@ bool MainBackend::m_InitWindow() {
     }
 
     glfwSetWindowCloseCallback(m_MainWindowPtr, glfw_window_close_callback);
+
+#ifdef WINDOWS_OS
+    auto icon_h_inst = LoadIconA(GetModuleHandle(NULL), "IDI_ICON1");
+    SetClassLongPtrA(glfwGetWin32Window(m_MainWindowPtr), GCLP_HICON, (LONG_PTR)icon_h_inst);
+#endif
 
     return true;
 }
@@ -403,12 +451,14 @@ bool MainBackend::m_InitImGui() {
         }
     }    
 
+    MainFrontend::initSingleton();
+
     // Setup Platform/Renderer bindings
     if (ImGui_ImplGlfw_InitForOpenGL(m_MainWindowPtr, true) &&  //
         ImGui_ImplOpenGL3_Init(m_GlslVersion)) {
 
         // ui init
-        if (MainFrontend::Instance()->init()) {
+        if (MainFrontend::ref().init()) {
             return true;
         }
     }
@@ -416,11 +466,12 @@ bool MainBackend::m_InitImGui() {
 }
 
 void MainBackend::m_InitPlugins(const ez::App& vApp) {
-    PluginManager::Instance()->LoadPlugins(vApp);
-    auto pluginPanes = PluginManager::Instance()->GetPluginPanes();
+    PluginManager::initSingleton();
+    PluginManager::ref().LoadPlugins(vApp);
+    auto pluginPanes = PluginManager::ref().GetPluginPanes();
     for (auto& pluginPane : pluginPanes) {
         if (!pluginPane.pane.expired()) {
-            LayoutManager::Instance()->AddPane(  //
+            LayoutManager::ref().AddPane(  //
                 pluginPane.pane,
                 pluginPane.name,
                 pluginPane.category,
@@ -430,10 +481,11 @@ void MainBackend::m_InitPlugins(const ez::App& vApp) {
                 pluginPane.focusedDefault);
             auto plugin_ptr = std::dynamic_pointer_cast<Cash::PluginPane>(pluginPane.pane.lock());
             if (plugin_ptr != nullptr) {
-                plugin_ptr->SetProjectInstance(ProjectFile::Instance());
+                plugin_ptr->SetProjectInstance(ProjectFile::ref());
             }
         }
     }
+    m_getAvailableDataBrokers();
 }
 
 void MainBackend::m_InitModels() {
@@ -445,7 +497,9 @@ void MainBackend::m_UnitModels() {
 }
 
 void MainBackend::m_UnitPlugins() {
-    PluginManager::Instance()->Clear();
+    m_clearDataBrokers();
+    PluginManager::ref().Clear();
+    PluginManager::unitSingleton();
 }
 
 void MainBackend::m_InitSystems() {
@@ -456,9 +510,9 @@ void MainBackend::m_UnitSystems() {
 }
 
 void MainBackend::m_InitPanes() {
-    if (LayoutManager::Instance()->InitPanes()) {
-        // a faire apres InitPanes() sinon ConsolePane::Instance()->paneFlag vaudra 0 et changeras apres InitPanes()
-        Messaging::Instance()->sMessagePaneId = ConsolePane::Instance()->GetFlag();
+    if (LayoutManager::ref().InitPanes()) {
+        // a faire apres InitPanes() sinon ConsolePane::ref()->paneFlag vaudra 0 et changeras apres InitPanes()
+        Messaging::ref().sMessagePaneId = ConsolePane::ref()->GetFlag();
     }
 }
 
@@ -466,15 +520,19 @@ void MainBackend::m_UnitPanes() {
 }
 
 void MainBackend::m_InitSettings() {
-    SettingsDialog::Instance()->init();
+    SettingsDialog::initSingleton();
+    SettingsDialog::ref().init();
 }
 
 void MainBackend::m_UnitSettings() {
-    SettingsDialog::Instance()->unit();
+    SettingsDialog::ref().unit();
+    SettingsDialog::unitSingleton();
 }
 
 void MainBackend::m_UnitImGui() {
-    MainFrontend::Instance()->unit();
+    MainFrontend::ref().unit();
+    LayoutManager::ref().Unit();
+    MainFrontend::unitSingleton();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

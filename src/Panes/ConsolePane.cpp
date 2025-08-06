@@ -2,8 +2,10 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
 #include "ConsolePane.h"
-#include <imgui_internal.h>
-#include <cinttypes>  // printf zu
+
+#include <Models/DataBase.h>
+#include <Project/ProjectFile.h>
+#include <Frontend/MainFrontend.h>
 
 ConsolePane::ConsolePane() = default;
 ConsolePane::~ConsolePane() {
@@ -34,7 +36,7 @@ bool ConsolePane::DrawPanes(const uint32_t& /*vCurrentFrame*/, bool* vOpened, Im
             else
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
-            Messaging::Instance()->DrawConsolePane();
+            Messaging::ref().DrawConsolePane();
         }
 
         ImGui::End();

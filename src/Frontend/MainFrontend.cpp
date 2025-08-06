@@ -27,16 +27,17 @@ limitations under the License.
 
 #include <Plugins/PluginManager.h>
 
-#include <Panes/StatsPane.h>
-#include <Panes/BudgetPane.h>
-#include <Panes/ConsolePane.h>
-#include <Panes/StatementsPane.h>
-#include <Panes/AccountsPane.h>
+#include <Models/DataBase.h>
+
 #include <Panes/BanksPane.h>
+#include <Panes/BudgetPane.h>
 #include <Panes/IncomesPane.h>
+#include <Panes/ConsolePane.h>
+#include <Panes/AccountsPane.h>
 #include <Panes/EntitiesPane.h>
 #include <Panes/CategoriesPane.h>
 #include <Panes/OperationsPane.h>
+#include <Panes/TransactionsPane.h>
 
 #include <Systems/SettingsDialog.h>
 
@@ -71,25 +72,38 @@ MainFrontend::~MainFrontend() = default;
 bool MainFrontend::init() {
     m_build_themes();
 
-    LayoutManager::Instance()->Init("Layouts", "Default Layout");
+    ImGuiThemeHelper::initSingleton();
+    ImGuiFileDialog::initSingleton();
+    TranslationHelper::initSingleton();
 
-    LayoutManager::Instance()->SetPaneDisposalRatio("LEFT", 0.25f);
-    LayoutManager::Instance()->SetPaneDisposalRatio("RIGHT", 0.25f);
-    LayoutManager::Instance()->SetPaneDisposalRatio("BOTTOM", 0.25f);
+    AccountsPane::initSingleton();
+    BanksPane::initSingleton();
+    BudgetPane::initSingleton();
+    CategoriesPane::initSingleton();
+    ConsolePane::initSingleton();
+    EntitiesPane::initSingleton();
+    IncomesPane::initSingleton();
+    OperationsPane::initSingleton();
+    TransactionsPane::initSingleton();
+
+    LayoutManager::ref().Init("Layouts", "Default Layout");
+
+    LayoutManager::ref().SetPaneDisposalRatio("LEFT", 0.25f);
+    LayoutManager::ref().SetPaneDisposalRatio("RIGHT", 0.25f);
+    LayoutManager::ref().SetPaneDisposalRatio("BOTTOM", 0.25f);
 
     // Views
-    LayoutManager::Instance()->AddPane(StatementsPane::Instance(), "Statements", "Views", "CENTRAL", 0.0f, true, true);
-    LayoutManager::Instance()->AddPane(StatsPane::Instance(), "Statistics", "Views", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(BudgetPane::Instance(), "Budget", "Views", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(ConsolePane::Instance(), "Console", "Panes", "BOTTOM", 0.25f, false, false);
+    LayoutManager::ref().AddPane(TransactionsPane::ref(), "Transactions", "", "CENTRAL", 0.0f, true, true);
+    LayoutManager::ref().AddPane(BudgetPane::ref(), "Budget", "", "RIGHT", 0.4f, false, false);
+    LayoutManager::ref().AddPane(ConsolePane::ref(), "Console", "", "BOTTOM", 0.25f, false, false);
     
     // Maintenance
-    LayoutManager::Instance()->AddPane(BanksPane::Instance(), "Banks", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(AccountsPane::Instance(), "Accounts", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(EntitiesPane::Instance(), "Entities", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(CategoriesPane::Instance(), "Categories", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(OperationsPane::Instance(), "Operations", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::Instance()->AddPane(IncomesPane::Instance(), "Incomes", "Maintenance", "CENTRAL", 0.25f, false, false);
+    LayoutManager::ref().AddPane(BanksPane::ref(), "Banks", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::ref().AddPane(AccountsPane::ref(), "Accounts", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::ref().AddPane(EntitiesPane::ref(), "Entities", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::ref().AddPane(CategoriesPane::ref(), "Categories", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::ref().AddPane(OperationsPane::ref(), "Operations", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::ref().AddPane(IncomesPane::ref(), "Incomes", "Maintenance", "RIGHT/BOTTOM", 0.25f, false, false);
     
     // InitPanes is done in m_InitPanes, because a specific order is needed
 
@@ -97,13 +111,32 @@ bool MainFrontend::init() {
 }
 
 void MainFrontend::unit() {
-    LayoutManager::Instance()->UnitPanes();
-    const auto& pluginPanes = PluginManager::Instance()->GetPluginPanes();
+    m_BankDialog.unit();
+    m_EntityDialog.unit();
+    m_AccountDialog.unit();
+    m_CategoryDialog.unit();
+    m_OperationDialog.unit();
+    LayoutManager::ref().UnitPanes();
+    const auto& pluginPanes = PluginManager::ref().GetPluginPanes();
     for (const auto& pluginPane : pluginPanes) {
         if (!pluginPane.pane.expired()) {
-            LayoutManager::Instance()->RemovePane(pluginPane.name);
+            LayoutManager::ref().RemovePane(pluginPane.name);
         }
     }
+
+    ImGuiThemeHelper::unitSingleton();
+    ImGuiFileDialog::unitSingleton();
+    TranslationHelper::unitSingleton();
+
+    AccountsPane::unitSingleton();
+    BanksPane::unitSingleton();
+    BudgetPane::unitSingleton();
+    CategoriesPane::unitSingleton();
+    ConsolePane::unitSingleton();
+    EntitiesPane::unitSingleton();
+    IncomesPane::unitSingleton();
+    OperationsPane::unitSingleton();
+    TransactionsPane::unitSingleton();
 }
 
 bool MainFrontend::isValid() const {
@@ -127,25 +160,25 @@ void MainFrontend::Display(const uint32_t& vCurrentFrame, const ImRect& vRect) {
         m_drawMainMenuBar();
         m_drawMainStatusBar();
 
-        if (LayoutManager::Instance()->BeginDockSpace(ImGuiDockNodeFlags_PassthruCentralNode)) {
-            /*if (MainBackend::Instance()->GetBackendDatasRef().canWeTuneGizmo) {
+        if (LayoutManager::ref().BeginDockSpace(ImGuiDockNodeFlags_PassthruCentralNode)) {
+            /*if (MainBackend::ref().GetBackendDatasRef().canWeTuneGizmo) {
                 const auto viewport = ImGui::GetMainViewport();
                 ImGuizmo::SetDrawlist(ImGui::GetCurrentWindow()->DrawList);
                 ImGuizmo::SetRect(viewport->Pos.x, viewport->Pos.y, viewport->Size.x, viewport->Size.y);
                 ImRect rc(viewport->Pos.x, viewport->Pos.y, viewport->Size.x, viewport->Size.y);
                 DrawOverlays(vCurrentFrame, rc, context_ptr, {});
             }*/
-            LayoutManager::Instance()->EndDockSpace();
+            LayoutManager::ref().EndDockSpace();
         }
 
-        if (LayoutManager::Instance()->DrawPanes(vCurrentFrame, context_ptr, {})) {
-            ProjectFile::Instance()->SetProjectChange();
+        if (LayoutManager::ref().DrawPanes(vCurrentFrame, context_ptr, {})) {
+            ProjectFile::ref()->SetProjectChange();
         }
 
         DrawDialogsAndPopups(vCurrentFrame, m_DisplayRect, context_ptr, {});
 
-        ImGuiThemeHelper::Instance()->Draw();
-        LayoutManager::Instance()->InitAfterFirstDisplay(io.DisplaySize);
+        ImGuiThemeHelper::ref().Draw();
+        LayoutManager::ref().InitAfterFirstDisplay(io.DisplaySize);
     }
 }
 
@@ -159,10 +192,9 @@ bool MainFrontend::DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRe
     return res;
 }
 
-bool MainFrontend::DrawDialogsAndPopups(
-    const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr, void* vUserDatas) {
+bool MainFrontend::DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr, void* vUserDatas) {
     m_ActionSystem.RunActions();
-    LayoutManager::Instance()->DrawDialogsAndPopups(vCurrentFrame, vRect, vContextPtr, vUserDatas);
+    LayoutManager::ref().DrawDialogsAndPopups(vCurrentFrame, vRect, vContextPtr, vUserDatas);
     if (m_ShowImGui) {
         ImGui::ShowDemoWindow(&m_ShowImGui);
     }
@@ -172,12 +204,100 @@ bool MainFrontend::DrawDialogsAndPopups(
     if (m_ShowMetric) {
         ImGui::ShowMetricsWindow(&m_ShowMetric);
     }
-    SettingsDialog::Instance()->Draw();
+    SettingsDialog::ref().Draw();
+    ImVec2 max = vRect.GetSize();
+    ImVec2 min = max * 0.5f;
+    if (ImGuiFileDialog::ref().Display("Import Datas", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
+        if (ImGuiFileDialog::ref().IsOk()) {
+            const auto& selection = ImGuiFileDialog::ref().GetSelection();
+            if (!selection.empty()) {
+                std::vector<std::string> files;
+                for (const auto& s : selection) {
+                    files.push_back(s.second);
+                }
+                MainBackend::ref().importFromFiles(files);
+            }
+        }
+        ImGuiFileDialog::ref().Close();
+    }
+    const auto center = vRect.GetCenter();
+    MainBackend::ref().getImportWorkerThreadRef().drawDialog(center);
+
+    const auto bankChange = MainFrontend::ref().getBankDialogRef().draw(center);
+    const auto accountChange = MainFrontend::ref().getAccountDialogRef().draw(center);
+    const auto entityChange = MainFrontend::ref().getEntityDialogRef().draw(center);
+    const auto incomeChange = MainFrontend::ref().getIncomeDialogRef().draw(center);
+    const auto categoryChange = MainFrontend::ref().getCategoryDialogRef().draw(center);
+    const auto operationChange = MainFrontend::ref().getOperationDialogRef().draw(center);
+    const auto transactionChange = MainFrontend::ref().getTransactionDialogRef().draw(center);
+
+    if (bankChange || accountChange) {
+        AccountsPane::ref()->Init();
+        BanksPane::ref()->Init();
+        BudgetPane::ref()->Init();
+        CategoriesPane::ref()->Init();
+        ConsolePane::ref()->Init();
+        EntitiesPane::ref()->Init();
+        OperationsPane::ref()->Init();
+        TransactionsPane::ref()->Init();
+        IncomesPane::ref()->Init();
+    } else if (entityChange) {
+        EntitiesPane::ref()->Init();
+        TransactionsPane::ref()->Init();
+        IncomesPane::ref()->Init();
+    } else if (categoryChange) {
+        CategoriesPane::ref()->Init();
+        TransactionsPane::ref()->Init();
+        IncomesPane::ref()->Init();
+    } else if (operationChange) {
+        OperationsPane::ref()->Init();
+        TransactionsPane::ref()->Init();
+        IncomesPane::ref()->Init();
+    } else if (incomeChange) {
+        BudgetPane::ref()->Init();
+        IncomesPane::ref()->Init();
+        TransactionsPane::ref()->Init();
+    } else if (transactionChange) {
+        TransactionsPane::ref()->Init();
+    }
+
     return false;
 }
 
 void MainFrontend::OpenAboutDialog() {
     m_ShowAboutDialog = true;
+}
+
+BankDialog& MainFrontend::getBankDialogRef() {
+    return m_BankDialog;
+}
+
+AccountDialog& MainFrontend::getAccountDialogRef() {
+    return m_AccountDialog;
+}
+
+EntityDialog& MainFrontend::getEntityDialogRef() {
+    return m_EntityDialog;
+}
+
+CategoryDialog& MainFrontend::getCategoryDialogRef() {
+    return m_CategoryDialog;
+}
+
+OperationDialog& MainFrontend::getOperationDialogRef() {
+    return m_OperationDialog;
+}
+
+IncomeDialog& MainFrontend::getIncomeDialogRef() {
+    return m_IncomeDialog;
+}
+
+TransactionDialog& MainFrontend::getTransactionDialogRef() {
+    return m_TransactionDialog;
+}
+
+FrameActionSystem& MainFrontend::GetActionSystemRef() {
+    return m_ActionSystem;
 }
 
 void MainFrontend::m_drawMainMenuBar() {
@@ -191,7 +311,7 @@ void MainFrontend::m_drawMainMenuBar() {
                 Action_Menu_OpenProject();
             }
 
-            if (ProjectFile::Instance()->IsProjectLoaded()) {
+            if (ProjectFile::ref()->IsProjectLoaded()) {
                 ImGui::Separator();
 
                 if (ImGui::MenuItem(" Re Open")) {
@@ -224,20 +344,67 @@ void MainFrontend::m_drawMainMenuBar() {
             ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("Add")) {
+            if (ImGui::MenuItem("Bank")) {
+                m_BankDialog.show(DataDialogMode::MODE_CREATION);
+            }
+            if (ImGui::MenuItem("Account")) {
+                m_AccountDialog.show(DataDialogMode::MODE_CREATION);
+            }
+            if (ImGui::MenuItem("Entity")) {
+                m_EntityDialog.show(DataDialogMode::MODE_CREATION);
+            }
+            if (ImGui::MenuItem("Category")) {
+                m_CategoryDialog.show(DataDialogMode::MODE_CREATION);
+            }
+            if (ImGui::MenuItem("Operation")) {
+                m_OperationDialog.show(DataDialogMode::MODE_CREATION);
+            }
+            if (ImGui::MenuItem("Transaction")) {
+                m_TransactionDialog.show(DataDialogMode::MODE_CREATION);
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Import")) {
+            for (const auto& broker : MainBackend::ref().getDataBrockers()) {
+                if (ImGui::BeginMenu(broker.first.c_str())) {
+                    for (const auto& way : broker.second) {
+                        if (ImGui::MenuItem(way.first.c_str())) {
+                            if (way.second != nullptr) {
+                                MainBackend::ref().selectDataBrocker(way.second);
+                                m_ActionSystem.Clear();
+                                m_ActionSystem.Add([&way]() {
+                                    const auto& ext = way.second->getFileExt();
+                                    IGFD::FileDialogConfig config;
+                                    config.countSelectionMax = 0;
+                                    config.flags = ImGuiFileDialogFlags_Modal;
+                                    ImGuiFileDialog::ref().OpenDialog("Import Datas", "Import Datas from File", ext.c_str(), config);
+                                    return true;
+                                });
+                            }
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+            }
+
+            ImGui::EndMenu();
+        }
+
         ImGui::Spacing();
 
         const auto& io = ImGui::GetIO();
-        LayoutManager::Instance()->DisplayMenu(io.DisplaySize);
+        LayoutManager::ref().DisplayMenu(io.DisplaySize);
 
         ImGui::Spacing();
 
         if (ImGui::BeginMenu("Tools")) {
             if (ImGui::MenuItem("Settings")) {
-                SettingsDialog::Instance()->OpenDialog();
+                SettingsDialog::ref().OpenDialog();
             }
             ImGui::Separator();
             if (ImGui::BeginMenu("Styles")) {
-                ImGuiThemeHelper::Instance()->DrawMenu();
+                ImGuiThemeHelper::ref().DrawMenu();
 
                 ImGui::Separator();
 
@@ -251,7 +418,95 @@ void MainFrontend::m_drawMainMenuBar() {
             ImGui::EndMenu();
         }
 
-        if (ProjectFile::Instance()->IsThereAnyProjectChanges()) {
+        if (ImGui::BeginMenu("Debug")) {
+            if (ImGui::BeginMenu("Delete Tables")) {
+                if (ImGui::MenuItem("Banks")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteBanks();
+                        BanksPane::ref()->Init();
+                        return true;
+                    });
+                }
+                if (ImGui::MenuItem("Accounts")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteAccounts();
+                        AccountsPane::ref()->Init();
+                        return true;
+                    });
+                }
+                if (ImGui::MenuItem("Entities")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteEntities();
+                        EntitiesPane::ref()->Init();
+                        return true;
+                    });
+                }
+                if (ImGui::MenuItem("Categories")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteCategories();
+                        CategoriesPane::ref()->Init();
+                        return true;
+                    });
+                }
+                if (ImGui::MenuItem("Operations")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteOperations();
+                        OperationsPane::ref()->Init();
+                        return true;
+                    });
+                }
+                if (ImGui::MenuItem("Incomes")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteIncomes();
+                        IncomesPane::ref()->Init();
+                        return true;
+                    });
+                }
+                if (ImGui::MenuItem("Transactions")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteTransactions();
+                        TransactionsPane::ref()->Init();
+                        return true;
+                    });
+                }
+                if (ImGui::MenuItem("Sources")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteSources();
+                        // SourcesPane::ref()->Init();
+                        return true;
+                    });
+                }
+                if (ImGui::MenuItem("All Except Accounts and banks")) {
+                    m_ActionSystem.Clear();
+                    m_ActionSystem.Add([]() {
+                        DataBase::ref().DeleteEntities();
+                        DataBase::ref().DeleteCategories();
+                        DataBase::ref().DeleteOperations();
+                        DataBase::ref().DeleteIncomes();
+                        DataBase::ref().DeleteTransactions();
+                        DataBase::ref().DeleteSources();
+                        EntitiesPane::ref()->Init();
+                        CategoriesPane::ref()->Init();
+                        OperationsPane::ref()->Init();
+                        IncomesPane::ref()->Init();
+                        TransactionsPane::ref()->Init();
+                        return true;
+                    });
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ProjectFile::ref()->IsThereAnyProjectChanges()) {
             ImGui::Spacing(200.0f);
 
             if (ImGui::MenuItem(" Save")) {
@@ -267,7 +522,7 @@ void MainFrontend::m_drawMainMenuBar() {
         ImGui::Spacing(ImGui::GetContentRegionAvail().x - size.x - s_translation_menu_size - ImGui::GetStyle().FramePadding.x * 2.0f);
         ImGui::Text("%s", label.c_str());
 
-        s_translation_menu_size = TranslationHelper::Instance()->DrawMenu();
+        s_translation_menu_size = TranslationHelper::ref().DrawMenu();
 
         ImGui::EndMainMenuBar();
     }
@@ -275,7 +530,7 @@ void MainFrontend::m_drawMainMenuBar() {
 
 void MainFrontend::m_drawMainStatusBar() {
     if (ImGui::BeginMainStatusBar()) {
-        Messaging::Instance()->DrawStatusBar();
+        Messaging::ref().DrawStatusBar();
 
         //  ImGui Infos
         const auto& io = ImGui::GetIO();
@@ -296,7 +551,7 @@ void MainFrontend::m_drawMainStatusBar() {
 
 void MainFrontend::OpenUnSavedDialog() {
     // force close dialog if any dialog is opened
-    ImGuiFileDialog::Instance()->Close();
+    ImGuiFileDialog::ref().Close();
 
     m_SaveDialogIfRequired = true;
 }
@@ -308,8 +563,8 @@ bool MainFrontend::ShowUnSavedDialog() {
     bool res = false;
 
     if (m_SaveDialogIfRequired) {
-        if (ProjectFile::Instance()->IsProjectLoaded()) {
-            if (ProjectFile::Instance()->IsThereAnyProjectChanges()) {
+        if (ProjectFile::ref()->IsProjectLoaded()) {
+            if (ProjectFile::ref()->IsThereAnyProjectChanges()) {
                 /*
                 Unsaved dialog behavior :
                 -	save :
@@ -376,7 +631,7 @@ void MainFrontend::Action_Menu_NewProject() {
         IGFD::FileDialogConfig config;
         config.countSelectionMax = 1;
         config.flags = ImGuiFileDialogFlags_Modal;
-        ImGuiFileDialog::Instance()->OpenDialog("NewProjectDlg", "New Project File", PROJECT_EXT, config);
+        ImGuiFileDialog::ref().OpenDialog("NewProjectDlg", "New Project File", PROJECT_EXT, config);
         return true;
     });
     m_ActionSystem.Add([this]() { return Display_NewProjectDialog(); });
@@ -398,7 +653,7 @@ void MainFrontend::Action_Menu_OpenProject() {
         IGFD::FileDialogConfig config;
         config.countSelectionMax = 1;
         config.flags = ImGuiFileDialogFlags_Modal;
-        ImGuiFileDialog::Instance()->OpenDialog("OpenProjectDlg", "Open Project File", PROJECT_EXT, config);
+        ImGuiFileDialog::ref().OpenDialog("OpenProjectDlg", "Open Project File", PROJECT_EXT, config);
         return true;
     });
     m_ActionSystem.Add([this]() { return Display_OpenProjectDialog(); });
@@ -411,7 +666,7 @@ void MainFrontend::Action_Menu_ImportDatas() {
         IGFD::FileDialogConfig config;
         config.countSelectionMax = 0;
         config.flags = ImGuiFileDialogFlags_Modal;
-        ImGuiFileDialog::Instance()->OpenDialog("Import Datas", "Import Datas from File", ".csv", config);
+        ImGuiFileDialog::ref().OpenDialog("Import Datas", "Import Datas from File", ".csv", config);
         return true;
     });
     m_ActionSystem.Add([this]() { return Display_OpenProjectDialog(); });
@@ -429,7 +684,7 @@ void MainFrontend::Action_Menu_ReOpenProject() {
     m_ActionSystem.Clear();
     Action_OpenUnSavedDialog_IfNeeded();
     m_ActionSystem.Add([]() {
-        MainBackend::Instance()->NeedToLoadProject(ProjectFile::Instance()->GetProjectFilepathName());
+        MainBackend::ref().NeedToLoadProject(ProjectFile::ref()->GetProjectFilepathName());
         return true;
     });
 }
@@ -444,12 +699,12 @@ void MainFrontend::Action_Menu_SaveProject() {
     */
     m_ActionSystem.Clear();
     m_ActionSystem.Add([this]() {
-        if (!MainBackend::Instance()->SaveProject()) {
+        if (!MainBackend::ref().SaveProject()) {
             CloseUnSavedDialog();
             IGFD::FileDialogConfig config;
             config.countSelectionMax = 1;
             config.flags = ImGuiFileDialogFlags_Modal;
-            ImGuiFileDialog::Instance()->OpenDialog("SaveProjectDlg", "Save Project File", PROJECT_EXT, config);
+            ImGuiFileDialog::ref().OpenDialog("SaveProjectDlg", "Save Project File", PROJECT_EXT, config);
         }
         return true;
     });
@@ -467,7 +722,7 @@ void MainFrontend::Action_Menu_SaveAsProject() {
         IGFD::FileDialogConfig config;
         config.countSelectionMax = 1;
         config.flags = ImGuiFileDialogFlags_ConfirmOverwrite | ImGuiFileDialogFlags_Modal;
-        ImGuiFileDialog::Instance()->OpenDialog("SaveProjectDlg", "Save Project File", PROJECT_EXT, config);
+        ImGuiFileDialog::ref().OpenDialog("SaveProjectDlg", "Save Project File", PROJECT_EXT, config);
         return true;
     });
     m_ActionSystem.Add([this]() { return Display_SaveProjectDialog(); });
@@ -485,13 +740,13 @@ void MainFrontend::Action_Menu_CloseProject() {
     m_ActionSystem.Clear();
     Action_OpenUnSavedDialog_IfNeeded();
     m_ActionSystem.Add([]() {
-        MainBackend::Instance()->NeedToCloseProject();
+        MainBackend::ref().NeedToCloseProject();
         return true;
     });
 }
 
 void MainFrontend::Action_Window_CloseApp() {
-    if (MainBackend::Instance()->IsNeedToCloseApp())
+    if (MainBackend::ref().IsNeedToCloseApp())
         return;  // block next call to close app when running
     /*
     Close app :
@@ -505,13 +760,13 @@ void MainFrontend::Action_Window_CloseApp() {
     m_ActionSystem.Clear();
     Action_OpenUnSavedDialog_IfNeeded();
     m_ActionSystem.Add([]() {
-        MainBackend::Instance()->CloseApp();
+        MainBackend::ref().CloseApp();
         return true;
     });
 }
 
 void MainFrontend::Action_OpenUnSavedDialog_IfNeeded() {
-    if (ProjectFile::Instance()->IsProjectLoaded() && ProjectFile::Instance()->IsThereAnyProjectChanges()) {
+    if (ProjectFile::ref()->IsProjectLoaded() && ProjectFile::ref()->IsThereAnyProjectChanges()) {
         OpenUnSavedDialog();
         m_ActionSystem.Add([this]() { return ShowUnSavedDialog(); });
     }
@@ -524,11 +779,11 @@ void MainFrontend::Action_Cancel() {
     */
     CloseUnSavedDialog();
     m_ActionSystem.Clear();
-    MainBackend::Instance()->NeedToCloseApp(false);
+    MainBackend::ref().NeedToCloseApp(false);
 }
 
 bool MainFrontend::Action_UnSavedDialog_SaveProject() {
-    bool res = MainBackend::Instance()->SaveProject();
+    bool res = MainBackend::ref().SaveProject();
     if (!res) {
         m_ActionSystem.Insert([this]() { return Display_SaveProjectDialog(); });
         m_ActionSystem.Insert([this]() {
@@ -537,7 +792,7 @@ bool MainFrontend::Action_UnSavedDialog_SaveProject() {
             config.countSelectionMax = 1;
             config.flags = ImGuiFileDialogFlags_ConfirmOverwrite | ImGuiFileDialogFlags_Modal;
             config.path = ".";
-            ImGuiFileDialog::Instance()->OpenDialog("SaveProjectDlg", "Save Project File", PROJECT_EXT, config);
+            ImGuiFileDialog::ref().OpenDialog("SaveProjectDlg", "Save Project File", PROJECT_EXT, config);
             return true;
         });
     }
@@ -552,7 +807,7 @@ void MainFrontend::Action_UnSavedDialog_SaveAsProject() {
         config.countSelectionMax = 1;
         config.flags = ImGuiFileDialogFlags_ConfirmOverwrite | ImGuiFileDialogFlags_Modal;
         config.path = ".";
-        ImGuiFileDialog::Instance()->OpenDialog("SaveProjectDlg", "Save Project File", PROJECT_EXT, config);
+        ImGuiFileDialog::ref().OpenDialog("SaveProjectDlg", "Save Project File", PROJECT_EXT, config);
         return true;
     });
 }
@@ -571,17 +826,17 @@ bool MainFrontend::Display_NewProjectDialog() {
     ImVec2 max = m_DisplayRect.GetSize();
     ImVec2 min = max * 0.5f;
 
-    if (ImGuiFileDialog::Instance()->Display("NewProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
-        if (ImGuiFileDialog::Instance()->IsOk()) {
+    if (ImGuiFileDialog::ref().Display("NewProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
+        if (ImGuiFileDialog::ref().IsOk()) {
             CloseUnSavedDialog();
-            auto file = ImGuiFileDialog::Instance()->GetFilePathName();
-            MainBackend::Instance()->NeedToNewProject(file);
+            auto file = ImGuiFileDialog::ref().GetFilePathName();
+            MainBackend::ref().NeedToNewProject(file);
         } else  // cancel
         {
             Action_Cancel();  // we interrupts all actions
         }
 
-        ImGuiFileDialog::Instance()->Close();
+        ImGuiFileDialog::ref().Close();
 
         return true;
     }
@@ -595,16 +850,16 @@ bool MainFrontend::Display_OpenProjectDialog() {
     ImVec2 max = m_DisplayRect.GetSize();
     ImVec2 min = max * 0.5f;
 
-    if (ImGuiFileDialog::Instance()->Display("OpenProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
-        if (ImGuiFileDialog::Instance()->IsOk()) {
+    if (ImGuiFileDialog::ref().Display("OpenProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
+        if (ImGuiFileDialog::ref().IsOk()) {
             CloseUnSavedDialog();
-            MainBackend::Instance()->NeedToLoadProject(ImGuiFileDialog::Instance()->GetFilePathName());
+            MainBackend::ref().NeedToLoadProject(ImGuiFileDialog::ref().GetFilePathName());
         } else  // cancel
         {
             Action_Cancel();  // we interrupts all actions
         }
 
-        ImGuiFileDialog::Instance()->Close();
+        ImGuiFileDialog::ref().Close();
 
         return true;
     }
@@ -618,16 +873,16 @@ bool MainFrontend::Display_SaveProjectDialog() {
     ImVec2 max = m_DisplayRect.GetSize();
     ImVec2 min = max * 0.5f;
 
-    if (ImGuiFileDialog::Instance()->Display("SaveProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
-        if (ImGuiFileDialog::Instance()->IsOk()) {
+    if (ImGuiFileDialog::ref().Display("SaveProjectDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
+        if (ImGuiFileDialog::ref().IsOk()) {
             CloseUnSavedDialog();
-            MainBackend::Instance()->SaveAsProject(ImGuiFileDialog::Instance()->GetFilePathName());
+            MainBackend::ref().SaveAsProject(ImGuiFileDialog::ref().GetFilePathName());
         } else  // cancel
         {
             Action_Cancel();  // we interrupts all actions
         }
 
-        ImGuiFileDialog::Instance()->Close();
+        ImGuiFileDialog::ref().Close();
 
         return true;
     }
@@ -676,7 +931,7 @@ void MainFrontend::JustDropFiles(int count, const char** paths) {
 
     // priority to project file
     if (!prj.empty()) {
-        MainBackend::Instance()->NeedToLoadProject(prj);
+        MainBackend::ref().NeedToLoadProject(prj);
     }
 }
 
@@ -685,20 +940,14 @@ void MainFrontend::JustDropFiles(int count, const char** paths) {
 //////////////////////////////////////////////////////////////////////////////////
 
 bool MainFrontend::m_build() {
-    // toolbar
-    /*static ImFontConfig icons_config3;
-    icons_config3.MergeMode = false;
-    icons_config3.PixelSnapH = true;
-    static const ImWchar icons_ranges3[] = {ICON_MIN_SDFMT, ICON_MAX_SDFMT, 0};
-    const float& font_size = 20.0f / font_scale_ratio;
-    m_ToolbarFontPtr =
-        ImGui::GetIO().Fonts->AddFontFromMemoryCompressedBase85TTF(FONT_ICON_BUFFER_NAME_SDFMT, font_size, &icons_config3, icons_ranges3);
-    if (m_ToolbarFontPtr != nullptr) {
-        m_ToolbarFontPtr->Scale = font_scale_ratio;
-        return true;
-    }*/
-
-    return LayoutManager::Instance()->InitPanes();
+    bool ret = true;
+    ret &= m_BankDialog.init();
+    ret &= m_EntityDialog.init();
+    ret &= m_AccountDialog.init();
+    ret &= m_CategoryDialog.init();
+    ret &= m_OperationDialog.init();
+    ret &= LayoutManager::ref().InitPanes();
+    return ret;
 }
 
 ///////////////////////////////////////////////////////
@@ -707,10 +956,10 @@ bool MainFrontend::m_build() {
 
 ez::xml::Nodes MainFrontend::getXmlNodes(const std::string& vUserDatas) {
     ez::xml::Node node;
-    node.addChilds(ImGuiThemeHelper::Instance()->getXmlNodes("app"));
-    node.addChilds(LayoutManager::Instance()->getXmlNodes("app"));
+    node.addChilds(ImGuiThemeHelper::ref().getXmlNodes("app"));
+    node.addChilds(LayoutManager::ref().getXmlNodes("app"));
 #ifdef USE_PLACES_FEATURE
-    node.addChild("places").setContent(ImGuiFileDialog::Instance()->SerializePlaces());
+    node.addChild("places").setContent(ImGuiFileDialog::ref().SerializePlaces());
 #endif
     node.addChild("showaboutdialog").setContent(m_ShowAboutDialog);
     node.addChild("showimgui").setContent(m_ShowImGui);
@@ -725,7 +974,7 @@ bool MainFrontend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::No
 
     if (strName == "places") {
 #ifdef USE_PLACES_FEATURE
-        ImGuiFileDialog::Instance()->DeserializePlaces(strValue);
+        ImGuiFileDialog::ref().DeserializePlaces(strValue);
 #endif
     } else if (strName == "showaboutdialog") {
         m_ShowAboutDialog = ez::ivariant(strValue).GetB();
@@ -735,8 +984,8 @@ bool MainFrontend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::No
         m_ShowMetric = ez::ivariant(strValue).GetB();
     }
 
-    ImGuiThemeHelper::Instance()->setFromXmlNodes(vNode, vParent, "app");
-    LayoutManager::Instance()->setFromXmlNodes(vNode, vParent, "app");
+    ImGuiThemeHelper::ref().setFromXmlNodes(vNode, vParent, "app");
+    LayoutManager::ref().setFromXmlNodes(vNode, vParent, "app");
 
     return true;
 }

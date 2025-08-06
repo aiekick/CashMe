@@ -1,25 +1,28 @@
 #include <Frontend/Tables/EntitiesTable.h>
 #include <Models/DataBase.h>
+#include <Frontend/MainFrontend.h>
 
 EntitiesTable::EntitiesTable() : ADataBarsTable("EntitiesTable", 6) {
 }
 
-bool EntitiesTable::load() {
-    ADataBarsTable::load();
-    m_updateEntities();
-    return true;
-}
-
-void EntitiesTable::unload() {
-    ADataBarsTable::unload();
-}
-
-bool EntitiesTable::drawMenu() {
-    if (m_drawAccountMenu()) {
-        m_updateEntities();
-        return true;
+bool EntitiesTable::m_drawMenu() {
+    bool ret = false;
+    if (ImGui::MenuItem("Refresh")) {
+        refreshDatas();
+        ret = true;
     }
-    return false;
+    return ret;
+}
+
+void EntitiesTable::refreshDatas() {
+    m_Entities.clear();
+    m_updateAccounts();
+    DataBase::ref().GetEntitiesStats(             //
+        m_getAccountID(),                         //
+        [this](                                   //
+            const EntityOutput& vEntityOutput) {  //
+            m_Entities.push_back(vEntityOutput);
+        });
 }
 
 size_t EntitiesTable::m_getItemsCount() const {
@@ -63,56 +66,19 @@ void EntitiesTable::m_drawContextMenuContent() {
         if (ImGui::MenuItem("Update")) {
             std::vector<EntityOutput> entities_to_update;
             for (const auto& e : m_Entities) {
-                if (m_IsRowSelected(e.id)) {
+                if (m_isRowSelected(e.id)) {
                     entities_to_update.push_back(e);
                 }
             }
-            if (entities_to_update.size() > 1U) {
-                m_EntityDialog.setEntitiesToMerge(entities_to_update);
-                m_EntityDialog.show(DataDialogMode::MODE_UPDATE_ALL);
-            } else if (entities_to_update.size() == 1U) {
-                m_EntityDialog.setEntity(entities_to_update.front());
-                m_EntityDialog.show(DataDialogMode::MODE_UPDATE_ONCE);
-            }
-        }
-        if (m_getSelectedRows().size() > 1U) {
-            if (ImGui::MenuItem("Merge")) {
-                std::vector<EntityOutput> entities_to_merge;
-                for (const auto& e : m_Entities) {
-                    if (m_IsRowSelected(e.id)) {
-                        entities_to_merge.push_back(e);
-                    }
-                }
-                m_EntityDialog.setEntitiesToMerge(entities_to_merge);
-                m_EntityDialog.show(DataDialogMode::MODE_MERGE_ALL);
-            }
-        }
-        if (ImGui::MenuItem("Delete")) {
-            std::vector<EntityOutput> entities_to_delete;
-            for (const auto& e : m_Entities) {
-                if (m_IsRowSelected(e.id)) {
-                    entities_to_delete.push_back(e);
-                }
-            }
-            m_EntityDialog.setEntitiesToDelete(entities_to_delete);
-            m_EntityDialog.show(DataDialogMode::MODE_DELETE_ALL);
+            MainFrontend::ref().getEntityDialogRef().setEntity(entities_to_update.front());
+            MainFrontend::ref().getEntityDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
         }
     }
 }
 
 void EntitiesTable::m_doActionOnDblClick(const size_t& vIdx, const RowID& vRowID) {
-    EZ_TOOLS_DEBUG_BREAK;
-}
-
-void EntitiesTable::m_updateEntities() {
-    const auto account_id = m_getAccountID();
-    if (account_id > 0) {
-        m_Entities.clear();
-        DataBase::ref().GetEntitiesStats(       //
-            account_id,                               //
-            [this](                                   //
-                const EntityOutput& vEntityOutput) {  //
-                m_Entities.push_back(vEntityOutput);
-            });
-    }
+    auto entity = m_Entities.at(vIdx);
+    entity.id = vRowID;
+    MainFrontend::ref().getEntityDialogRef().setEntity(entity);
+    MainFrontend::ref().getEntityDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
 }

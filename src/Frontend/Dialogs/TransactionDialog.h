@@ -5,7 +5,7 @@
 
 class TransactionDialog : public ADataDialog {
 private:
-    Transaction m_TransactionToUpdate;
+    TransactionOutput m_TransactionToUpdate;
 
     // widgets : Read Only
     SourceName m_SourceName;
@@ -18,15 +18,16 @@ private:
     ImWidgets::QuickStringEditCombo m_EntitiesCombo;
     ImWidgets::QuickStringEditCombo m_CategoriesCombo;
     ImWidgets::QuickStringEditCombo m_OperationsCombo;
+    ImWidgets::QuickStringEditCombo m_IncomesCombo;
     ImWidgets::InputText m_TransactionDateInputText;
     ImWidgets::InputText m_TransactionDescriptionInputText;
     ImWidgets::InputText m_TransactionCommentInputText;
-    bool m_TransactionConfirmed = false; // need to have a three state checkbox
+    bool m_TransactionConfirmed = false;  // need to have a three state checkbox
     bool m_TransactionConfirmedManyValues = false;
 
     // transactions to update / delete
-    std::vector<Transaction> m_TransactionsToUpdate;
-    std::vector<Transaction> m_TransactionsToDelete;
+    std::vector<TransactionOutput> m_TransactionsToUpdate;
+    std::vector<TransactionOutput> m_TransactionsToDelete;
     ImGuiListClipper m_TransactionsDeletionListClipper;
 
 public:
@@ -34,9 +35,9 @@ public:
     bool init() override;
     void unit() override;
 
-    void setTransaction(const Transaction& vTransaction);
-    void setTransactionsToUpdate(const std::vector<Transaction>& vTransactions);
-    void setTransactionsToDelete(const std::vector<Transaction>& vTransactions);
+    void setTransaction(const TransactionOutput& vTransaction);
+    void setTransactionsToUpdate(const std::vector<TransactionOutput>& vTransactions);
+    void setTransactionsToDelete(const std::vector<TransactionOutput>& vTransactions);
 
 protected:
     void m_drawContent(const ImVec2& vPos) override;
@@ -56,8 +57,9 @@ protected:
     void m_confirmDialogDeletion();
     void m_drawContentDeletion(const ImVec2& vPos);
 
-    void m_UpdateAccounts();
-    void m_UpdateEntities();
-    void m_UpdateOperations();
-    void m_UpdateCategories();
+    void m_updateAccounts();
+    void m_updateEntities();
+    void m_updateOperations();
+    void m_updateCategories();
+    void m_updateIncomes();
 };

@@ -4,11 +4,12 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-
+#include <ezlibs/ezSingleton.hpp>
 #include <Frontend/Tables/AccountsTable.h>
 
 class ProjectFile;
 class AccountsPane : public AbstractPane {
+    IMPLEMENT_SHARED_SINGLETON(AccountsPane)
 private:
     AccountsTable m_AccountsTable;
 
@@ -19,14 +20,6 @@ public:
     bool DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened = nullptr, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
-
-    void Load();
-
-public:  // singleton
-    static std::shared_ptr<AccountsPane> Instance() {
-        static std::shared_ptr<AccountsPane> _instance = std::make_shared<AccountsPane>();
-        return _instance;
-    }
 
 public:
     AccountsPane();                             // Prevent construction

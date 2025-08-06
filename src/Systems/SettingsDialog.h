@@ -2,13 +2,15 @@
 
 #include <ezlibs/ezXmlConfig.hpp>
 #include <apis/CashMePluginApi.h>
+#include <ezlibs/ezSingleton.hpp>
 
 class SettingsDialog : public ez::xml::Config {
+    IMPLEMENT_SINGLETON(SettingsDialog)
 private:
     std::map<Cash::SettingsCategoryPath, Cash::ISettingsWeak> m_SettingsPerCategoryPath;
     bool m_ShowDialog = false;
-    Cash::SettingsCategoryPath m_SelectedCategoryPath;
-    bool m_IsHiddenMode = false;
+    Cash::SettingsCategoryPath m_selectedCategoryPath;
+    bool m_isHiddenMode = false;
 
 public:
     bool init();
@@ -30,10 +32,4 @@ private:
     void m_DrawButtonsPane();
     bool m_Load();
     bool m_Save();
-
-public:  // singleton
-    static SettingsDialog* Instance() {
-        static SettingsDialog _instance;
-        return &_instance;
-    }
 };

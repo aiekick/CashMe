@@ -7,16 +7,13 @@
 class AccountsTable : public ADataBarsTable {
 private:
     std::vector<AccountOutput> m_Accounts;
-    AccountDialog m_AccountDialog;
 
 public:
     AccountsTable();
     ~AccountsTable() = default;
 
-    bool load() final;
-    void unload() final;
     bool drawMenu() final;
-    AccountDialog& getAccountDialogRef();
+    void refreshDatas() final;
 
 protected:
     size_t m_getItemsCount() const final;

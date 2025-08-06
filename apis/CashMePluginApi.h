@@ -99,7 +99,7 @@ struct BankAccount {
     std::string number;
 };
 
-struct AccountStatements {
+struct AccountTransactions {
     BankAccount account;
     std::string start_date;
     std::string end_date;
@@ -125,7 +125,7 @@ struct BankStatementImportModule : public PluginModule {
     // return file extention if any
     virtual std::string getFileExt() const = 0;
     // used for get account statement from file
-    virtual AccountStatements importBankStatement(const std::string& vFilePathName) = 0;
+    virtual AccountTransactions importBankStatement(const std::string& vFilePathName) = 0;
 };
 
 typedef std::shared_ptr<BankStatementImportModule> BankStatementModulePtr;

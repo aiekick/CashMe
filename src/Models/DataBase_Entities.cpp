@@ -8,10 +8,10 @@ bool DataBase::AddEntity(const EntityInput& vEntityInput) {
     auto insert_query =             //
         ez::sqlite::QueryBuilder()  //
             .setTable("entities")
-            .addField("name", vEntityInput.name)
+            .addOrSetField("name", vEntityInput.name)
             .build(ez::sqlite::QueryType::INSERT_IF_NOT_EXIST);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
-        LogVarError("Fail to insert a entity in database : %s (%s)", m_LastErrorMsg, insert_query.c_str());
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to insert a entity in database : %s (%s)", m_LastErrorMsg, insert_query);
         ret = false;
     }
     return ret;
@@ -69,6 +69,9 @@ bool DataBase::GetEntities(std::function<void(const EntityOutput&)> vCallback) {
 
 bool DataBase::GetEntitiesStats(const RowID& vAccountID, std::function<void(const EntityOutput&)> vCallback) {
     bool ret = false;
+    if (vAccountID == 0) {
+        return ret;
+    }
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
     const auto& select_query = ez::str::toStr(
@@ -121,7 +124,7 @@ ORDER BY
 bool DataBase::UpdateEntity(const RowID& vRowID, const EntityInput& vEntityInput) {
     bool ret = true;
     auto insert_query = ez::str::toStr(u8R"(UPDATE entities SET name = "%s" WHERE id = %u;)", vEntityInput.name.c_str(), vRowID);
-    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a entity in database : %s", m_LastErrorMsg);
         ret = false;
     }
@@ -133,7 +136,7 @@ bool DataBase::DeleteEntities() {
     if (m_OpenDB()) {
         ret = true;
         auto insert_query = ez::str::toStr(u8R"(DELETE FROM entities;)");
-        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query.c_str(), nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
             LogVarError("Fail to delete content of entities table in database : %s", m_LastErrorMsg);
             ret = false;
         }

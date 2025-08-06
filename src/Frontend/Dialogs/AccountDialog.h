@@ -37,5 +37,5 @@ protected:
     void m_confirmDialogDeletion();
     void m_drawContentDeletion(const ImVec2& vPos);
 
-    void m_UpdateBanks();
+    void m_updateBanks();
 };
