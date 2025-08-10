@@ -25,6 +25,7 @@ private:
     ImWidgets::InputValue<int32_t> m_IncomeMinDayInputInt32;
     ImWidgets::InputValue<int32_t> m_IncomeMaxDayInputInt32;
     ImWidgets::InputText m_IncomeDescriptionInputText;
+    bool m_IncomeOptional = false;
 
     // transactions to add as incomes
     std::vector<TransactionOutput> m_TransactionToAddAsIncomes;

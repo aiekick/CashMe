@@ -30,6 +30,7 @@ bool DataBase::AddIncome(const RowID& vAccountID, const IncomeInput& vIncomeInpu
             .addOrSetField("min_day", vIncomeInput.minDay)
             .addOrSetField("max_day", vIncomeInput.maxDay)
             .addOrSetField("description", vIncomeInput.description)
+            .addOrSetField("optional", vIncomeInput.optional)
             .addOrSetField(
                 "sha",
                 ez::sha1()
@@ -79,7 +80,8 @@ SELECT
     incomes.max_amount AS max_amount,
     incomes.min_day AS min_day,
     incomes.max_day AS max_day,
-    incomes.description AS description
+    incomes.description AS description,
+    incomes.optional AS optional
 FROM
     incomes
     LEFT JOIN accounts ON incomes.account_id = accounts.id
@@ -119,6 +121,7 @@ ORDER BY
                     io.datas.minDay = sqlite3_column_int(stmt, 12);
                     io.datas.maxDay = sqlite3_column_int(stmt, 13);
                     io.datas.description = ez::sqlite::readStringColumn(stmt, 14);
+                    io.datas.optional = sqlite3_column_int(stmt, 15);
                     vCallback(io);
                     ret = true;
                 }
@@ -148,6 +151,7 @@ bool DataBase::UpdateIncome(const RowID& vRowID, const IncomeInput& vIncomeInput
             .addOrSetField("max_day", vIncomeInput.maxDay)
             .addOrSetField("description", vIncomeInput.description)
             .addOrSetField("comment", vIncomeInput.comment)
+            .addOrSetField("optional", vIncomeInput.optional)
             .addOrSetField(
                 "sha",
                 ez::sha1()
@@ -176,6 +180,30 @@ bool DataBase::UpdateIncome(const RowID& vRowID, const IncomeInput& vIncomeInput
 
 bool DataBase::SearchIncomeInTransactions(const TransactionInput& vTransactionInput, RowID& vOutRowID) {
     bool ret = false;
+    return ret;
+}
+
+bool DataBase::setIncomeAsOptional(const RowID& vRowID, const bool& vOptional) {
+    bool ret = false;
+    auto insert_query = ez::str::toStr(
+        u8R"(
+UPDATE 
+  incomes
+SET 
+  optional = %u
+WHERE
+  id = %u;
+)",
+        vOptional,
+        vRowID);
+    if (m_OpenDB()) {
+        ret = true;
+        if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+            LogVarError("Fail to set income as optional (%s) in database : %s", vOptional ? "true" : "false", m_LastErrorMsg);
+            ret = false;
+        }
+        m_CloseDB();
+    }
     return ret;
 }
 

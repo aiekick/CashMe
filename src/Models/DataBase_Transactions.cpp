@@ -374,6 +374,137 @@ AND
     return ret;
 }
 
+bool DataBase::getLastMonthEndBalance(const RowID& vAccountID, double& vOutBalance) {
+    bool ret = false;
+    if (vAccountID == 0) {
+        return ret;
+    }
+    auto select_query = ez::str::toStr(
+        u8R"(
+WITH params AS (
+    SELECT %u AS account_id
+),
+last_tx AS (
+    SELECT date(MAX(t.date), 'start of month', '-1 day') AS prev_month_end
+    FROM transactions t, params p
+    WHERE t.account_id = p.account_id
+)
+SELECT 
+    a.base_solde + IFNULL(SUM(t.amount), 0) AS balance_before_month
+FROM accounts a
+JOIN params
+JOIN last_tx l
+LEFT JOIN transactions t 
+   ON t.account_id = a.id
+   AND t.date <= l.prev_month_end
+WHERE a.id = params.account_id;
+)",
+        vAccountID);
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = m_debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    vOutBalance = sqlite3_column_double(stmt, 0);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+    return ret;
+}
+
+bool DataBase::getMonthTransactions(const RowID& vAccountID, std::function<void(const TransactionOutput&)> vCallback, std::string& vOutFirstDayOfMonth) {
+    bool ret = false;
+    if (vAccountID == 0) {
+        return ret;
+    }
+    // no interest to call that without a callback for retrieve datas
+    assert(vCallback);
+    auto select_query = ez::str::toStr(
+        u8R"(
+WITH params AS (
+  SELECT %u AS account_id
+),
+month AS (
+  SELECT date(MAX(t.date), 'start of month') AS month_start
+  FROM transactions t
+  JOIN params p ON t.account_id = p.account_id
+)
+SELECT
+  t.id,
+  entities.name   AS entity,
+  categories.name AS category,
+  operations.name AS operation,
+  sources.name    AS source,
+  t.date,
+  unixepoch(t.date),
+  t.description,
+  t.comment,
+  t.amount,
+  t.confirmed,
+  t.sha,
+  incomes.name,
+  t.income_confirmed,
+  m.month_start
+FROM transactions t
+JOIN params p ON t.account_id = p.account_id
+CROSS JOIN month m
+LEFT JOIN accounts   ON t.account_id = accounts.id
+LEFT JOIN entities   ON t.entity_id = entities.id
+LEFT JOIN categories ON t.category_id = categories.id
+LEFT JOIN operations ON t.operation_id = operations.id
+LEFT JOIN sources    ON t.source_id = sources.id
+LEFT JOIN incomes    ON t.income_id = incomes.id
+WHERE t.date >= m.month_start
+ORDER BY t.date;
+)",
+        vAccountID);
+    if (m_OpenDB()) {
+        sqlite3_stmt* stmt = nullptr;
+        int res = m_debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            LogVarError("%s %s", "Fail get transactions with reason", sqlite3_errmsg(m_SqliteDB));
+        } else {
+            vOutFirstDayOfMonth.clear();
+            while (res == SQLITE_OK || res == SQLITE_ROW) {
+                res = sqlite3_step(stmt);
+                if (res == SQLITE_OK || res == SQLITE_ROW) {
+                    TransactionOutput to;
+                    to.id = sqlite3_column_int(stmt, 0);
+                    to.datas.entity.name = ez::sqlite::readStringColumn(stmt, 1);
+                    to.datas.category.name = ez::sqlite::readStringColumn(stmt, 2);
+                    to.datas.operation.name = ez::sqlite::readStringColumn(stmt, 3);
+                    to.datas.source.name = ez::sqlite::readStringColumn(stmt, 4);
+                    to.datas.date = ez::sqlite::readStringColumn(stmt, 5);
+                    to.dateEpoch = sqlite3_column_int64(stmt, 6);
+                    to.datas.description = ez::sqlite::readStringColumn(stmt, 7);
+                    to.datas.comment = ez::sqlite::readStringColumn(stmt, 8);
+                    to.datas.amount = sqlite3_column_double(stmt, 9);
+                    to.datas.confirmed = static_cast<bool>(!!sqlite3_column_int(stmt, 10));
+                    to.datas.sha = ez::sqlite::readStringColumn(stmt, 11);
+                    to.datas.income.name = ez::sqlite::readStringColumn(stmt, 12);
+                    to.datas.incomeConfirmed = sqlite3_column_int(stmt, 13);
+                    if (vOutFirstDayOfMonth.empty()) {  // avoid a copy for each iterations
+                        vOutFirstDayOfMonth = ez::sqlite::readStringColumn(stmt, 14);
+                    }
+                    vCallback(to);
+                    ret = true;
+                }
+            }
+        }
+        sqlite3_finalize(stmt);
+        m_CloseDB();
+    }
+    return ret;
+}
+
 bool DataBase::UpdateTransaction(const RowID& vRowID, const TransactionInput& vTransactionInput) {
     bool ret = true;
     auto insert_query = ez::str::toStr(

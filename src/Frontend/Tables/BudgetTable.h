@@ -5,10 +5,13 @@
 
 class BudgetTable : public ADataTable {
 private:
-    bool m_showTable{true};
-    bool m_showGraph{true};
     BudgetGraph m_budgetGraph;
     std::vector<BudgetOutput> m_budgets;
+    bool m_showTable{true};
+    bool m_showGraph{true};
+    uint32_t m_projectedDays{190};
+    bool m_useOptional{true};
+    bool m_hideEmptyRows{false};
 
 public:
     BudgetTable();
@@ -24,4 +27,7 @@ protected:
     void m_setupColumns() final;
     bool m_drawMenu() final;
     void m_draw(const ImVec2& vSize) final;
+
+private:
+    bool m_computeBudget();
 };

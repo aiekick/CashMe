@@ -48,6 +48,7 @@ protected:
     void m_updateAccounts();
     bool m_drawAccountMenu();
     void m_drawColumnSelectable(const size_t& vIdx, const RowID& vRowID, const std::string& vText);
+    bool m_drawColumnCheckbox(bool& vValue, const bool vVisibility = true);
     void m_drawColumnText(const std::string& vText);
     void m_drawColumnDebit(const double& vDebit);
     void m_drawColumnCredit(const double& vCredit);

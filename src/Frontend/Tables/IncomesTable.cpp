@@ -3,7 +3,7 @@
 #include <Models/DataBase.h>
 #include <Systems/SettingsDialog.h>
 
-IncomesTable::IncomesTable() : ADataTable("IncomesTable", 11) {
+IncomesTable::IncomesTable() : ADataTable("IncomesTable", 12) {
 }
 
 bool IncomesTable::init() {
@@ -64,6 +64,9 @@ void IncomesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmou
     m_drawColumnText(t.datas.category.name);
     m_drawColumnText(t.datas.operation.name);
     m_drawColumnText(t.datas.description);
+    if (m_drawColumnCheckbox(t.datas.optional)) {
+        DataBase::ref().setIncomeAsOptional(t.id, t.datas.optional);
+    }
 }
 
 void IncomesTable::m_setupColumns() {
@@ -80,6 +83,7 @@ void IncomesTable::m_setupColumns() {
     ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Description", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn("Optional", ImGuiTableColumnFlags_WidthFixed);
 
     ImGui::TableNextColumn();
     ImGui::TableNextColumn();

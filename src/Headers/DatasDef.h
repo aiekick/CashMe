@@ -187,6 +187,7 @@ struct IncomeInput {
     std::string description;
     std::string comment;
     std::string sha;
+    bool optional{false};
 };
 
 struct IncomeOutput {

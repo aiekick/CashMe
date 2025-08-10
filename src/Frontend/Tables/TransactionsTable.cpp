@@ -66,15 +66,8 @@ void TransactionsTable::m_setupColumns() {
 
 void TransactionsTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmount) {
     auto& t = m_Datas.transactions_filtered.at(vIdx);
-    ImGui::TableNextColumn();
-    if (m_isGroupingModeTransactions()) {
-        ImGui::PushID(t.id);
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-        if (ImGui::Checkbox("##check", &t.datas.confirmed)) {
-            DataBase::ref().ConfirmTransaction(t.id, t.datas.confirmed);
-        }
-        ImGui::PopStyleVar();
-        ImGui::PopID();
+    if (m_drawColumnCheckbox(t.datas.confirmed, m_isGroupingModeTransactions())) {
+        DataBase::ref().ConfirmTransaction(t.id, t.datas.confirmed);
     }
     m_drawColumnText(t.datas.date);
     m_drawColumnSelectable(vIdx, t.id, t.datas.description);

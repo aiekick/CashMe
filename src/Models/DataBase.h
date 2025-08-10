@@ -122,6 +122,7 @@ public:
     bool GetIncomes(const RowID& vAccountID, std::function<void(const IncomeOutput&)> vCallback);
     bool UpdateIncome(const RowID& vRowID, const IncomeInput& vIncomeInput);
     bool SearchIncomeInTransactions(const TransactionInput& vTransactionInput, RowID& vOutRowID);
+    bool setIncomeAsOptional(const RowID& vRowID, const bool& vOptional);
     bool DeleteIncome(const RowID& vRowID);
     bool DeleteIncomes(const std::set<RowID>& vRowIDs);
     bool DeleteIncomes();
@@ -137,12 +138,10 @@ public:
         const DateFormat& vGroupByDate,
         std::function<void(const TransactionOutput&)> vCallback);
     std::string GetFormatDate(const DateFormat& vDateFormat);
-    bool GetDuplicateTransactionsOnDatesAndAmount(  
-        const RowID& vAccountID,                    
-        std::function<void(const RowID&)> vCallback);
-    bool GetUnConfirmedTransactions(  
-        const RowID& vAccountID,      
-        std::function<void(const RowID&)> vCallback);
+    bool GetDuplicateTransactionsOnDatesAndAmount(const RowID& vAccountID, std::function<void(const RowID&)> vCallback);
+    bool GetUnConfirmedTransactions(const RowID& vAccountID, std::function<void(const RowID&)> vCallback);
+    bool getLastMonthEndBalance(const RowID& vAccountID, double& vOutBalance);
+    bool getMonthTransactions(const RowID& vAccountID, std::function<void(const TransactionOutput&)> vCallback, std::string& vOutFirstDayOfMonth);
     bool UpdateTransaction(const RowID& vRowID, const TransactionInput& vTransactionInput);
     bool ConfirmTransaction(const RowID& vRowID, const bool& vConfirmed);
     bool DeleteTransaction(const RowID& vRowID);
@@ -154,6 +153,8 @@ public:
     bool ComputeBudget(  //
         const RowID& vAccountID,
         const BudgetProjectedDays& vProjectedDays,
+        const bool vUseOptional,
+        const bool vHideEmptyRows,
         std::function<void(const BudgetOutput&)> vCallback);
 
 private:

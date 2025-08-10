@@ -8,6 +8,8 @@
 bool DataBase::ComputeBudget(  //
     const RowID& vAccountID,
     const BudgetProjectedDays& vProjectedDays,
+    const bool vUseOptional,
+    const bool vHideEmptyRows,
     std::function<void(const BudgetOutput&)> vCallback) {
     bool ret = false;
     if (vAccountID == 0) {
@@ -15,7 +17,22 @@ bool DataBase::ComputeBudget(  //
     }
     // no interest to call that without a callback for retrieve datas
     assert(vCallback);
-    const auto select_query = ez::str::toStr(R"(WITH RECURSIVE params AS (SELECT %u AS account_id, %u AS projection_days),)", vAccountID, vProjectedDays) +
+    const auto select_query = ez::str::toStr(
+                                  R"(WITH RECURSIVE 
+params AS (
+  SELECT 
+    %u AS account_id, 
+    %u AS projection_days
+),
+incomes_base AS (
+  SELECT *
+  FROM incomes
+  WHERE account_id = (SELECT account_id FROM params) 
+    AND %s or (optional = 0)
+),)",
+                                  vAccountID,
+                                  vProjectedDays,
+                                  vUseOptional ? "true" : "false") +
         R"(
 jours(jour, n) AS (
   SELECT date('now'), 0
@@ -24,32 +41,26 @@ jours(jour, n) AS (
   FROM jours, params
   WHERE n < projection_days - 1
 ),
-mois_proj AS (
-  SELECT DISTINCT strftime('%Y-%m-01', jour) AS premier_jour
-  FROM jours
-),
-incomes_base AS (
-  SELECT *
-  FROM incomes
-  WHERE account_id = (SELECT account_id FROM params)
-),
 transactions_base AS (
   SELECT *
   FROM transactions
   WHERE account_id = (SELECT account_id FROM params)
+),
+mois_proj AS (
+  SELECT DISTINCT strftime('%Y-%m-01', jour) AS premier_jour
+  FROM jours
 ),
 -- ----------- COURBE MIN -----------
 income_min_dates AS (
     -- Dépenses (min_amount < 0) à min_day
     SELECT
         i.id AS income_id,
-        i.account_id,
         i.min_amount AS amount,
         CASE
           WHEN i.min_day >= 1 THEN date(m.premier_jour, '+'||(i.min_day-1)||' days')
           ELSE date(m.premier_jour, '-1 day', (i.min_day)||' days')
         END AS date_apparition
-    FROM incomes i
+    FROM incomes_base i
     CROSS JOIN mois_proj m
     WHERE i.min_amount < 0
       AND (CASE
@@ -71,13 +82,12 @@ income_min_dates AS (
     -- Revenus (max_amount > 0) à max_day
     SELECT
         i.id AS income_id,
-        i.account_id,
         i.max_amount AS amount,
         CASE
           WHEN i.max_day >= 1 THEN date(m.premier_jour, '+'||(i.max_day-1)||' days')
           ELSE date(m.premier_jour, '-1 day', (i.max_day)||' days')
         END AS date_apparition
-    FROM incomes i
+    FROM incomes_base i
     CROSS JOIN mois_proj m
     WHERE i.max_amount > 0
       AND (CASE
@@ -99,10 +109,9 @@ income_min_dates AS (
     -- Dépenses : min_amount à min_day déjà passé mais max_day pas passé
     SELECT
         i.id AS income_id,
-        i.account_id,
         i.min_amount AS amount,
         (SELECT MIN(jour) FROM jours) AS date_apparition
-    FROM incomes i
+    FROM incomes_base i
     CROSS JOIN mois_proj m
     WHERE i.min_amount < 0
       AND (CASE
@@ -116,7 +125,7 @@ income_min_dates AS (
       AND (SELECT MIN(jour) FROM jours) >= i.start_date
       AND ((i.end_date IS NULL OR i.end_date = '') OR (SELECT MIN(jour) FROM jours) <= i.end_date)
       AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = i.id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', (SELECT MIN(jour) FROM jours))
@@ -126,10 +135,9 @@ income_min_dates AS (
     -- Revenus : max_amount à max_day déjà passé mais min_day pas passé
     SELECT
         i.id AS income_id,
-        i.account_id,
         i.max_amount AS amount,
         (SELECT MIN(jour) FROM jours) AS date_apparition
-    FROM incomes i
+    FROM incomes_base i
     CROSS JOIN mois_proj m
     WHERE i.max_amount > 0
       AND (CASE
@@ -143,26 +151,23 @@ income_min_dates AS (
       AND (SELECT MIN(jour) FROM jours) >= i.start_date
       AND ((i.end_date IS NULL OR i.end_date = '') OR (SELECT MIN(jour) FROM jours) <= i.end_date)
       AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = i.id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', (SELECT MIN(jour) FROM jours))
       )
 ),
-
 -- ----------- COURBE MAX -----------
-
 income_max_dates AS (
     -- Revenus (max_amount > 0) à min_day
     SELECT
         i.id AS income_id,
-        i.account_id,
         i.max_amount AS amount,
         CASE
           WHEN i.min_day >= 1 THEN date(m.premier_jour, '+'||(i.min_day-1)||' days')
           ELSE date(m.premier_jour, '-1 day', (i.min_day)||' days')
         END AS date_apparition
-    FROM incomes i
+    FROM incomes_base i
     CROSS JOIN mois_proj m
     WHERE i.max_amount > 0
       AND (CASE
@@ -184,13 +189,12 @@ income_max_dates AS (
     -- Dépenses (max_amount < 0) à max_day
     SELECT
         i.id AS income_id,
-        i.account_id,
         i.max_amount AS amount,
         CASE
           WHEN i.max_day >= 1 THEN date(m.premier_jour, '+'||(i.max_day-1)||' days')
           ELSE date(m.premier_jour, '-1 day', (i.max_day)||' days')
         END AS date_apparition
-    FROM incomes i
+    FROM incomes_base i
     CROSS JOIN mois_proj m
     WHERE i.min_amount < 0
       AND (CASE
@@ -212,10 +216,9 @@ income_max_dates AS (
     -- Revenus : max_amount à min_day déjà passé mais max_day pas passé
     SELECT
         i.id AS income_id,
-        i.account_id,
         i.max_amount AS amount,
         (SELECT MIN(jour) FROM jours) AS date_apparition
-    FROM incomes i
+    FROM incomes_base i
     CROSS JOIN mois_proj m
     WHERE i.max_amount > 0
       AND (CASE
@@ -229,7 +232,7 @@ income_max_dates AS (
       AND (SELECT MIN(jour) FROM jours) >= i.start_date
       AND ((i.end_date IS NULL OR i.end_date = '') OR (SELECT MIN(jour) FROM jours) <= i.end_date)
       AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = i.id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', (SELECT MIN(jour) FROM jours))
@@ -239,10 +242,9 @@ income_max_dates AS (
     -- Dépenses : min_amount à max_day déjà passé mais min_day pas passé
     SELECT
         i.id AS income_id,
-        i.account_id,
         i.min_amount AS amount,
         (SELECT MIN(jour) FROM jours) AS date_apparition
-    FROM incomes i
+    FROM incomes_base i
     CROSS JOIN mois_proj m
     WHERE i.min_amount < 0
       AND (CASE
@@ -256,96 +258,83 @@ income_max_dates AS (
       AND (SELECT MIN(jour) FROM jours) >= i.start_date
       AND ((i.end_date IS NULL OR i.end_date = '') OR (SELECT MIN(jour) FROM jours) <= i.end_date)
       AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = i.id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', (SELECT MIN(jour) FROM jours))
       )
 )
-
 SELECT
     ROW_NUMBER() OVER (ORDER BY j.jour) AS id,
     j.jour,
     unixepoch(j.jour) AS epoch,
-
     -- Delta min du jour
     IFNULL((
       SELECT SUM(imd.amount)
       FROM income_min_dates imd
-      WHERE imd.account_id = a.id
-        AND imd.date_apparition = j.jour
+      WHERE imd.date_apparition = j.jour
         AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = imd.income_id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', imd.date_apparition)
         )
     ), 0) AS delta_min,
-
     -- Delta max du jour
     IFNULL((
       SELECT SUM(imd.amount)
       FROM income_max_dates imd
-      WHERE imd.account_id = a.id
-        AND imd.date_apparition = j.jour
+      WHERE imd.date_apparition = j.jour
         AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = imd.income_id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', imd.date_apparition)
         )
     ), 0) AS delta_max,
-
     -- Solde min cumulatif
     a.base_solde
       + IFNULL((SELECT SUM(t.amount)
-          FROM transactions t
-          WHERE t.account_id = a.id
-            AND t.date <= j.jour), 0)
+          FROM transactions_base t
+          WHERE t.date <= j.jour), 0)
       + SUM(
         IFNULL((
           SELECT SUM(imd.amount)
           FROM income_min_dates imd
-          WHERE imd.account_id = a.id
-            AND imd.date_apparition = j.jour
+          WHERE imd.date_apparition = j.jour
             AND NOT EXISTS (
-                SELECT 1 FROM transactions t2
+                SELECT 1 FROM transactions_base t2
                 WHERE t2.income_id = imd.income_id
                   AND t2.income_confirmed = 1
                   AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', imd.date_apparition)
             )
         ), 0)
       ) OVER (ORDER BY j.jour) AS solde_min,
-
     -- Solde max cumulatif
     a.base_solde
       + IFNULL((SELECT SUM(t.amount)
-          FROM transactions t
-          WHERE t.account_id = a.id
-            AND t.date <= j.jour), 0)
+          FROM transactions_base t
+          WHERE t.date <= j.jour), 0)
       + SUM(
         IFNULL((
           SELECT SUM(imd.amount)
           FROM income_max_dates imd
-          WHERE imd.account_id = a.id
-            AND imd.date_apparition = j.jour
+          WHERE imd.date_apparition = j.jour
             AND NOT EXISTS (
-                SELECT 1 FROM transactions t2
+                SELECT 1 FROM transactions_base t2
                 WHERE t2.income_id = imd.income_id
                   AND t2.income_confirmed = 1
                   AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', imd.date_apparition)
             )
         ), 0)
       ) OVER (ORDER BY j.jour) AS solde_max,
-
     -- Détail min
     IFNULL((
       SELECT GROUP_CONCAT(imd.income_id)
       FROM income_min_dates imd
-      WHERE imd.account_id = a.id
-        AND imd.date_apparition = j.jour
+      WHERE imd.date_apparition = j.jour
         AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = imd.income_id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', imd.date_apparition)
@@ -354,24 +343,21 @@ SELECT
     IFNULL((
       SELECT GROUP_CONCAT(imd.amount)
       FROM income_min_dates imd
-      WHERE imd.account_id = a.id
-        AND imd.date_apparition = j.jour
+      WHERE imd.date_apparition = j.jour
         AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = imd.income_id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', imd.date_apparition)
         )
     ), '') AS incomes_min_amounts,
-
     -- Détail max
     IFNULL((
       SELECT GROUP_CONCAT(imd.income_id)
       FROM income_max_dates imd
-      WHERE imd.account_id = a.id
-        AND imd.date_apparition = j.jour
+      WHERE imd.date_apparition = j.jour
         AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = imd.income_id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', imd.date_apparition)
@@ -380,25 +366,23 @@ SELECT
     IFNULL((
       SELECT GROUP_CONCAT(imd.amount)
       FROM income_max_dates imd
-      WHERE imd.account_id = a.id
-        AND imd.date_apparition = j.jour
+      WHERE imd.date_apparition = j.jour
         AND NOT EXISTS (
-            SELECT 1 FROM transactions t2
+            SELECT 1 FROM transactions_base t2
             WHERE t2.income_id = imd.income_id
               AND t2.income_confirmed = 1
               AND strftime('%Y-%m', t2.date) = strftime('%Y-%m', imd.date_apparition)
         )
-    ), '') AS incomes_max_amounts
-
+    ), '') AS incomes_max_amounts)" +
+        ez::str::toStr(R"(
 FROM jours j
 CROSS JOIN accounts a
 JOIN params ON 1=1
 WHERE a.id = params.account_id
--- AND (delta_min != 0 OR delta_max !=0) -- seulement els ligne utiles
-ORDER BY j.jour
-;
-
-)";
+AND %s or (delta_min != 0 OR delta_max !=0) -- seulement els ligne utiles
+ORDER BY j.jour;
+)",
+                       vHideEmptyRows ? "false" : "true");
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = m_debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);

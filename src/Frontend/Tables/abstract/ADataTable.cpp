@@ -216,6 +216,19 @@ void ADataTable::m_drawColumnSelectable(const size_t& vIdx, const RowID& vRowID,
     m_showContextMenu(vIdx);
 }
 
+bool ADataTable::m_drawColumnCheckbox(bool& vValue, const bool vVisibility) {
+    bool ret = false;
+    ImGui::TableNextColumn();
+    if (vVisibility) {
+        ImGui::PushID(&vValue);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+        ret = ImGui::Checkbox("##check", &vValue);
+        ImGui::PopStyleVar();
+        ImGui::PopID();
+    }
+    return ret;
+}
+
 void ADataTable::m_drawColumnText(const std::string& vText) {
     ImGui::TableNextColumn();
     ImGui::Text("%s", vText.c_str());

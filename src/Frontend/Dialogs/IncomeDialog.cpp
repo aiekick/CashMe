@@ -166,6 +166,7 @@ void IncomeDialog::m_drawContentCreation(const ImVec2& vPos) {
         return (m_IncomeMinDayInputInt32.get() <= vValue);
     });
     m_IncomeDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
+    ImGui::DisplayAlignedWidget(width, "Optional", align, [this]() { ImGui::CheckBoxBoolDefault("##Optional", &m_IncomeOptional, false); });
 }
 
 void IncomeDialog::m_drawContentUpdate(const ImVec2& vPos) {
@@ -349,6 +350,7 @@ void IncomeDialog::m_confirmDialogCreation() {
             ii.endDate = m_IncomeEndDateInputText.GetText();
             ii.minDay = m_IncomeMinDayInputInt32.get();
             ii.maxDay = m_IncomeMaxDayInputInt32.get();
+            ii.optional = m_IncomeOptional;
             DataBase::ref().AddIncome(account_id, ii);
             DataBase::ref().CloseDBFile();
         }
@@ -372,6 +374,7 @@ void IncomeDialog::m_confirmDialogUpdateOnce() {
             ii.endDate = m_IncomeEndDateInputText.GetText();
             ii.minDay = m_IncomeMinDayInputInt32.get();
             ii.maxDay = m_IncomeMaxDayInputInt32.get();
+            ii.optional = m_IncomeOptional;
             DataBase::ref().UpdateIncome(m_IncomeToUpdate.id, ii);
             DataBase::ref().CloseDBFile();
         }

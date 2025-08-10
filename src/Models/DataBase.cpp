@@ -267,6 +267,7 @@ CREATE TABLE incomes (
     max_day INTEGER, -- max day from the first day of month, can be the same as min 
     description TEXT,
     comment TEXT,
+    optional INTEGER, -- true:1 or false:0
     sha TEXT NOT NULL UNIQUE,
     -- links
     FOREIGN KEY (account_id) REFERENCES accounts(id),
