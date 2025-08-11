@@ -44,4 +44,5 @@ void ADataBarsTable::m_drawColumnBars(const double vAmount, const double vMaxAmo
         drawListPtr->AddRectFilled(ImVec2(pMidX, pMin.y), ImVec2(pMidX + bw, pMax.y), ImGui::GetColorU32(ImGui::CustomStyle::GoodColor));
     }
     ImGui::SetCursorScreenPos(pMax);
+    ImGui::Dummy(ImVec2(0, 0)); // https://github.com/ocornut/imgui/issues/5548
 }

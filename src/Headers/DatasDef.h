@@ -190,6 +190,11 @@ struct IncomeInput {
     bool optional{false};
 };
 
+struct BudgetIncomeDatas {
+    bool usedInMinCurve = false;
+    bool usedInMaxCurve = false;
+};
+
 struct IncomeOutput {
     RowID id = 0;
     std::string accountNumber;
@@ -198,6 +203,7 @@ struct IncomeOutput {
     DateEpoch endEpoch;
     Amounts amounts;
     uint32_t count = 0;
+    BudgetIncomeDatas budget;
 };
 
 // SOURCE
@@ -235,7 +241,6 @@ struct TransactionOutput {
     std::string accountNumber;
     DateEpoch dateEpoch;
     TransactionInput datas;
-
     size_t comment_first_line_end_pos = 0;
     Amounts amounts;
     std::array<std::string, SearchColumns::SEARCH_COLUMN_Count> optimized;
@@ -255,6 +260,7 @@ struct BudgetOutput {
     DateEpoch dateEpoch = 0;
     BudgetMinMax delta;
     BudgetMinMax solde;
+    double soldeReal{}; // le vrai solde realisé par les vraies transactions
     std::string incomesMin;
     std::string incomesMinAmount;
     std::string incomesMax;

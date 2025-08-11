@@ -225,7 +225,10 @@ bool ADataTable::m_drawColumnCheckbox(bool& vValue, const bool vVisibility) {
         ret = ImGui::Checkbox("##check", &vValue);
         ImGui::PopStyleVar();
         ImGui::PopID();
+    } else {
+        ImGui::Text("%s", "");
     }
+    
     return ret;
 }
 
@@ -288,6 +291,8 @@ void ADataTable::m_drawColumnDebit(const double& vDebit) {
         ImGui::Text("%.2f", vDebit);
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::ref().isHiddenMode(), "%.2f", vDebit);
         ImGui::PopStyleColor();
+    } else {
+        ImGui::Text("%s", "");
     }
 }
 
@@ -298,6 +303,8 @@ void ADataTable::m_drawColumnCredit(const double& vCredit) {
         ImGui::Text("%.2f", vCredit);
         ImGui::HideByFilledRectForHiddenMode(SettingsDialog::ref().isHiddenMode(), "%.2f", vCredit);
         ImGui::PopStyleColor();
+    } else {
+        ImGui::Text("%s", "");
     }
 }
 
@@ -325,10 +332,8 @@ void ADataTable::m_drawAmount(const double& vAmount) {
 
 void ADataTable::m_drawColumnInt(const int32_t& vValue) {
     ImGui::TableNextColumn();
-    {
-        ImGui::Text("%i", vValue);
-        ImGui::HideByFilledRectForHiddenMode(SettingsDialog::ref().isHiddenMode(), "%i", vValue);
-    }
+    ImGui::Text("%i", vValue);
+    ImGui::HideByFilledRectForHiddenMode(SettingsDialog::ref().isHiddenMode(), "%i", vValue);
 }
 
 const std::set<RowID>& ADataTable::m_getSelectedRows() {

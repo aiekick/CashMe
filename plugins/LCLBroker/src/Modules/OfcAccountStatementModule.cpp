@@ -33,7 +33,8 @@ Cash::AccountTransactions OfcAccountStatementModule::importBankStatement(const s
 
     auto ps = ez::file::parsePathFileName(vFilePathName);
     if (ps.isOk) {
-        auto lines = ez::str::splitStringToVector(ez::file::loadFileToString(vFilePathName), '\n');
+        const auto code = ez::file::loadFileToString(vFilePathName);
+        auto lines = ez::str::splitStringToVector(code, '\n');
         if (lines.empty()) {
             LogVarError("Fail, %s is empty", vFilePathName.c_str());
             return {};

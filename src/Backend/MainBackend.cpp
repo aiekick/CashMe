@@ -84,8 +84,6 @@ bool MainBackend::init(const ez::App& vApp) {
     m_InitModels();
     if (m_InitWindow() && m_InitImGui()) {
         m_InitPlugins(vApp);
-        m_InitSystems();
-        m_InitPanes();
         m_InitSettings();
         LoadConfigFile("config.xml", "app");
         return true;
@@ -96,7 +94,6 @@ bool MainBackend::init(const ez::App& vApp) {
 // todo : to refactor ! i dont like that
 void MainBackend::unit() {
     SaveConfigFile("config.xml", "app", "config");
-    m_UnitSystems();
     m_UnitSettings();  // before plugins and gui since containing weak ptr to plugins
     m_UnitImGui();     // before plugins since containing weak ptr to plugins
     m_UnitPlugins();
@@ -500,23 +497,6 @@ void MainBackend::m_UnitPlugins() {
     m_clearDataBrokers();
     PluginManager::ref().Clear();
     PluginManager::unitSingleton();
-}
-
-void MainBackend::m_InitSystems() {
-    
-}
-
-void MainBackend::m_UnitSystems() {
-}
-
-void MainBackend::m_InitPanes() {
-    if (LayoutManager::ref().InitPanes()) {
-        // a faire apres InitPanes() sinon ConsolePane::ref()->paneFlag vaudra 0 et changeras apres InitPanes()
-        Messaging::ref().sMessagePaneId = ConsolePane::ref()->GetFlag();
-    }
-}
-
-void MainBackend::m_UnitPanes() {
 }
 
 void MainBackend::m_InitSettings() {

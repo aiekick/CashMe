@@ -2,6 +2,7 @@
 #include <Frontend/MainFrontend.h>
 #include <Models/DataBase.h>
 #include <Systems/SettingsDialog.h>
+#include <Panes/BudgetPane.h>
 
 IncomesTable::IncomesTable() : ADataTable("IncomesTable", 12) {
 }
@@ -66,6 +67,7 @@ void IncomesTable::m_drawTableContent(const size_t& vIdx, const double& vMaxAmou
     m_drawColumnText(t.datas.description);
     if (m_drawColumnCheckbox(t.datas.optional)) {
         DataBase::ref().setIncomeAsOptional(t.id, t.datas.optional);
+        BudgetPane::ref()->Init();
     }
 }
 

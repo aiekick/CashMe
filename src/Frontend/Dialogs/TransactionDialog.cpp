@@ -56,7 +56,7 @@ void TransactionDialog::m_drawContentCreation(const ImVec2& vPos) {
     m_EntitiesCombo.displayWithColumn(width, "Entity", align);
     m_CategoriesCombo.displayWithColumn(width, "Category", align);
     m_OperationsCombo.displayWithColumn(width, "Operation", align);
-    m_IncomesCombo.displayWithColumn(width, "Income", align);
+    //m_IncomesCombo.displayWithColumn(width, "Income", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
     m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
     m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", true, align);
@@ -71,7 +71,7 @@ void TransactionDialog::m_drawContentUpdate(const ImVec2& vPos) {
     m_EntitiesCombo.displayWithColumn(width, "Entity", align);
     m_CategoriesCombo.displayWithColumn(width, "Category", align);
     m_OperationsCombo.displayWithColumn(width, "Operation", align);
-    m_IncomesCombo.displayWithColumn(width, "Income", align);
+    //m_IncomesCombo.displayWithColumn(width, "Income", align);
     m_TransactionDateInputText.DisplayInputText(width, "Date", "", false, align);
     m_TransactionDescriptionInputText.DisplayInputText(width, "Description", "", false, align);
     m_TransactionCommentInputText.DisplayInputText(width, "Comment", "", true, align);
@@ -199,7 +199,7 @@ void TransactionDialog::m_prepare() {
     m_EntitiesCombo.setText(m_TransactionToUpdate.datas.entity.name);
     m_CategoriesCombo.setText(m_TransactionToUpdate.datas.category.name);
     m_OperationsCombo.setText(m_TransactionToUpdate.datas.operation.name);
-    m_IncomesCombo.setText(m_TransactionToUpdate.datas.income.name);
+    //m_IncomesCombo.setText(m_TransactionToUpdate.datas.income.name);
     m_TransactionDateInputText.SetText(m_TransactionToUpdate.datas.date);
     m_TransactionDescriptionInputText.SetText(m_TransactionToUpdate.datas.description);
     m_TransactionCommentInputText.SetText(m_TransactionToUpdate.datas.comment);
@@ -279,7 +279,7 @@ void TransactionDialog::m_confirmDialogCreation() {
             ti.entity.name = m_EntitiesCombo.getText();
             ti.category.name = m_CategoriesCombo.getText();
             ti.operation.name = m_OperationsCombo.getText();
-            ti.income.name = m_IncomesCombo.getText();
+            //ti.income.name = m_IncomesCombo.getText();
             ti.incomeConfirmed = true;
             ti.source.name = m_SourceName;
             ti.source.type = m_SourceType;
@@ -308,32 +308,21 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
             OperationInput oi;
             oi.name = m_OperationsCombo.getText();
             DataBase::ref().AddOperation(oi);
-            IncomeInput ii;
+            /*IncomeInput ii;
             ii.name = m_IncomesCombo.getText();
-            DataBase::ref().AddIncome(account_id, ii);
+            DataBase::ref().AddIncome(account_id, ii);*/
             TransactionInput ti;
             ti.entity = ei;
             ti.category = ci;
             ti.operation = oi;
-            ti.income = ii;
+            //ti.income = ii;
             ti.incomeConfirmed = true;
-            ti.source.name = m_SourceName + "/User";
+            ti.source.name = m_SourceName;
             ti.date = m_TransactionDateInputText.GetText();
             ti.description = m_TransactionDescriptionInputText.GetText();
             ti.comment = m_TransactionCommentInputText.GetText();
             ti.amount = m_TransactionAmountInputDouble;
             ti.confirmed = false;
-            ti.sha =        //
-                ez::sha1()  //
-                    .add(ti.date)
-                    // un fichier ofc ne peut pas avoir des description de longueur > a 30
-                    // alors on limite le sha a utiliser un description de 30
-                    // comme cela un ofc ne rentrera pas un collision avec un autre type de fcihier comme les pdf par ex
-                    .add(ti.description.substr(0, 30))
-                    // must be unique per oepration
-                    .addValue(ti.amount)
-                    .finalize()
-                    .getHex();
             DataBase::ref().UpdateTransaction(m_TransactionToUpdate.id, ti);
             DataBase::ref().CloseDBFile();
         }
@@ -441,7 +430,7 @@ void TransactionDialog::m_updateCategories() {
 }
 
 void TransactionDialog::m_updateIncomes() {
-    RowID account_id = 0U;
+    /*RowID account_id = 0U;
     if (DataBase::ref().GetAccount(m_AccountsCombo.getText(), account_id)) {
         m_IncomesCombo.clear();
         DataBase::ref().GetIncomes(  //
@@ -451,5 +440,5 @@ void TransactionDialog::m_updateIncomes() {
             });
         m_IncomesCombo.getIndexRef() = 0;
         m_IncomesCombo.finalize();
-    }
+    }*/
 }

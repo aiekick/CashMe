@@ -286,8 +286,8 @@ CREATE TABLE transactions (
     category_id INTEGER NOT NULL,
     operation_id INTEGER NOT NULL,
     source_id INTEGER NOT NULL,
-    income_id INTEGER NULL,        -- lié a un income
-    income_confirmed INTEGER NULL, -- income lie, confirmé par le user
+    income_id INTEGER NULL,        -- linked to a income (or exepcted to be if auto detected during import)
+    income_confirmed INTEGER NULL, -- income linked, confirmed by the user
     date DATE NOT NULL,
     description TEXT,
     comment TEXT,

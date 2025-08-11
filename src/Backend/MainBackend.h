@@ -105,16 +105,12 @@ private:
     bool m_InitImGui();
     void m_InitPlugins(const ez::App& vApp);
     void m_InitModels();
-    void m_InitSystems();
-    void m_InitPanes();
     void m_InitSettings();
 
     void m_UnitWindow();
     void m_UnitModels();
     void m_UnitImGui();
     void m_UnitPlugins();
-    void m_UnitSystems();
-    void m_UnitPanes();
     void m_UnitSettings();
 
     void m_MainLoop();

@@ -94,7 +94,7 @@ bool MainFrontend::init() {
 
     // Views
     LayoutManager::ref().AddPane(TransactionsPane::ref(), "Transactions", "", "CENTRAL", 0.0f, true, true);
-    LayoutManager::ref().AddPane(BudgetPane::ref(), "Budget", "", "RIGHT", 0.4f, false, false);
+    LayoutManager::ref().AddPane(BudgetPane::ref(), "Budget", "", "CENTRAL", 0.0f, false, false);
     LayoutManager::ref().AddPane(ConsolePane::ref(), "Console", "", "BOTTOM", 0.25f, false, false);
     
     // Maintenance
@@ -103,11 +103,22 @@ bool MainFrontend::init() {
     LayoutManager::ref().AddPane(EntitiesPane::ref(), "Entities", "Maintenance", "CENTRAL", 0.0f, false, false);
     LayoutManager::ref().AddPane(CategoriesPane::ref(), "Categories", "Maintenance", "CENTRAL", 0.0f, false, false);
     LayoutManager::ref().AddPane(OperationsPane::ref(), "Operations", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::ref().AddPane(IncomesPane::ref(), "Incomes", "Maintenance", "RIGHT/BOTTOM", 0.25f, false, false);
+    LayoutManager::ref().AddPane(IncomesPane::ref(), "Incomes", "Maintenance", "CENTRAL", 0.0f, false, false);
     
     // InitPanes is done in m_InitPanes, because a specific order is needed
 
-    return m_build();
+    bool ret = true;
+    ret &= m_BankDialog.init();
+    ret &= m_EntityDialog.init();
+    ret &= m_AccountDialog.init();
+    ret &= m_CategoryDialog.init();
+    ret &= m_OperationDialog.init();
+    if (LayoutManager::ref().InitPanes()) {
+        // a faire apres InitPanes() sinon ConsolePane::ref()->paneFlag vaudra 0 et changeras apres InitPanes()
+        Messaging::ref().sMessagePaneId = ConsolePane::ref()->GetFlag();
+        ret &= true;
+    }
+    return ret;
 }
 
 void MainFrontend::unit() {
@@ -116,6 +127,7 @@ void MainFrontend::unit() {
     m_AccountDialog.unit();
     m_CategoryDialog.unit();
     m_OperationDialog.unit();
+
     LayoutManager::ref().UnitPanes();
     const auto& pluginPanes = PluginManager::ref().GetPluginPanes();
     for (const auto& pluginPane : pluginPanes) {
@@ -300,6 +312,67 @@ FrameActionSystem& MainFrontend::GetActionSystemRef() {
     return m_ActionSystem;
 }
 
+void MainFrontend::IWantToCloseTheApp() {
+    Action_Window_CloseApp();
+}
+
+void MainFrontend::JustDropFiles(int count, const char** paths) {
+    assert(0);
+
+    std::map<std::string, std::string> dicoFont;
+    std::string prj;
+
+    for (int i = 0; i < count; ++i) {
+        // file
+        auto f = std::string(paths[i]);
+
+        // lower case
+        auto f_opt = f;
+        for (auto& c : f_opt)
+            c = (char)std::tolower((int)c);
+
+        // well known extention
+        if (f_opt.find(".ttf") != std::string::npos     // truetype (.ttf)
+            || f_opt.find(".otf") != std::string::npos  // opentype (.otf)
+            //||	f_opt.find(".ttc") != std::string::npos		// ttf/otf collection for futur (.ttc)
+        ) {
+            dicoFont[f] = f;
+        }
+        if (f_opt.find(PROJECT_EXT) != std::string::npos) {
+            prj = f;
+        }
+    }
+
+    // priority to project file
+    if (!prj.empty()) {
+        MainBackend::ref().NeedToLoadProject(prj);
+    }
+}
+
+ez::xml::Nodes MainFrontend::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    node.addChilds(ImGuiThemeHelper::ref().getXmlNodes("app"));
+    node.addChilds(LayoutManager::ref().getXmlNodes("app"));
+    node.addChilds(BudgetPane::ref()->getXmlNodes("app"));
+    node.addChild("places").setContent(ImGuiFileDialog::ref().SerializePlaces());
+    return node.getChildren();
+}
+
+bool MainFrontend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    const auto& strName = vNode.getName();
+    const auto& strValue = vNode.getContent();
+    const auto& strParentName = vParent.getName();
+
+    if (strName == "places") {
+        ImGuiFileDialog::ref().DeserializePlaces(strValue);
+    }
+
+    ImGuiThemeHelper::ref().setFromXmlNodes(vNode, vParent, "app");
+    LayoutManager::ref().setFromXmlNodes(vNode, vParent, "app");
+    BudgetPane::ref()->setFromXmlNodes(vNode, vParent, "app");
+    return true;
+}
+
 void MainFrontend::m_drawMainMenuBar() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu(" Project")) {
@@ -359,6 +432,9 @@ void MainFrontend::m_drawMainMenuBar() {
             }
             if (ImGui::MenuItem("Operation")) {
                 m_OperationDialog.show(DataDialogMode::MODE_CREATION);
+            }
+            if (ImGui::MenuItem("Income")) {
+                m_IncomeDialog.show(DataDialogMode::MODE_CREATION);
             }
             if (ImGui::MenuItem("Transaction")) {
                 m_TransactionDialog.show(DataDialogMode::MODE_CREATION);
@@ -888,104 +964,4 @@ bool MainFrontend::Display_SaveProjectDialog() {
     }
 
     return false;
-}
-
-///////////////////////////////////////////////////////
-//// APP CLOSING //////////////////////////////////////
-///////////////////////////////////////////////////////
-
-void MainFrontend::IWantToCloseTheApp() {
-    Action_Window_CloseApp();
-}
-
-///////////////////////////////////////////////////////
-//// DROP /////////////////////////////////////////////
-///////////////////////////////////////////////////////
-
-void MainFrontend::JustDropFiles(int count, const char** paths) {
-    assert(0);
-
-    std::map<std::string, std::string> dicoFont;
-    std::string prj;
-
-    for (int i = 0; i < count; ++i) {
-        // file
-        auto f = std::string(paths[i]);
-
-        // lower case
-        auto f_opt = f;
-        for (auto& c : f_opt)
-            c = (char)std::tolower((int)c);
-
-        // well known extention
-        if (f_opt.find(".ttf") != std::string::npos     // truetype (.ttf)
-            || f_opt.find(".otf") != std::string::npos  // opentype (.otf)
-            //||	f_opt.find(".ttc") != std::string::npos		// ttf/otf collection for futur (.ttc)
-        ) {
-            dicoFont[f] = f;
-        }
-        if (f_opt.find(PROJECT_EXT) != std::string::npos) {
-            prj = f;
-        }
-    }
-
-    // priority to project file
-    if (!prj.empty()) {
-        MainBackend::ref().NeedToLoadProject(prj);
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-//// PRIVATE /////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-
-bool MainFrontend::m_build() {
-    bool ret = true;
-    ret &= m_BankDialog.init();
-    ret &= m_EntityDialog.init();
-    ret &= m_AccountDialog.init();
-    ret &= m_CategoryDialog.init();
-    ret &= m_OperationDialog.init();
-    ret &= LayoutManager::ref().InitPanes();
-    return ret;
-}
-
-///////////////////////////////////////////////////////
-//// CONFIGURATION ////////////////////////////////////
-///////////////////////////////////////////////////////
-
-ez::xml::Nodes MainFrontend::getXmlNodes(const std::string& vUserDatas) {
-    ez::xml::Node node;
-    node.addChilds(ImGuiThemeHelper::ref().getXmlNodes("app"));
-    node.addChilds(LayoutManager::ref().getXmlNodes("app"));
-#ifdef USE_PLACES_FEATURE
-    node.addChild("places").setContent(ImGuiFileDialog::ref().SerializePlaces());
-#endif
-    node.addChild("showaboutdialog").setContent(m_ShowAboutDialog);
-    node.addChild("showimgui").setContent(m_ShowImGui);
-    node.addChild("showmetric").setContent(m_ShowMetric);
-    return node.getChildren();
-}
-
-bool MainFrontend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
-    const auto& strName = vNode.getName();
-    const auto& strValue = vNode.getContent();
-    const auto& strParentName = vParent.getName();
-
-    if (strName == "places") {
-#ifdef USE_PLACES_FEATURE
-        ImGuiFileDialog::ref().DeserializePlaces(strValue);
-#endif
-    } else if (strName == "showaboutdialog") {
-        m_ShowAboutDialog = ez::ivariant(strValue).GetB();
-    } else if (strName == "showimgui") {
-        m_ShowImGui = ez::ivariant(strValue).GetB();
-    } else if (strName == "showmetric") {
-        m_ShowMetric = ez::ivariant(strValue).GetB();
-    }
-
-    ImGuiThemeHelper::ref().setFromXmlNodes(vNode, vParent, "app");
-    LayoutManager::ref().setFromXmlNodes(vNode, vParent, "app");
-
-    return true;
 }

@@ -10,9 +10,9 @@ bool DataBase::AddTransaction(const RowID& vAccountID, const TransactionInput& v
     AddOperation(vTransactionInput.operation);
     AddCategory(vTransactionInput.category);
     AddSource(vTransactionInput.source.name, vTransactionInput.source.type, vTransactionInput.source.sha);
-    RowID incomeID{};
+    /*RowID incomeID{};
     if (SearchIncomeInTransactions(vTransactionInput, incomeID)) {
-    }
+    }*/
     auto insert_query =  //
         ez::sqlite::QueryBuilder()
             .setTable("transactions")
@@ -43,9 +43,9 @@ bool DataBase::AddTransactionAutoSha(const RowID& vAccountID, const TransactionI
     AddOperation(vTransactionInput.operation);
     AddCategory(vTransactionInput.category);
     AddSource(vTransactionInput.source.name, vTransactionInput.source.type, vTransactionInput.source.sha);
-    RowID incomeID{};
+    /*RowID incomeID{};
     if (SearchIncomeInTransactions(vTransactionInput, incomeID)) {
-    }
+    }*/
     auto insertBuilder =  //
         ez::sqlite::QueryBuilder()
             .setTable("transactions")
@@ -128,8 +128,13 @@ FROM
 WHERE
   transactions.account_id = %u
 ORDER BY
-  transactions.date;
-)",
+  transactions.date,
+  CASE
+    WHEN transactions.amount > 0 THEN 0  -- crédits d’abord
+    ELSE 1                               -- puis débits
+  END,
+  ABS(transactions.amount) DESC -- gros montant (credit ou debit) d'abord
+;)",
         vAccountID);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
@@ -374,7 +379,7 @@ AND
     return ret;
 }
 
-bool DataBase::getLastMonthEndBalance(const RowID& vAccountID, double& vOutBalance) {
+bool DataBase::getLastMonthEndBalance(const RowID& vAccountID, const int32_t& vPastMonthOffset, double& vOutBalance) {
     bool ret = false;
     if (vAccountID == 0) {
         return ret;
@@ -385,7 +390,7 @@ WITH params AS (
     SELECT %u AS account_id
 ),
 last_tx AS (
-    SELECT date(MAX(t.date), 'start of month', '-1 day') AS prev_month_end
+    SELECT date(MAX(t.date), '%i month', 'start of month', '-1 day') AS prev_month_end
     FROM transactions t, params p
     WHERE t.account_id = p.account_id
 )
@@ -399,7 +404,8 @@ LEFT JOIN transactions t
    AND t.date <= l.prev_month_end
 WHERE a.id = params.account_id;
 )",
-        vAccountID);
+        vAccountID,
+        vPastMonthOffset);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = m_debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -420,7 +426,11 @@ WHERE a.id = params.account_id;
     return ret;
 }
 
-bool DataBase::getMonthTransactions(const RowID& vAccountID, std::function<void(const TransactionOutput&)> vCallback, std::string& vOutFirstDayOfMonth) {
+bool DataBase::getMonthTransactions(
+    const RowID& vAccountID,
+    const int32_t& vPastMonthOffset,
+    std::function<void(const TransactionOutput&)> vCallback,
+    std::string& vOutFirstDayOfMonth) {
     bool ret = false;
     if (vAccountID == 0) {
         return ret;
@@ -433,7 +443,7 @@ WITH params AS (
   SELECT %u AS account_id
 ),
 month AS (
-  SELECT date(MAX(t.date), 'start of month') AS month_start
+  SELECT date(MAX(t.date), '%i month', 'start of month') AS month_start
   FROM transactions t
   JOIN params p ON t.account_id = p.account_id
 )
@@ -465,7 +475,8 @@ LEFT JOIN incomes    ON t.income_id = incomes.id
 WHERE t.date >= m.month_start
 ORDER BY t.date;
 )",
-        vAccountID);
+        vAccountID,
+        vPastMonthOffset);
     if (m_OpenDB()) {
         sqlite3_stmt* stmt = nullptr;
         int res = m_debug_sqlite3_prepare_v2(__FUNCTION__, m_SqliteDB, select_query.c_str(), (int)select_query.size(), &stmt, nullptr);
@@ -520,8 +531,7 @@ SET
   description = "%s",
   comment = "%s",
   amount = %.6f,
-  confirmed = %u,
-  sha = "%s"
+  confirmed = %u
 WHERE
   transactions.id = %u;
 )",
@@ -534,7 +544,6 @@ WHERE
         vTransactionInput.comment.c_str(),
         vTransactionInput.amount,
         vTransactionInput.confirmed,
-        vTransactionInput.sha.c_str(),
         vRowID);
     if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, insert_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
         LogVarError("Fail to update a transaction in database : %s", m_LastErrorMsg);

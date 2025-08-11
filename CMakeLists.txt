@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 set(PROJECT CashMe)
 
@@ -142,6 +142,7 @@ source_group(src/ImGuiImpl FILES ${IMGUI_IMPL_SOURCES})
 
 if (MSVC)
 	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_SOURCE_DIR}/res/appicon.rc")
+	source_group(TREE ${CMAKE_SOURCE_DIR}/res PREFIX res FILES ${APP_ICON_RESOURCE_WINDOWS})
 endif()
 
 add_executable(${PROJECT}
@@ -233,7 +234,7 @@ add_subdirectory(3rdparty/BuildInc)
 
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
-	COMMAND BuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h>)
+	COMMAND BuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h> --no-help)
 
 ########################################################
 ##### TESTS ############################################

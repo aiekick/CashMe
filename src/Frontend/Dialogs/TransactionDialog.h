@@ -18,7 +18,7 @@ private:
     ImWidgets::QuickStringEditCombo m_EntitiesCombo;
     ImWidgets::QuickStringEditCombo m_CategoriesCombo;
     ImWidgets::QuickStringEditCombo m_OperationsCombo;
-    ImWidgets::QuickStringEditCombo m_IncomesCombo;
+    //ImWidgets::QuickStringEditCombo m_IncomesCombo;
     ImWidgets::InputText m_TransactionDateInputText;
     ImWidgets::InputText m_TransactionDescriptionInputText;
     ImWidgets::InputText m_TransactionCommentInputText;

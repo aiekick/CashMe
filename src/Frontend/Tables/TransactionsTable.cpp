@@ -4,7 +4,7 @@
 #include <Systems/SettingsDialog.h>
 #include <Frontend/MainFrontend.h>
 
-TransactionsTable::TransactionsTable() : ADataBarsTable("TransactionsTable", 12) {}
+TransactionsTable::TransactionsTable() : ADataBarsTable("TransactionsTable", 11) {}
 
 void TransactionsTable::refreshDatas() {
     m_updateBanks();
@@ -53,7 +53,7 @@ void TransactionsTable::m_setupColumns() {
     ImGui::TableSetupColumn("Entity", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Operation", ImGuiTableColumnFlags_WidthFixed);
-    ImGui::TableSetupColumn("Income", ImGuiTableColumnFlags_WidthFixed);
+    //ImGui::TableSetupColumn("Income", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Debit", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Credit", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Solde", ImGuiTableColumnFlags_WidthFixed);
@@ -83,7 +83,7 @@ void TransactionsTable::m_drawTableContent(const size_t& vIdx, const double& vMa
     m_drawColumnText(t.datas.entity.name);
     m_drawColumnText(t.datas.category.name);
     m_drawColumnText(t.datas.operation.name);
-    m_drawColumnText(t.datas.income.name);
+    //m_drawColumnText(t.datas.income.name);
     m_drawColumnDebit(t.amounts.debit);
     m_drawColumnCredit(t.amounts.credit);
     m_drawColumnAmount(t.amounts.amount);
@@ -163,13 +163,13 @@ void TransactionsTable::m_drawSearchRow() {
                 }
                 ImGui::PopStyleVar();
             }
-        } else if (idx == 7) {
+        } else if (idx == 6) {
             m_drawAmount(m_TotalDebit);
-        } else if (idx == 8) {
+        } else if (idx == 7) {
             m_drawAmount(m_TotalCredit);
-        } else if (idx == 9) {
+        } else if (idx == 8) {
             // m_drawAmount(m_CurrentBaseSolde);
-        } else if (idx == 10) {
+        } else if (idx == 9) {
             ImGui::Text(  //
                 "[%u/%u]",
                 (uint32_t)m_Datas.transactions_filtered.size(),

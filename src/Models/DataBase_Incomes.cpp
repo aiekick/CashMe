@@ -75,7 +75,7 @@ SELECT
     incomes.start_date AS start_date, 
     unixepoch(incomes.start_date) AS start_epoch,
     incomes.end_date AS end_date, 
-    unixepoch(incomes.end_date) AS start_epoch,
+    unixepoch(incomes.end_date) AS end_epoch,
     incomes.min_amount AS min_amount, 
     incomes.max_amount AS max_amount,
     incomes.min_day AS min_day,

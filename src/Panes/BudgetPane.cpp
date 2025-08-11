@@ -65,3 +65,17 @@ bool BudgetPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vC
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }
+
+ez::xml::Nodes BudgetPane::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    auto& budgetNode = node.addChild("budget");
+    budgetNode.addChilds(m_BudgetTable.getXmlNodes());
+    return node.getChildren();
+}
+
+bool BudgetPane::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    if (vNode.getName() == "budget") {
+        m_BudgetTable.RecursParsingConfigChilds(vNode, vUserDatas);
+    }
+    return false;
+}
