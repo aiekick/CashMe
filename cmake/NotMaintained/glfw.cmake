@@ -33,3 +33,10 @@ add_definitions(${GLFW_DEFINITIONS})
 install(TARGETS glfw RUNTIME DESTINATION / COMPONENT APP_LIBS_GLFW)
 
 include_directories(${GLFW_INCLUDE_DIR})
+
+if (MSVC)
+	set_property(TARGET glfw PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	if (TARGET update_mappings)
+		set_property(TARGET update_mappings PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	endif()
+endif()

@@ -5,7 +5,7 @@ set(PROJECT CashMe)
 project(${PROJECT} CXX)
 enable_language(C CXX)
 
-option(USE_BUILDING_AS_SHARED "Enable shared building" ON)
+option(USE_BUILDING_AS_SHARED "Enable shared building" OFF)
 option(USE_BUILDING_OF_TESTS "Enable the build of tests" OFF)
 
 ## for group smake targets in the dir CmakeTargets
@@ -156,6 +156,10 @@ add_executable(${PROJECT}
 )
 
 if (MSVC)
+	set_property(TARGET ${PROJECT} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
+if (MSVC)
 	target_link_options(${PROJECT} PRIVATE "/SUBSYSTEM:WINDOWS")
 	target_link_options(${PROJECT} PRIVATE "/ENTRY:mainCRTStartup")
 endif()
@@ -175,35 +179,24 @@ install(TARGETS ${PROJECT} DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 include_directories(
 	${CASHME_BRIDGE_INCLUDE_DIRS}
-	${IN_APP_GPU_PROFILER_INCLUDE_DIR}
 	${CMAKE_SOURCE_DIR}/3rdparty
 	${IMGUIPACK_INCLUDE_DIRS}
 	${CMAKE_SOURCE_DIR}/src
-	${TINYXML2_INCLUDE_DIR}
 	${SQLITE3_INCLUDE_DIR}
-	${CTOOLS_INCLUDE_DIR}
 	${OPENGL_INCLUDE_DIR}
 	${CMAKE_SOURCE_DIR}
 	${PLOG_INCLUDE_DIR}
 	${GLFW_INCLUDE_DIR}
 	${GLAD_INCLUDE_DIR}
-	${CURL_INCLUDE_DIR}
-	${SHA1_INCLUDE_DIR}
-	${FMT_INCLUDE_DIR}
 )
 
 target_link_libraries(${PROJECT}
 	${CASHME_BRIDGE_LIBRARIES}
-	${IN_APP_GPU_PROFILER_LIBRARIES}
 	${IMGUIPACK_LIBRARIES}
-	${TINYXML2_LIBRARIES}
 	${SQLITE3_LIBRARIES}
 	${OPENGL_LIBRARIES}
-	${CTOOLS_LIBRARIES}
 	${GLFW_LIBRARIES}
 	${GLAD_LIBRARIES}
-	${CURL_LIBRARIES}
-	${FMT_LIBRARIES}
 )
 
 # define for let CashMe detect what is the config of a plugin 
