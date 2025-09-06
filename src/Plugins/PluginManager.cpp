@@ -178,33 +178,8 @@ void PluginManager::m_LoadPlugin(const fs::directory_entry& vEntry) {
                         } else {
                             auto pluginInstancePtr = resPtr->Get().lock();
                             if (pluginInstancePtr) {
-                                char spaceBuffer[40 + 1] = "";
-                                spaceBuffer[0] = '\0';
-
-                                std::string name = pluginInstancePtr->GetName();
-                                if (name.size() < 15U) {
-                                    size_t of = 15U - name.size();
-                                    memset(spaceBuffer, 32, of);  // 32 is space code in ASCII table
-                                    spaceBuffer[of] = '\0';
-                                    name += spaceBuffer;
-                                } else {
-                                    name = name.substr(0, 15U);
-                                }
-
-                                std::string version = pluginInstancePtr->GetVersion();
-                                if (version.size() < 10U) {
-                                    size_t of = 10U - version.size();
-                                    memset(spaceBuffer, 32, of);  // 32 is space code in ASCII table
-                                    spaceBuffer[of] = '\0';
-                                    version += spaceBuffer;
-                                } else {
-                                    version = version.substr(0, 10U);
-                                }
-
-                                std::string desc = pluginInstancePtr->GetDescription();
+                                m_Plugins[ps.name] = resPtr;
                             }
-
-                            m_Plugins[ps.name] = resPtr;
                         }
                     }
                 }

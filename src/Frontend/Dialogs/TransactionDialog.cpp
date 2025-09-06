@@ -288,7 +288,7 @@ void TransactionDialog::m_confirmDialogCreation() {
             ti.description = m_TransactionDescriptionInputText.GetText();
             ti.comment = m_TransactionCommentInputText.GetText();
             ti.amount = m_TransactionAmountInputDouble;
-            ti.confirmed = false;
+            ti.confirmed = m_TransactionConfirmed;
             DataBase::ref().AddTransactionAutoSha(account_id, ti);
             DataBase::ref().CloseDBFile();
         }
@@ -322,7 +322,7 @@ void TransactionDialog::m_confirmDialogUpdateOnce() {
             ti.description = m_TransactionDescriptionInputText.GetText();
             ti.comment = m_TransactionCommentInputText.GetText();
             ti.amount = m_TransactionAmountInputDouble;
-            ti.confirmed = false;
+            ti.confirmed = m_TransactionConfirmed;
             DataBase::ref().UpdateTransaction(m_TransactionToUpdate.id, ti);
             DataBase::ref().CloseDBFile();
         }
