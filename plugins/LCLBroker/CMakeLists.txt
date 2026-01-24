@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.20)
 
 set(PROJECT LCLBroker)
 
@@ -63,7 +63,7 @@ add_library(${PROJECT} MODULE
 )
 
 if (MSVC)
-	set_property(TARGET ${PROJECT} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	set_property(TARGET ${PROJECT} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 endif()
 
 if ("${CMAKE_EXE_LINKER_FLAGS}" STREQUAL "/machine:x64")
@@ -126,8 +126,7 @@ set(LOADED_CASHME_PLUGINS ${LOADED_CASHME_PLUGINS} ${PROJECT} PARENT_SCOPE)
 ## only for Debug
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
-	COMMAND BuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/src/Headers/${PROJECT}Build.h>
-	DEPENDS ${PROJECT}
+	COMMAND ezBuildInc ${PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/src/Headers/${PROJECT}Build.h --no-help
 )
 
 ########################################################

@@ -468,18 +468,20 @@ void MainBackend::m_InitPlugins(const ez::App& vApp) {
     auto pluginPanes = PluginManager::ref().GetPluginPanes();
     for (auto& pluginPane : pluginPanes) {
         if (!pluginPane.pane.expired()) {
-            LayoutManager::ref().AddPane(  //
-                pluginPane.pane,
-                pluginPane.name,
-                pluginPane.category,
-                pluginPane.disposal,
-                pluginPane.disposalRatio,
-                pluginPane.openedDefault,
-                pluginPane.focusedDefault);
-            auto plugin_ptr = std::dynamic_pointer_cast<Cash::PluginPane>(pluginPane.pane.lock());
-            if (plugin_ptr != nullptr) {
-                plugin_ptr->SetProjectInstance(ProjectFile::ref());
+            auto layoutPaneInfos =  //
+                LayoutPaneInfos(pluginPane.pane, pluginPane.name)
+                    .setMenu("Transactions", pluginPane.category)
+                    .setDisposalCentral()
+                    .setDefaultOpened(pluginPane.openedDefault)
+                    .setDefaultFocused(pluginPane.focusedDefault);
+            if (pluginPane.disposal == "CENTRAL") {
+                layoutPaneInfos.setDisposalCentral();
+            } else {
+                layoutPaneInfos.setDisposalSide(pluginPane.disposal, pluginPane.disposalRatio);
             }
+            LayoutManager::ref().AddPane(layoutPaneInfos);
+            auto plugin_ptr = std::dynamic_pointer_cast<Cash::PluginPane>(pluginPane.pane.lock());
+            if (plugin_ptr != nullptr) { plugin_ptr->SetProjectInstance(ProjectFile::ref()); }
         }
     }
     m_getAvailableDataBrokers();

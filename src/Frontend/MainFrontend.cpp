@@ -69,6 +69,7 @@ bool MainFrontend::sCentralWindowHovered = false;
 
 MainFrontend::~MainFrontend() = default;
 
+// clang-format off
 bool MainFrontend::init() {
     m_build_themes();
 
@@ -86,24 +87,38 @@ bool MainFrontend::init() {
     OperationsPane::initSingleton();
     TransactionsPane::initSingleton();
 
-    LayoutManager::ref().Init("Layouts", "Default Layout");
-
-    LayoutManager::ref().SetPaneDisposalRatio("LEFT", 0.25f);
-    LayoutManager::ref().SetPaneDisposalRatio("RIGHT", 0.25f);
-    LayoutManager::ref().SetPaneDisposalRatio("BOTTOM", 0.25f);
+    LayoutManager::ref().Init("Panes", "Default Layout");
 
     // Views
-    LayoutManager::ref().AddPane(TransactionsPane::ref(), "Transactions", "", "CENTRAL", 0.0f, true, true);
-    LayoutManager::ref().AddPane(BudgetPane::ref(), "Budget", "", "CENTRAL", 0.0f, false, false);
-    LayoutManager::ref().AddPane(ConsolePane::ref(), "Console", "", "BOTTOM", 0.25f, false, false);
+    LayoutManager::ref().AddPane( 
+        LayoutPaneInfos(TransactionsPane::ref(), "Transactions")
+            .setMenu("Transactions", "").setDisposalCentral().setDefaultOpened(true).setDefaultFocused(true));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(BudgetPane::ref(), "Budget")
+            .setMenu("Budget", "").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(ConsolePane::ref(), "Console")
+            .setMenu("Console", "").setDisposalSide("BOTTOM",0.25f).setDefaultOpened(false).setDefaultFocused(false));
     
     // Maintenance
-    LayoutManager::ref().AddPane(BanksPane::ref(), "Banks", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::ref().AddPane(AccountsPane::ref(), "Accounts", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::ref().AddPane(EntitiesPane::ref(), "Entities", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::ref().AddPane(CategoriesPane::ref(), "Categories", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::ref().AddPane(OperationsPane::ref(), "Operations", "Maintenance", "CENTRAL", 0.0f, false, false);
-    LayoutManager::ref().AddPane(IncomesPane::ref(), "Incomes", "Maintenance", "CENTRAL", 0.0f, false, false);
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(BanksPane::ref(), "Banks")
+            .setMenu("Transactions", "Maintenance").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(AccountsPane::ref(), "Accounts")
+            .setMenu("Accounts", "Maintenance").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(EntitiesPane::ref(), "Entities")
+            .setMenu("Entities", "Maintenance").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(CategoriesPane::ref(), "Categories")
+            .setMenu("Categories", "Maintenance").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(OperationsPane::ref(), "Operations")
+            .setMenu("Operations", "Maintenance").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(IncomesPane::ref(), "Incomes")
+            .setMenu("Incomes", "Maintenance").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
     
     // InitPanes is done in m_InitPanes, because a specific order is needed
 
@@ -120,6 +135,7 @@ bool MainFrontend::init() {
     }
     return ret;
 }
+// clang-format on
 
 void MainFrontend::unit() {
     m_BankDialog.unit();

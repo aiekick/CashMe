@@ -48,22 +48,24 @@ set_target_properties(fofi PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_
 set_target_properties(fofi PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${FINAL_BIN_DIR}")
 set_target_properties(fofi PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${FINAL_BIN_DIR}")
 
-add_executable(pdftotext
-	${XPDF_INCLUDE_DIR}/xpdf/TextOutputDev.cc
-	${XPDF_INCLUDE_DIR}/xpdf/pdftotext.cc
-)
-target_link_libraries(pdftotext xpdf goo fofi)
-
-set_target_properties(pdftotext PROPERTIES FOLDER 3rdparty/Tools)
-set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${FINAL_BIN_DIR}")
-set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${FINAL_BIN_DIR}")
-set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_BIN_DIR}")
-set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${FINAL_BIN_DIR}")
-set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${FINAL_BIN_DIR}")
-
 if (MSVC)
-	set_property(TARGET xpdf PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-	set_property(TARGET goo PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-	set_property(TARGET fofi PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-	set_property(TARGET pdftotext PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	set_property(TARGET xpdf PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
+	set_property(TARGET goo PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
+	set_property(TARGET fofi PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
+endif()
+
+#add_executable(pdftotext ${XPDF_INCLUDE_DIR}/xpdf/TextOutputDev.cc ${XPDF_INCLUDE_DIR}/xpdf/pdftotext.cc)
+
+if(TARGET pdftotext)
+	target_link_libraries(pdftotext xpdf goo fofi)
+
+	set_target_properties(pdftotext PROPERTIES FOLDER 3rdparty/Tools)
+	set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${FINAL_BIN_DIR}")
+	set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${FINAL_BIN_DIR}")
+	set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_BIN_DIR}")
+	set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${FINAL_BIN_DIR}")
+	set_target_properties(pdftotext PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${FINAL_BIN_DIR}")
+	if (MSVC)
+		set_property(TARGET pdftotext PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
+	endif()
 endif()

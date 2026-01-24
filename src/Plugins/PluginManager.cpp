@@ -192,13 +192,15 @@ void PluginManager::m_DisplayLoadedPlugins() {
     if (!m_Plugins.empty()) {
         size_t max_name_size = 0U;
         size_t max_vers_size = 0U;
-        const size_t& minimal_space = 2U;
+        const size_t minimal_space = 2U;
         for (auto plugin : m_Plugins) {
             if (plugin.second != nullptr) {
                 auto plugin_instance_ptr = plugin.second->Get().lock();
                 if (plugin_instance_ptr != nullptr) {
-                    max_name_size = ez::maxi(max_name_size, plugin_instance_ptr->GetName().size() + minimal_space);
-                    max_vers_size = ez::maxi(max_vers_size, plugin_instance_ptr->GetVersion().size() + minimal_space);
+                    const auto name = plugin_instance_ptr->GetName();
+                    const auto vers = plugin_instance_ptr->GetVersion();
+                    max_name_size = ez::maxi(max_name_size, name.size() + minimal_space);
+                    max_vers_size = ez::maxi(max_vers_size, vers.size() + minimal_space);
                 }
             }
         }
@@ -206,11 +208,11 @@ void PluginManager::m_DisplayLoadedPlugins() {
             if (plugin.second != nullptr) {
                 auto plugin_instance_ptr = plugin.second->Get().lock();
                 if (plugin_instance_ptr != nullptr) {
-                    const auto& name = plugin_instance_ptr->GetName();
-                    const auto& name_space = std::string(max_name_size - name.size(), ' ');  // 32 is a space in ASCII
-                    const auto& vers = plugin_instance_ptr->GetVersion();
-                    const auto& vers_space = std::string(max_vers_size - vers.size(), ' ');  // 32 is a space in ASCII
-                    const auto& desc = plugin_instance_ptr->GetDescription();
+                    const auto name = plugin_instance_ptr->GetName();
+                    const auto name_space = std::string(max_name_size - name.size(), ' ');  // 32 is a space in ASCII
+                    const auto vers = plugin_instance_ptr->GetVersion();
+                    const auto vers_space = std::string(max_vers_size - vers.size(), ' ');  // 32 is a space in ASCII
+                    const auto desc = plugin_instance_ptr->GetDescription();
                     LogVarLightInfo("Plugin loaded : %s%sv%s%s(%s)",  //
                         name.c_str(), name_space.c_str(),             //
                         vers.c_str(), vers_space.c_str(),             //

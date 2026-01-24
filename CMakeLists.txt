@@ -156,7 +156,7 @@ add_executable(${PROJECT}
 )
 
 if (MSVC)
-	set_property(TARGET ${PROJECT} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	set_property(TARGET ${PROJECT} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 endif()
 
 if (MSVC)
@@ -222,12 +222,13 @@ ENDFOREACH()
 ########################################################
 
 ## only for Debug
-add_subdirectory(3rdparty/BuildInc)
+add_subdirectory(3rdparty/ezlibs/Tests/ezBuildInc)
 ## set_target_properties(BuildInc PROPERTIES FOLDER Tools)
 
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
-	COMMAND BuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h> --no-help)
+	COMMAND ezBuildInc ${PROJECT} ${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h --no-help
+)
 
 ########################################################
 ##### TESTS ############################################
@@ -248,7 +249,6 @@ endif()
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
 	COMMAND echo "$<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>$<$<CONFIG:MinSizeRel>:MinSizeRel>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>" > ${CMAKE_BINARY_DIR}/current_build_type
-	DEPENDS ${PROJECT}
 )
 
 ### outside of the building we read the last file content
@@ -278,7 +278,6 @@ message(STATUS "${PROJECT} Version to install : ${${PROJECT}_Version}")
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
 	COMMAND echo "${PROJECT}_${CMAKE_SYSTEM_NAME}_${PROJECT_BUILD_CONFIG_NAME}_${ARCH}_v${MajorNumber}.${MinorNumber}.${BuildNumber}" > ${CMAKE_SOURCE_DIR}/VERSION
-	DEPENDS ${PROJECT}
 )
 
 #############################################################

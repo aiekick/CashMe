@@ -202,6 +202,7 @@ void ADataTable::m_drawColumnSelectable(const size_t& vIdx, const RowID& vRowID,
         } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
             if (ImGui::IsKeyDown(ImGuiMod_Shift)) {
                 m_CurrSelectedItemIdx = vIdx;
+                m_selectRow(vRowID);
             } else {
                 m_LastSelectedItemIdx = vIdx;
                 if (!ImGui::IsKeyDown(ImGuiMod_Ctrl)) {
@@ -252,6 +253,7 @@ void ADataTable::m_selectOrDeselectRow(const RowID& vRowID) {
 
 void ADataTable::m_ResetSelection() {
     m_selectedItems.clear();
+    m_CurrSelectedItemIdx = -1;
 }
 
 bool ADataTable::m_isRowSelected(const RowID& vRowID) const {
@@ -341,7 +343,8 @@ const std::set<RowID>& ADataTable::m_getSelectedRows() {
 }
 
 void ADataTable::m_selectRows(const size_t& vStartIdx, const size_t& vEndIdx) {
-    for (size_t idx = vStartIdx; idx < vEndIdx; ++idx) {
+    m_ResetSelection();
+    for (size_t idx = vStartIdx; idx <= vEndIdx; ++idx) {
         m_selectRow(m_getItemRowID(idx));
     }
 }

@@ -69,6 +69,6 @@ install(TARGETS sqlite3 RUNTIME DESTINATION / COMPONENT APP_LIBS_SQLITE3)
 include_directories(${SQLITE3_INCLUDE_DIR})
 
 if (MSVC)
-	set_property(TARGET sqlite3 PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	set_property(TARGET sqlite3 PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
 endif()
 
