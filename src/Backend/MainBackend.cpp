@@ -353,7 +353,7 @@ void MainBackend::m_MainLoop() {
         ++m_CurrentFrame;
 
         // will pause the view until we move the mouse or press keys
-        // glfwWaitEvents();
+        glfwWaitEventsTimeout(300);
     }
 }
 
