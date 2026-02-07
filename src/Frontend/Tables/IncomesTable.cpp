@@ -121,14 +121,14 @@ void IncomesTable::m_drawContextMenuContent() {
                 MainFrontend::ref().getIncomeDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
             }
         }
-        if (ImGui::MenuItem("Duplicate")) {
+        if (ImGui::MenuItem("Duplicate", nullptr, false, m_getSelectedRows().size() == 1U)) {
             std::vector<IncomeOutput> incomes_to_duplicate;
             for (const auto& trans : m_Datas.incomes) {
                 if (m_isRowSelected(trans.id)) {
                     incomes_to_duplicate.push_back(trans);
                 }
             }
-            if (incomes_to_duplicate.size() >= 1U) {
+            if (incomes_to_duplicate.size() == 1U) {
                 auto income_copy = incomes_to_duplicate.front();
                 income_copy.id = 0;
                 MainFrontend::ref().getIncomeDialogRef().setIncome(income_copy);
