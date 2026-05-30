@@ -74,7 +74,7 @@ void TransactionsTable::m_drawTableContent(const size_t& vIdx, const double& vMa
     ImGui::TableNextColumn();
     {
         if (m_enableMultilineComment || t.comment_first_line_end_pos == 0) {
-            ImGui::Text(t.datas.comment.c_str());
+            ImGui::Text("%s", t.datas.comment.c_str());
         } else {
             ImGui::TextUnformatted(t.datas.comment.c_str(), t.datas.comment.data() + t.comment_first_line_end_pos);
         }

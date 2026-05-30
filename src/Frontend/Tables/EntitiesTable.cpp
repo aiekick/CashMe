@@ -70,8 +70,10 @@ void EntitiesTable::m_drawContextMenuContent() {
                     entities_to_update.push_back(e);
                 }
             }
-            MainFrontend::ref().getEntityDialogRef().setEntity(entities_to_update.front());
-            MainFrontend::ref().getEntityDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
+            if (!entities_to_update.empty()) {
+                MainFrontend::ref().getEntityDialogRef().setEntity(entities_to_update.front());
+                MainFrontend::ref().getEntityDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
+            }
         }
     }
 }

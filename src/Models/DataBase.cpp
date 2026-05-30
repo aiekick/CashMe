@@ -103,7 +103,7 @@ void DataBase::RollbackDBTransaction() {
 }
 
 bool DataBase::m_EnableForeignKey() {
-    if (!m_SqliteDB) {
+    if (m_SqliteDB) {
         int res = m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
         if (res != SQLITE_OK) {
             LogVarError("Erreur lors de l'activation des clés étrangères : %s", sqlite3_errmsg(m_SqliteDB));

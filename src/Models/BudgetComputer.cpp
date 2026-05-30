@@ -71,10 +71,10 @@ bool BudgetComputer::compute(const RowID vAccountID, const std::pair<int32_t, ui
 
     /*
      * Un income doit :
-     * apparaître une seule fois par mois (même s'il est valide sur plusieurs jours du mois),
-     * tomber à la date effective estimée, qui est :
+     * apparaï¿½tre une seule fois par mois (mï¿½me s'il est valide sur plusieurs jours du mois),
+     * tomber ï¿½ la date effective estimï¿½e, qui est :
      * - pour le min : le jour le plus tardif possible (max_day)
-     * - pour le max : le jour le plus tôt possible (min_day)
+     * - pour le max : le jour le plus tï¿½t possible (min_day)
      *
      * le min serait : le moins d'argnet dispo a date
      * - si un montant positif ne vient pas a date
@@ -84,8 +84,8 @@ bool BudgetComputer::compute(const RowID vAccountID, const std::pair<int32_t, ui
      * - si un montant positif maxi vient a date
      */
 
-    // 5) en fait on veut avoir les soldes min/max depuis le debut de mois jusqu'a x jours projetés dans le futur
-    //    et en plus on va superposer la courbe du realisé (le vrai solde bancaire) pour voir ou on se situ
+    // 5) en fait on veut avoir les soldes min/max depuis le debut de mois jusqu'a x jours projetï¿½s dans le futur
+    //    et en plus on va superposer la courbe du realisï¿½ (le vrai solde bancaire) pour voir ou on se situ
     m_budgets.reserve(dates.size());
     double soldeMin = m_lastMonthBalance;
     double soldeReal = m_lastMonthBalance;
@@ -154,7 +154,7 @@ bool BudgetComputer::compute(const RowID vAccountID, const std::pair<int32_t, ui
             }
 
             size_t last_max_end_line = bo.incomesMax.find_last_of("\n\t");
-            if (last_min_end_line != std::string::npos) {
+            if (last_max_end_line != std::string::npos) {
                 bo.incomesMax = bo.incomesMax.substr(0, last_max_end_line);
             }
 

@@ -38,8 +38,10 @@ PluginReturnMsg PluginInstance::Init(const std::string& vName, const std::string
 }
 
 void PluginInstance::Unit() {
-    m_PluginInstance->Unit();
-    m_PluginInstance.reset();
+    if (m_PluginInstance != nullptr) {
+        m_PluginInstance->Unit();
+        m_PluginInstance.reset();
+    }
     m_Loader.dlCloseLib();
 }
 

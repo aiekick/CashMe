@@ -79,7 +79,7 @@ void ADataTable::m_draw(const ImVec2& vSize) {
                 int32_t min_idx = ImMin(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
                 int32_t max_idx = ImMax(m_LastSelectedItemIdx, m_CurrSelectedItemIdx);
                 m_ResetSelection();
-                m_selectRows(min_idx, max_idx);
+                m_selectRows(min_idx, max_idx + 1);
             }
         }
 
@@ -273,7 +273,6 @@ const AccountOutput& ADataTable::m_getAccount() const {
 }
 
 AccountOutput ADataTable::m_getAccount(const BankName& vBankName, const BankAgency& vBankAgency, const AccountNumber& vAccountNumber) const {
-    std::map<BankName, std::map<BankAgency, std::map<AccountNumber, AccountOutput>>> m_Accounts;
     if (m_Accounts.find(vBankName) != m_Accounts.end()) {
         const auto acc0 = m_Accounts.at(vBankName);
         if (acc0.find(vBankAgency) != acc0.end()) {
@@ -344,7 +343,7 @@ const std::set<RowID>& ADataTable::m_getSelectedRows() {
 
 void ADataTable::m_selectRows(const size_t& vStartIdx, const size_t& vEndIdx) {
     m_ResetSelection();
-    for (size_t idx = vStartIdx; idx <= vEndIdx; ++idx) {
+    for (size_t idx = vStartIdx; idx < vEndIdx; ++idx) {
         m_selectRow(m_getItemRowID(idx));
     }
 }

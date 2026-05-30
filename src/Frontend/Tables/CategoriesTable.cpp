@@ -69,8 +69,10 @@ void CategoriesTable::m_drawContextMenuContent() {
                     entities_to_update.push_back(e);
                 }
             }
-            MainFrontend::ref().getCategoryDialogRef().setCategory(entities_to_update.front());
-            MainFrontend::ref().getCategoryDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
+            if (!entities_to_update.empty()) {
+                MainFrontend::ref().getCategoryDialogRef().setCategory(entities_to_update.front());
+                MainFrontend::ref().getCategoryDialogRef().show(DataDialogMode::MODE_UPDATE_ONCE);
+            }
         }
     }
 }

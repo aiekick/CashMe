@@ -1,8 +1,8 @@
 #pragma once
 
 #define CashMe_Label "CashMe"
-#define CashMe_BuildNumber 1234
+#define CashMe_BuildNumber 1235
 #define CashMe_MinorNumber 0
 #define CashMe_MajorNumber 0
-#define CashMe_BuildId "0.0.1234"
-#define CashMe_BuildIdNum 00001234
+#define CashMe_BuildId "0.0.1235"
+#define CashMe_BuildIdNum 00001235

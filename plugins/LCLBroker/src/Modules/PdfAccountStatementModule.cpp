@@ -246,10 +246,11 @@ private:
                         const auto &tmp = fields.fields.at(0).token;
                         auto du_pos = tmp.find(" du ");
                         auto au_pos = tmp.find(" au ");
-                        auto n_pos = tmp.find(" -  N° ");
+                        auto n_pos = tmp.find(" -  Nï¿½ ");
                         if (du_pos != std::string::npos &&  //
                             au_pos != std::string::npos &&  //
-                            n_pos != std::string::npos) {
+                            n_pos != std::string::npos &&   //
+                            du_pos < au_pos && au_pos < n_pos) {
                             // we have found the date range
                             du_pos += 4;
                             m_StartDate = tmp.substr(du_pos, au_pos - du_pos);
@@ -264,7 +265,7 @@ private:
                 } else if (fields.fields.size() == 2U) {
                     if (!tabled_started) {
                         if (fields.fields.at(0).token == "Indicatif" &&  //
-                            fields.fields.at(1).token == "N° de compte") {
+                            fields.fields.at(1).token == "Nï¿½ de compte") {
                             m_RibHeader = fields;
                             rib_started = true;
                         }
@@ -293,8 +294,8 @@ private:
                     if (!tabled_started) {
                         if (fields.fields.at(0).token == "Banque" &&     //
                             fields.fields.at(1).token == "Indicatif" &&  //
-                            fields.fields.at(2).token == "N° de compte" &&  //
-                            fields.fields.at(3).token == "Clé") {
+                            fields.fields.at(2).token == "Nï¿½ de compte" &&  //
+                            fields.fields.at(3).token == "Clï¿½") {
                             m_RibHeader = fields;
                             rib_started = true;
                         }

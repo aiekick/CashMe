@@ -19,7 +19,7 @@ bool parseDescription(const std::string& vDesc,  //
                         const auto date_word1 = arr.at(arr.size() - 2);
                         if (date_word1.size() == 2U && date_word1.find_first_not_of("0123456789") == std::string::npos) {
                             if (arr.size() > 3) {
-                                const auto date_word2 = arr.at(arr.size() - 1);
+                                const auto date_word2 = arr.at(arr.size() - 3);
                                 if (date_word2.size() == 2U && date_word2.find_first_not_of("0123456789") == std::string::npos) {
                                     // date format : 25 03 24
                                     found_date_pos = arr.size() - 3;
