@@ -31,6 +31,7 @@ limitations under the License.
 
 #include <Panes/BanksPane.h>
 #include <Panes/BudgetPane.h>
+#include <Panes/BuySellPane.h>
 #include <Panes/IncomesPane.h>
 #include <Panes/ConsolePane.h>
 #include <Panes/AccountsPane.h>
@@ -80,6 +81,7 @@ bool MainFrontend::init() {
     AccountsPane::initSingleton();
     BanksPane::initSingleton();
     BudgetPane::initSingleton();
+    BuySellPane::initSingleton();
     CategoriesPane::initSingleton();
     ConsolePane::initSingleton();
     EntitiesPane::initSingleton();
@@ -96,6 +98,9 @@ bool MainFrontend::init() {
     LayoutManager::ref().AddPane( //
         LayoutPaneInfos(BudgetPane::ref(), "Budget")
             .setMenu("Budget", "").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(BuySellPane::ref(), "Buy/Sell")
+            .setMenu("Buy/Sell", "").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
     LayoutManager::ref().AddPane( //
         LayoutPaneInfos(ConsolePane::ref(), "Console")
             .setMenu("Console", "").setDisposalSide("BOTTOM",0.25f).setDefaultOpened(false).setDefaultFocused(false));
@@ -159,6 +164,7 @@ void MainFrontend::unit() {
     AccountsPane::unitSingleton();
     BanksPane::unitSingleton();
     BudgetPane::unitSingleton();
+    BuySellPane::unitSingleton();
     CategoriesPane::unitSingleton();
     ConsolePane::unitSingleton();
     EntitiesPane::unitSingleton();
@@ -269,24 +275,29 @@ bool MainFrontend::DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImR
         OperationsPane::ref()->Init();
         TransactionsPane::ref()->Init();
         IncomesPane::ref()->Init();
+        BuySellPane::ref()->Init();
     } else if (entityChange) {
         EntitiesPane::ref()->Init();
         TransactionsPane::ref()->Init();
         IncomesPane::ref()->Init();
+        BuySellPane::ref()->Init();
     } else if (categoryChange) {
         CategoriesPane::ref()->Init();
         TransactionsPane::ref()->Init();
         IncomesPane::ref()->Init();
+        BuySellPane::ref()->Init();
     } else if (operationChange) {
         OperationsPane::ref()->Init();
         TransactionsPane::ref()->Init();
         IncomesPane::ref()->Init();
+        BuySellPane::ref()->Init();
     } else if (incomeChange) {
         BudgetPane::ref()->Init();
         IncomesPane::ref()->Init();
         TransactionsPane::ref()->Init();
     } else if (transactionChange) {
         TransactionsPane::ref()->Init();
+        BuySellPane::ref()->Init();
     }
 
     return false;
@@ -370,6 +381,7 @@ ez::xml::Nodes MainFrontend::getXmlNodes(const std::string& vUserDatas) {
     node.addChilds(ImGuiThemeHelper::ref().getXmlNodes("app"));
     node.addChilds(LayoutManager::ref().getXmlNodes("app"));
     node.addChilds(BudgetPane::ref()->getXmlNodes("app"));
+    node.addChilds(BuySellPane::ref()->getXmlNodes("app"));
     node.addChild("places").setContent(ImGuiFileDialog::ref().SerializePlaces());
     return node.getChildren();
 }
@@ -386,6 +398,7 @@ bool MainFrontend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::No
     ImGuiThemeHelper::ref().setFromXmlNodes(vNode, vParent, "app");
     LayoutManager::ref().setFromXmlNodes(vNode, vParent, "app");
     BudgetPane::ref()->setFromXmlNodes(vNode, vParent, "app");
+    BuySellPane::ref()->setFromXmlNodes(vNode, vParent, "app");
     return true;
 }
 

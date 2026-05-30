@@ -48,9 +48,15 @@ void ADataTable::m_updateDatas(const RowID& /*vAccountID*/) {
 
 void ADataTable::m_draw(const ImVec2& vSize) {
     ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 30.0f);
-    static auto flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
+    const ImGuiTableFlags flags = m_getTableFlags();
     if (ImGui::BeginTable(m_TableName, m_ColummCount, flags, vSize)) {
         m_setupColumns();
+        if (ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs()) {
+            if (sortSpecs->SpecsDirty) {
+                m_sortDatas(sortSpecs);
+                sortSpecs->SpecsDirty = false;
+            }
+        }
         int32_t idx = 0;
         m_TextHeight = ImGui::GetTextLineHeight();
         const float& item_h = ImGui::GetTextLineHeightWithSpacing();
@@ -87,6 +93,12 @@ void ADataTable::m_draw(const ImVec2& vSize) {
     }
     ImGui::PopStyleVar();
 }
+
+ImGuiTableFlags ADataTable::m_getTableFlags() const {
+    return ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY;
+}
+
+void ADataTable::m_sortDatas(ImGuiTableSortSpecs* /*vSortSpecs*/) {}
 
 bool ADataTable::m_drawAccountMenu() {
     bool needRefresh = false;

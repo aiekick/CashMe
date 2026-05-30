@@ -41,6 +41,8 @@ protected:
     virtual bool m_drawDebugMenu();
     virtual void m_updateDatas(const RowID& vAccountID);
     virtual void m_draw(const ImVec2& vSize);
+    virtual ImGuiTableFlags m_getTableFlags() const;
+    virtual void m_sortDatas(ImGuiTableSortSpecs* vSortSpecs);
 
 protected:
     int32_t m_getColumnCount() const;

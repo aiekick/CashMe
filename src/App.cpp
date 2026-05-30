@@ -19,6 +19,7 @@
 #include <Panes/AccountsPane.h>
 #include <Panes/BanksPane.h>
 #include <Panes/BudgetPane.h>
+#include <Panes/BuySellPane.h>
 #include <Panes/CategoriesPane.h>
 #include <Panes/ConsolePane.h>
 #include <Panes/EntitiesPane.h>

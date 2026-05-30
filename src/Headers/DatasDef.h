@@ -260,9 +260,18 @@ struct BudgetOutput {
     DateEpoch dateEpoch = 0;
     BudgetMinMax delta;
     BudgetMinMax solde;
-    double soldeReal{}; // le vrai solde realisé par les vraies transactions
+    double soldeReal{}; // le vrai solde realisï¿½ par les vraies transactions
     std::string incomesMin;
     std::string incomesMinAmount;
     std::string incomesMax;
     std::string incomesMaxAmount;
+};
+
+// BUY/SELL STATS
+
+struct BuySellStatItem {
+    std::string month;    // "YYYY/MM"
+    DateEpoch epoch = 0;  // epoch of the first day of the month
+    std::string group;    // value of the selected field (category, entity, ...)
+    double amount = 0.0;  // net sum (debit+credit) for that month and group
 };

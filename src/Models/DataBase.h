@@ -161,6 +161,17 @@ public:
         const bool vHideEmptyRows,
         std::function<void(const BudgetOutput&)> vCallback);
 
+    // STATS
+
+    bool GetBuySellStats(  //
+        const RowID& vAccountID,
+        const SearchColumns& vField,
+        const std::string& vFilterText,
+        const bool vUseDayRange,
+        const int32_t& vDayStart,
+        const int32_t& vDayEnd,
+        std::function<void(const BuySellStatItem&)> vCallback);
+
 private:
     bool m_OpenDB();
     void m_CloseDB();
