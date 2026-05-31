@@ -44,7 +44,7 @@ double TransactionsTable::m_getItemBarAmount(const size_t& vIdx) const {
 }
 
 void TransactionsTable::m_setupColumns() {
-    ImGui::TableSetupScrollFreeze(0, 2);
+    ImGui::TableSetupScrollFreeze(0, 3);
 
     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableSetupColumn("Dates", ImGuiTableColumnFlags_WidthFixed);
@@ -126,6 +126,26 @@ void TransactionsTable::m_drawContextMenuContent() {
             }
             MainFrontend::ref().getIncomeDialogRef().setTransactions(transactions_to_add_as_incomes);
             MainFrontend::ref().getIncomeDialogRef().show(DataDialogMode::MODE_CREATION);
+        }
+        if (ImGui::MenuItem("Add as rule")) {
+            for (const auto& trans : m_Datas.transactions_filtered) {
+                if (m_isRowSelected(trans.id)) {
+                    // seed a rule from the first selected transaction : match its entity, assign its category/operation
+                    CategorizationRule rule;
+                    rule.name = trans.datas.description;
+                    rule.descriptionPattern = trans.datas.description;
+                    rule.commentPattern = trans.datas.comment;
+                    rule.entityPattern = trans.datas.entity.name;
+                    rule.amountMin = trans.datas.amount;
+                    rule.amountMax = trans.datas.amount;
+                    rule.useAmountRange = true;
+                    rule.targetCategory = trans.datas.category.name;
+                    rule.targetOperation = trans.datas.operation.name;
+                    MainFrontend::ref().getRuleDialogRef().setRule(rule);
+                    MainFrontend::ref().getRuleDialogRef().show(DataDialogMode::MODE_CREATION);
+                    break;
+                }
+            }
         }
     }
 }

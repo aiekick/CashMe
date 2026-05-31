@@ -30,6 +30,8 @@ limitations under the License.
 #include <Frontend/Dialogs/OperationDialog.h>
 #include <Frontend/Dialogs/TransactionDialog.h>
 #include <Frontend/Dialogs/IncomeDialog.h>
+#include <Frontend/Dialogs/RuleDialog.h>
+#include <Frontend/Dialogs/RuleSuggestionsDialog.h>
 
 #include <ezlibs/ezSingleton.hpp>
 
@@ -131,6 +133,8 @@ private:
     OperationDialog m_OperationDialog;
     IncomeDialog m_IncomeDialog;
     TransactionDialog m_TransactionDialog;
+    RuleDialog m_RuleDialog;
+    RuleSuggestionsDialog m_RuleSuggestionsDialog;
 
 public:
     static bool sCentralWindowHovered;
@@ -159,6 +163,8 @@ public:
     OperationDialog& getOperationDialogRef();
     IncomeDialog& getIncomeDialogRef();
     TransactionDialog& getTransactionDialogRef();
+    RuleDialog& getRuleDialogRef();
+    RuleSuggestionsDialog& getRuleSuggestionsDialogRef();
     FrameActionSystem& GetActionSystemRef();
 
 public:                         // save : on quit or project loading

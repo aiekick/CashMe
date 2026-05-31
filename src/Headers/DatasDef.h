@@ -275,3 +275,33 @@ struct BuySellStatItem {
     std::string group;    // value of the selected field (category, entity, ...)
     double amount = 0.0;  // net sum (debit+credit) for that month and group
 };
+
+// CATEGORIZATION RULES
+
+struct CategorizationRule {
+    RowID id = 0;  // in-session id assigned by the rules table (not persisted)
+    bool enabled = true;
+    std::string name;
+    std::string description;
+    // per string-column wildcard patterns ('*'), empty = that column is not tested
+    std::string descriptionPattern;
+    std::string commentPattern;
+    std::string entityPattern;
+    // signed amount bounds (negative side = debit, positive side = credit), used only if useAmountRange
+    bool useAmountRange = false;
+    double amountMin = 0.0;
+    double amountMax = 0.0;
+    // assignment (empty = the field is left unchanged)
+    std::string targetCategory;
+    std::string targetOperation;
+};
+
+struct CategorizationSuggestion {
+    RowID transactionId = 0;
+    std::string date;
+    std::string description;
+    double amount = 0.0;
+    std::string suggestedCategory;   // pre-filled by a rule, editable by the user before applying
+    std::string suggestedOperation;  // pre-filled by a rule, editable by the user before applying
+    bool apply = true;               // checkbox : the row is applied only if true on OK
+};

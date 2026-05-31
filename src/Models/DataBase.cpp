@@ -302,6 +302,21 @@ CREATE TABLE transactions (
     FOREIGN KEY (income_id) REFERENCES incomes(id)
 );
 
+CREATE TABLE rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    enabled INTEGER,
+    name TEXT,
+    description TEXT,
+    description_pattern TEXT,
+    comment_pattern TEXT,
+    entity_pattern TEXT,
+    use_range INTEGER,
+    amount_min REAL,
+    amount_max REAL,
+    target_category TEXT,
+    target_operation TEXT
+);
+
 CREATE TABLE settings (
 	xml TEXT
 );

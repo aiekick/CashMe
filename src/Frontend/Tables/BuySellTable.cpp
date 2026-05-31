@@ -59,11 +59,9 @@ bool BuySellTable::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::No
 
 bool BuySellTable::m_drawControls() {
     bool changed = false;
-    // clang-format off
     static const std::vector<std::string> sFieldLabels = {"Description", "Comment", "Entity", "Category", "Operation"};
     static const SearchColumns sFieldColumns[] = {
         SEARCH_COLUMN_DESCRIPTION, SEARCH_COLUMN_COMMENT, SEARCH_COLUMN_ENTITY, SEARCH_COLUMN_CATEGORY, SEARCH_COLUMN_OPERATION};
-    // clang-format on
     const int32_t fieldCount = static_cast<int32_t>(sFieldLabels.size());
     int currentField = 3;  // default : Category
     for (int32_t idx = 0; idx < fieldCount; ++idx) {

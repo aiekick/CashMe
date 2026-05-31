@@ -33,6 +33,8 @@ limitations under the License.
 #include <Panes/CategoriesPane.h>
 #include <Panes/OperationsPane.h>
 #include <Panes/BudgetPane.h>
+#include <Panes/BuySellPane.h>
+#include <Panes/RulesPane.h>
 
 #include <Plugins/PluginManager.h>
 #include <Systems/SettingsDialog.h>
@@ -115,6 +117,8 @@ bool ProjectFile::LoadAs(const std::string vFilePathName) {
                     OperationsPane::ref()->Init();
                     IncomesPane::ref()->Init();
                     BudgetPane::ref()->Init();
+                    BuySellPane::ref()->Init();
+                    RulesPane::ref()->Init();
                     SetProjectChange(false);
                 } else {
                     Clear();

@@ -172,6 +172,20 @@ public:
         const int32_t& vDayEnd,
         std::function<void(const BuySellStatItem&)> vCallback);
 
+    // CATEGORIZATION
+
+    // sets the category and/or operation of a transaction (empty name = field left unchanged).
+    // expects an open database : wrap batch calls in BeginDBTransaction / CommitDBTransaction.
+    bool SetTransactionCategoryOperation(const RowID& vRowID, const std::string& vCategoryName, const std::string& vOperationName);
+
+    // RULES
+
+    // Add/Update/Delete expect an open database (wrap in OpenDBFile/CloseDBFile). GetRules opens by itself.
+    bool AddRule(const CategorizationRule& vRule);
+    bool GetRules(std::function<void(const CategorizationRule&)> vCallback);
+    bool UpdateRule(const RowID& vRowID, const CategorizationRule& vRule);
+    bool DeleteRule(const RowID& vRowID);
+
 private:
     bool m_OpenDB();
     void m_CloseDB();

@@ -130,8 +130,8 @@ WHERE
 ORDER BY
   transactions.date,
   CASE
-    WHEN transactions.amount > 0 THEN 0  -- crédits d’abord
-    ELSE 1                               -- puis débits
+    WHEN transactions.amount > 0 THEN 0  -- crï¿½dits dï¿½abord
+    ELSE 1                               -- puis dï¿½bits
   END,
   ABS(transactions.amount) DESC -- gros montant (credit ou debit) d'abord
 ;)",
@@ -630,6 +630,29 @@ WHERE
             }
         }
         CommitDBTransaction();
+    }
+    return ret;
+}
+
+bool DataBase::SetTransactionCategoryOperation(const RowID& vRowID, const std::string& vCategoryName, const std::string& vOperationName) {
+    std::string set_clause;
+    if (!vCategoryName.empty()) {
+        set_clause += "category_id = (SELECT id FROM categories WHERE name = \"" + vCategoryName + "\")";
+    }
+    if (!vOperationName.empty()) {
+        if (!set_clause.empty()) {
+            set_clause += ", ";
+        }
+        set_clause += "operation_id = (SELECT id FROM operations WHERE name = \"" + vOperationName + "\")";
+    }
+    if (set_clause.empty()) {
+        return false;  // nothing to set
+    }
+    bool ret = true;
+    auto update_query = ez::str::toStr(u8R"(UPDATE transactions SET %s WHERE id = %u;)", set_clause.c_str(), vRowID);
+    if (m_debug_sqlite3_exec(__FUNCTION__, m_SqliteDB, update_query, nullptr, nullptr, &m_LastErrorMsg) != SQLITE_OK) {
+        LogVarError("Fail to set category/operation of a transaction in database : %s", m_LastErrorMsg);
+        ret = false;
     }
     return ret;
 }

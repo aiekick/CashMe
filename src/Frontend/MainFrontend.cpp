@@ -32,6 +32,7 @@ limitations under the License.
 #include <Panes/BanksPane.h>
 #include <Panes/BudgetPane.h>
 #include <Panes/BuySellPane.h>
+#include <Panes/RulesPane.h>
 #include <Panes/IncomesPane.h>
 #include <Panes/ConsolePane.h>
 #include <Panes/AccountsPane.h>
@@ -82,6 +83,7 @@ bool MainFrontend::init() {
     BanksPane::initSingleton();
     BudgetPane::initSingleton();
     BuySellPane::initSingleton();
+    RulesPane::initSingleton();
     CategoriesPane::initSingleton();
     ConsolePane::initSingleton();
     EntitiesPane::initSingleton();
@@ -101,6 +103,9 @@ bool MainFrontend::init() {
     LayoutManager::ref().AddPane( //
         LayoutPaneInfos(BuySellPane::ref(), "Buy/Sell")
             .setMenu("Buy/Sell", "").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(RulesPane::ref(), "Rules")
+            .setMenu("Rules", "").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
     LayoutManager::ref().AddPane( //
         LayoutPaneInfos(ConsolePane::ref(), "Console")
             .setMenu("Console", "").setDisposalSide("BOTTOM",0.25f).setDefaultOpened(false).setDefaultFocused(false));
@@ -133,6 +138,7 @@ bool MainFrontend::init() {
     ret &= m_AccountDialog.init();
     ret &= m_CategoryDialog.init();
     ret &= m_OperationDialog.init();
+    ret &= m_RuleDialog.init();
     if (LayoutManager::ref().InitPanes()) {
         // a faire apres InitPanes() sinon ConsolePane::ref()->paneFlag vaudra 0 et changeras apres InitPanes()
         Messaging::ref().sMessagePaneId = ConsolePane::ref()->GetFlag();
@@ -148,6 +154,7 @@ void MainFrontend::unit() {
     m_AccountDialog.unit();
     m_CategoryDialog.unit();
     m_OperationDialog.unit();
+    m_RuleDialog.unit();
 
     LayoutManager::ref().UnitPanes();
     const auto& pluginPanes = PluginManager::ref().GetPluginPanes();
@@ -165,6 +172,7 @@ void MainFrontend::unit() {
     BanksPane::unitSingleton();
     BudgetPane::unitSingleton();
     BuySellPane::unitSingleton();
+    RulesPane::unitSingleton();
     CategoriesPane::unitSingleton();
     ConsolePane::unitSingleton();
     EntitiesPane::unitSingleton();
@@ -265,6 +273,16 @@ bool MainFrontend::DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImR
     const auto operationChange = MainFrontend::ref().getOperationDialogRef().draw(center);
     const auto transactionChange = MainFrontend::ref().getTransactionDialogRef().draw(center);
 
+    if (getRuleDialogRef().draw(center)) {
+        CategoriesPane::ref()->Init();
+        OperationsPane::ref()->Init();
+    }
+    if (getRuleSuggestionsDialogRef().draw(center)) {
+        TransactionsPane::ref()->Init();
+        CategoriesPane::ref()->Init();
+        OperationsPane::ref()->Init();
+    }
+
     if (bankChange || accountChange) {
         AccountsPane::ref()->Init();
         BanksPane::ref()->Init();
@@ -276,6 +294,7 @@ bool MainFrontend::DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImR
         TransactionsPane::ref()->Init();
         IncomesPane::ref()->Init();
         BuySellPane::ref()->Init();
+        RulesPane::ref()->Init();
     } else if (entityChange) {
         EntitiesPane::ref()->Init();
         TransactionsPane::ref()->Init();
@@ -286,11 +305,13 @@ bool MainFrontend::DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImR
         TransactionsPane::ref()->Init();
         IncomesPane::ref()->Init();
         BuySellPane::ref()->Init();
+        RulesPane::ref()->Init();
     } else if (operationChange) {
         OperationsPane::ref()->Init();
         TransactionsPane::ref()->Init();
         IncomesPane::ref()->Init();
         BuySellPane::ref()->Init();
+        RulesPane::ref()->Init();
     } else if (incomeChange) {
         BudgetPane::ref()->Init();
         IncomesPane::ref()->Init();
@@ -333,6 +354,14 @@ IncomeDialog& MainFrontend::getIncomeDialogRef() {
 
 TransactionDialog& MainFrontend::getTransactionDialogRef() {
     return m_TransactionDialog;
+}
+
+RuleDialog& MainFrontend::getRuleDialogRef() {
+    return m_RuleDialog;
+}
+
+RuleSuggestionsDialog& MainFrontend::getRuleSuggestionsDialogRef() {
+    return m_RuleSuggestionsDialog;
 }
 
 FrameActionSystem& MainFrontend::GetActionSystemRef() {
