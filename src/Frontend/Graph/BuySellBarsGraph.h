@@ -12,6 +12,8 @@ private:
     std::vector<std::string> m_groupLabels;       // series labels (field values), ordered by index
     std::vector<const char*> m_groupLabelPtrs;    // c_str of m_groupLabels, for ImPlot
     std::map<std::string, int32_t> m_groupIndex;  // field value -> serie index (also colormap index)
+    std::vector<ImVec4> m_groupColors;            // serie index -> color (ez::getRainBowColor)
+    ImPlotColormap m_colormapId{-1};              // ImPlot colormap registered in prepare(), pushed in draw()
     std::vector<std::string> m_monthLabels;       // x tick labels, ordered
     std::vector<const char*> m_monthLabelPtrs;    // c_str of m_monthLabels
     std::vector<double> m_monthPositions;         // x positions 0..monthCount-1

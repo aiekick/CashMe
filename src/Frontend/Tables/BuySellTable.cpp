@@ -1,6 +1,7 @@
 #include <Frontend/Tables/BuySellTable.h>
 #include <Models/DataBase.h>
 #include <algorithm>
+#include <set>
 
 BuySellTable::BuySellTable() : ADataTable("BuySellTable", 3) {}
 
@@ -23,6 +24,25 @@ void BuySellTable::refreshDatas() {
         [this](const BuySellStatItem& vItem) {  //
             m_items.push_back(vItem);
         });
+    // optional sliding window on the most recent months (applies to table + bars + pie)
+    if (m_useLastMonths && m_lastMonths > 0) {
+        // month strings are "YYYY/MM" so lexical order == chronological order
+        std::set<std::string> distinctMonths;
+        for (const auto& item : m_items) {
+            distinctMonths.insert(item.month);
+        }
+        if (static_cast<int32_t>(distinctMonths.size()) > m_lastMonths) {
+            auto monthIt = distinctMonths.begin();
+            std::advance(monthIt, distinctMonths.size() - static_cast<size_t>(m_lastMonths));
+            const std::set<std::string> keptMonths(monthIt, distinctMonths.end());
+            m_items.erase(
+                std::remove_if(
+                    m_items.begin(),
+                    m_items.end(),
+                    [&keptMonths](const BuySellStatItem& vItem) { return keptMonths.find(vItem.month) == keptMonths.end(); }),
+                m_items.end());
+        }
+    }
     m_barsGraph.prepare(m_items);
     m_pieGraph.prepare(m_items, m_monthsWindow);
     m_applySort();
@@ -36,6 +56,8 @@ ez::xml::Nodes BuySellTable::getXmlNodes(const std::string& vUserDatas) {
     node.addChild("day_start").setContent(m_dayStart);
     node.addChild("day_end").setContent(m_dayEnd);
     node.addChild("pie_months").setContent(m_monthsWindow);
+    node.addChild("use_last_months").setContent(m_useLastMonths);
+    node.addChild("last_months").setContent(m_lastMonths);
     return node.getChildren();
 }
 
@@ -53,6 +75,10 @@ bool BuySellTable::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::No
         m_dayEnd = vNode.getContent<int32_t>();
     } else if (strName == "pie_months") {
         m_monthsWindow = vNode.getContent<int32_t>();
+    } else if (strName == "use_last_months") {
+        m_useLastMonths = vNode.getContent<bool>();
+    } else if (strName == "last_months") {
+        m_lastMonths = vNode.getContent<int32_t>();
     }
     return false;
 }
@@ -86,17 +112,27 @@ bool BuySellTable::m_drawControls() {
     }
     if (m_useDayRange) {
         ImGui::SameLine();
-        if (ImGui::InputIntDefault(90.0f, "Start", &m_dayStart, 1)) {
+        if (ImGui::InputIntDefault(150.0f, "Start", &m_dayStart, 1)) {
             changed = true;
         }
         ImGui::SameLine();
-        if (ImGui::InputIntDefault(90.0f, "End", &m_dayEnd, 31)) {
+        if (ImGui::InputIntDefault(150.0f, "End", &m_dayEnd, 31)) {
             changed = true;
         }
     }
     ImGui::SameLine();
-    if (ImGui::InputIntDefault(90.0f, "Pie months", &m_monthsWindow, 6)) {
+    if (ImGui::InputIntDefault(150.0f, "Pie months", &m_monthsWindow, 6)) {
         changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::CheckBoxBoolDefault("Last months", &m_useLastMonths, false)) {
+        changed = true;
+    }
+    if (m_useLastMonths) {
+        ImGui::SameLine();
+        if (ImGui::InputIntDefault(150.0f, "Months", &m_lastMonths, 6)) {
+            changed = true;
+        }
     }
     ImGui::SameLine();
     if (ImGui::ContrastedButton("Update")) {
@@ -114,6 +150,9 @@ bool BuySellTable::m_drawControls() {
     }
     if (m_monthsWindow < 1) {
         m_monthsWindow = 1;
+    }
+    if (m_lastMonths < 1) {
+        m_lastMonths = 1;
     }
     return changed;
 }

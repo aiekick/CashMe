@@ -1,6 +1,7 @@
 #include <Frontend/Dialogs/RuleDialog.h>
 #include <Models/DataBase.h>
 #include <Panes/RulesPane.h>
+#include <Headers/CustomImWidgetsConfig.h>
 
 RuleDialog::RuleDialog() : ADataDialog("RuleModalPopup") {
 }
@@ -56,14 +57,34 @@ void RuleDialog::m_drawContent(const ImVec2& /*vPos*/) {
     const float align = 140.0f;
 
     m_nameInput.DisplayInputText(width, "Name", "", false, align);
+    ImGui::SameLine();
+    if (ImGui::ContrastedButton(BUTTON_LABEL_RESET, "Reset")) {
+        m_nameInput.Clear();
+    }
     m_descriptionInput.DisplayInputText(width, "Description", "", false, align);
+    ImGui::SameLine();
+    if (ImGui::ContrastedButton(BUTTON_LABEL_RESET, "Reset")) {
+        m_descriptionInput.Clear();
+    }
     ImGui::CheckBoxBoolDefault("Enabled", &m_rule.enabled, true);
 
     ImGui::Separator();
     ImGui::TextUnformatted("Conditions (an empty field is ignored)");
     m_descPatternInput.DisplayInputText(width, "Description pattern", "", false, align);
+    ImGui::SameLine();
+    if (ImGui::ContrastedButton(BUTTON_LABEL_RESET, "Reset")) {
+        m_descPatternInput.Clear();
+    }
     m_commentPatternInput.DisplayInputText(width, "Comment pattern", "", false, align);
+    ImGui::SameLine();
+    if (ImGui::ContrastedButton(BUTTON_LABEL_RESET, "Reset")) {
+        m_commentPatternInput.Clear();
+    }
     m_entityPatternInput.DisplayInputText(width, "Entity pattern", "", false, align);
+    ImGui::SameLine();
+    if (ImGui::ContrastedButton(BUTTON_LABEL_RESET, "Reset")) {
+        m_entityPatternInput.Clear();
+    }
     ImGui::CheckBoxBoolDefault("Amount range (signed : <0 debit, >0 credit)", &m_rule.useAmountRange, false);
     if (m_rule.useAmountRange) {
         ImGui::InputDoubleDefault(width, "Amount min", &m_rule.amountMin, 0.0);
@@ -72,8 +93,8 @@ void RuleDialog::m_drawContent(const ImVec2& /*vPos*/) {
 
     ImGui::Separator();
     ImGui::TextUnformatted("Assign (an empty field is left unchanged)");
-    m_categoryCombo.displayWithColumn(width, "-> Category", align);
-    m_operationCombo.displayWithColumn(width, "-> Operation", align);
+    m_categoryCombo.displayWithColumn(width, "Resulting Category", align);
+    m_operationCombo.displayWithColumn(width, "Resulting Operation", align);
 }
 
 void RuleDialog::m_confirmDialog() {

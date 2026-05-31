@@ -12,6 +12,7 @@ private:
     std::vector<const char*> m_labelPtrs;
     std::vector<double> m_values;
     int32_t m_count{};
+    ImPlotColormap m_colormapId{-1};  // ImPlot colormap registered in prepare(), pushed in draw()
 
 public:
     void clear();

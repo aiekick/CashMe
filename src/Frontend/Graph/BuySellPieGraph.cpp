@@ -1,4 +1,5 @@
 #include <Frontend/Graph/BuySellPieGraph.h>
+#include <Frontend/Graph/RainbowColormap.h>
 #include <map>
 #include <set>
 #include <cmath>
@@ -8,6 +9,7 @@ void BuySellPieGraph::clear() {
     m_labelPtrs.clear();
     m_values.clear();
     m_count = 0;
+    m_colormapId = -1;
 }
 
 void BuySellPieGraph::prepare(const std::vector<BuySellStatItem>& vItems, const int32_t& vMonthsWindow) {
@@ -45,6 +47,11 @@ void BuySellPieGraph::prepare(const std::vector<BuySellStatItem>& vItems, const 
     for (int32_t idx = 0; idx < m_count; ++idx) {
         m_labelPtrs[idx] = m_labels[idx].c_str();
     }
+    // resolve the colormap once here (called on refresh) ; draw() will only push it.
+    // the helper caches by size, so we never re-register a colormap for an already-seen slice count.
+    if (m_count > 0) {
+        m_colormapId = getOrCreateEzRainbowColormap(m_count);
+    }
 }
 
 void BuySellPieGraph::draw(const ImVec2& vSize) {
@@ -52,10 +59,14 @@ void BuySellPieGraph::draw(const ImVec2& vSize) {
         ImGui::TextUnformatted("No data");
         return;
     }
+    // slice i takes ez::getRainBowColor(i, m_count) along the label order.
+    // the colormap was registered once in prepare() so draw() (called every frame) only pushes it.
+    ImPlot::PushColormap(m_colormapId);
     if (ImPlot::BeginPlot("##BuySellPie", vSize, ImPlotFlags_Equal | ImPlotFlags_NoMouseText)) {
         ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
         ImPlot::SetupAxesLimits(0.0, 1.0, 0.0, 1.0);
         ImPlot::PlotPieChart(m_labelPtrs.data(), m_values.data(), m_count, 0.5, 0.5, 0.45, "%.0f", 90.0, ImPlotPieChartFlags_Normalize);
         ImPlot::EndPlot();
     }
+    ImPlot::PopColormap();
 }

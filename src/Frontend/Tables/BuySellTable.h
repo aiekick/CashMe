@@ -17,6 +17,8 @@ private:
     int32_t m_dayStart{1};
     int32_t m_dayEnd{31};
     int32_t m_monthsWindow{6};
+    bool m_useLastMonths{false};  // when true, keep only the m_lastMonths most recent months in the display
+    int32_t m_lastMonths{6};
     int32_t m_sortColumn{-1};
     bool m_sortAscending{true};
 

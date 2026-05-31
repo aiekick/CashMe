@@ -34,6 +34,6 @@ protected:
     bool m_drawMenu() final;
 
 private:
-    void m_runPreview();
+    void m_runPreview(const std::vector<CategorizationRule>& vRules);
     std::string m_amountRangeText(const CategorizationRule& vRule) const;
 };

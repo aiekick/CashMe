@@ -1,10 +1,13 @@
 #include <Frontend/Graph/BuySellBarsGraph.h>
+#include <Frontend/Graph/RainbowColormap.h>
 #include <cmath>
+#include <ezlibs/ezTools.hpp>
 
 void BuySellBarsGraph::clear() {
     m_groupLabels.clear();
     m_groupLabelPtrs.clear();
     m_groupIndex.clear();
+    m_groupColors.clear();
     m_monthLabels.clear();
     m_monthLabelPtrs.clear();
     m_monthPositions.clear();
@@ -12,21 +15,35 @@ void BuySellBarsGraph::clear() {
     m_monthTotals.clear();
     m_groupCount = 0;
     m_monthCount = 0;
+    m_colormapId = -1;
 }
 
 void BuySellBarsGraph::prepare(const std::vector<BuySellStatItem>& vItems) {
     clear();
 
-    // ordered indexing of months and groups (std::map keeps "YYYY/MM" chronological)
+    // 1st pass : collect distinct months / groups (values are placeholders).
+    // we do NOT assign the final index here because the items can arrive in any order from
+    // GetBuySellStats, which would make idx 0 the "first encountered" group instead of the
+    // first alphabetical one. that breaks the legend ordering AND the rainbow color sequence.
     std::map<std::string, int32_t> monthIndex;
     for (const auto& item : vItems) {
-        if (monthIndex.find(item.month) == monthIndex.end()) {
-            const int32_t next = static_cast<int32_t>(monthIndex.size());
-            monthIndex[item.month] = next;
+        monthIndex[item.month] = 0;
+        m_groupIndex[item.group] = 0;
+    }
+    // 2nd pass : assign indices in std::map iteration order (= alphabetical for groups,
+    // = chronological for months since the key is "YYYY/MM"). idx 0 is now the first alpha
+    // group, idx N-1 the last → legend rows, m_groupColors[i] = rainbow(i, N) and bars'
+    // colormap entry i all line up the same way.
+    {
+        int32_t counter = 0;
+        for (auto& pair : monthIndex) {
+            pair.second = counter++;
         }
-        if (m_groupIndex.find(item.group) == m_groupIndex.end()) {
-            const int32_t next = static_cast<int32_t>(m_groupIndex.size());
-            m_groupIndex[item.group] = next;
+    }
+    {
+        int32_t counter = 0;
+        for (auto& pair : m_groupIndex) {
+            pair.second = counter++;
         }
     }
 
@@ -58,6 +75,16 @@ void BuySellBarsGraph::prepare(const std::vector<BuySellStatItem>& vItems) {
         m_groupLabelPtrs[idx] = m_groupLabels[idx].c_str();
     }
 
+    // colors driven by ez::getRainBowColor along the serie order (alphabetical via std::map)
+    m_groupColors.resize(m_groupCount);
+    for (int32_t idx = 0; idx < m_groupCount; ++idx) {
+        const ez::fvec4 c = ez::getRainBowColor(idx, m_groupCount);
+        m_groupColors[idx] = ImVec4(c.x, c.y, c.z, c.w);
+    }
+    // resolve the colormap once here (called on refresh) ; draw() will only push it.
+    // the helper caches by size, so we never re-register a colormap for an already-seen group count.
+    m_colormapId = getOrCreateEzRainbowColormap(m_groupCount);
+
     // values matrix [serie * monthCount + month] and the per month totals
     m_values.assign(static_cast<size_t>(m_groupCount) * m_monthCount, 0.0);
     m_monthTotals.assign(m_monthCount, 0.0);
@@ -74,10 +101,12 @@ void BuySellBarsGraph::draw(const ImVec2& vSize) {
         ImGui::TextUnformatted("No data");
         return;
     }
+    // serie i takes ez::getRainBowColor(i, m_groupCount), shared with the list rows via getGroupColor.
+    // the colormap was registered once in prepare() so draw() (called every frame) only pushes it.
+    ImPlot::PushColormap(m_colormapId);
     if (ImPlot::BeginPlot("##BuySellBars", vSize, ImPlotFlags_NoMouseText)) {
         ImPlot::SetupAxes("Month", "Amount", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
         ImPlot::SetupAxisTicks(ImAxis_X1, m_monthPositions.data(), m_monthCount, m_monthLabelPtrs.data());
-        // bars first : serie i takes colormap color i, which getGroupColor mirrors for the list rows
         const double barGroupSize = 0.67;
         ImPlot::PlotBarGroups(m_groupLabelPtrs.data(), m_values.data(), m_groupCount, m_monthCount, barGroupSize, 0.0, ImPlotBarGroupsFlags_Stacked);
         // net total per month, drawn after the bars with an explicit color
@@ -88,12 +117,13 @@ void BuySellBarsGraph::draw(const ImVec2& vSize) {
         m_drawHoveredTooltip(barGroupSize);
         ImPlot::EndPlot();
     }
+    ImPlot::PopColormap();
 }
 
 ImVec4 BuySellBarsGraph::getGroupColor(const std::string& vGroup) const {
     const auto it = m_groupIndex.find(vGroup);
-    if (it != m_groupIndex.end()) {
-        return ImPlot::GetColormapColor(it->second);
+    if (it != m_groupIndex.end() && it->second < static_cast<int32_t>(m_groupColors.size())) {
+        return m_groupColors[static_cast<size_t>(it->second)];
     }
     return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 }
@@ -132,9 +162,12 @@ void BuySellBarsGraph::m_drawHoveredTooltip(const double& vBarGroupSize) const {
         return;
     }
     const double amount = m_values[static_cast<size_t>(hoveredSerie) * m_monthCount + month];
+    const ImVec4 hoveredColor = (hoveredSerie < static_cast<int32_t>(m_groupColors.size()))  //
+        ? m_groupColors[static_cast<size_t>(hoveredSerie)]                                   //
+        : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     ImGui::BeginTooltip();
     ImGui::Text("Month: %s", m_monthLabels[month].c_str());
-    ImGui::TextColored(ImPlot::GetColormapColor(hoveredSerie), "%s", m_groupLabels[hoveredSerie].c_str());
+    ImGui::TextColored(hoveredColor, "%s", m_groupLabels[hoveredSerie].c_str());
     ImGui::Text("Amount: %.2f", amount);
     ImGui::EndTooltip();
 }

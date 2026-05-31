@@ -107,6 +107,19 @@ void RulesTable::m_draw(const ImVec2& vSize) {
 
 void RulesTable::m_drawContextMenuContent() {
     if (!m_getSelectedRows().empty()) {
+        if (ImGui::MenuItem("Apply rule")) {
+            // forced preview on the selected rule(s): enabled flag is ignored here (manual override)
+            // and the cache / database is not mutated — we only push enabled-forced copies to the engine.
+            std::vector<CategorizationRule> rulesToApply;
+            for (const auto& rule : m_rules) {
+                if (m_isRowSelected(rule.id)) {
+                    CategorizationRule forced = rule;
+                    forced.enabled = true;
+                    rulesToApply.push_back(forced);
+                }
+            }
+            m_runPreview(rulesToApply);
+        }
         if (ImGui::MenuItem("Update")) {
             for (const auto& rule : m_rules) {
                 if (m_isRowSelected(rule.id)) {
@@ -145,12 +158,12 @@ bool RulesTable::m_drawMenu() {
         MainFrontend::ref().getRuleDialogRef().show(DataDialogMode::MODE_CREATION);
     }
     if (ImGui::MenuItem("Apply all rules")) {
-        m_runPreview();
+        m_runPreview(m_rules);
     }
     return false;
 }
 
-void RulesTable::m_runPreview() {
+void RulesTable::m_runPreview(const std::vector<CategorizationRule>& vRules) {
     std::vector<std::string> categoryNames;
     std::vector<std::string> operationNames;
     DataBase::ref().GetCategories([&categoryNames](const CategoryOutput& vCategory) {  //
@@ -160,10 +173,10 @@ void RulesTable::m_runPreview() {
         operationNames.push_back(vOperation.datas.name);
     });
     std::vector<CategorizationSuggestion> suggestions;
-    DataBase::ref().GetTransactions(m_getAccountID(), [this, &suggestions](const TransactionOutput& vTransaction) {
+    DataBase::ref().GetTransactions(m_getAccountID(), [&vRules, &suggestions](const TransactionOutput& vTransaction) {
         std::string category;
         std::string operation;
-        if (CategorizationEngine::evaluate(m_rules, vTransaction, category, operation)) {
+        if (CategorizationEngine::evaluate(vRules, vTransaction, category, operation)) {
             // only propose a row that actually changes something vs the current values
             const bool categoryChanges = (!category.empty() && category != vTransaction.datas.category.name);
             const bool operationChanges = (!operation.empty() && operation != vTransaction.datas.operation.name);

@@ -102,10 +102,7 @@ bool MainFrontend::init() {
             .setMenu("Budget", "").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
     LayoutManager::ref().AddPane( //
         LayoutPaneInfos(BuySellPane::ref(), "Buy/Sell")
-            .setMenu("Buy/Sell", "").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
-    LayoutManager::ref().AddPane( //
-        LayoutPaneInfos(RulesPane::ref(), "Rules")
-            .setMenu("Rules", "").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+            .setMenu("Buy/Sell", "").setDisposalSide("BOTTOM",0.5f).setDefaultOpened(false).setDefaultFocused(false));
     LayoutManager::ref().AddPane( //
         LayoutPaneInfos(ConsolePane::ref(), "Console")
             .setMenu("Console", "").setDisposalSide("BOTTOM",0.25f).setDefaultOpened(false).setDefaultFocused(false));
@@ -128,7 +125,10 @@ bool MainFrontend::init() {
             .setMenu("Operations", "Maintenance").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
     LayoutManager::ref().AddPane( //
         LayoutPaneInfos(IncomesPane::ref(), "Incomes")
-            .setMenu("Incomes", "Maintenance").setDisposalCentral().setDefaultOpened(false).setDefaultFocused(false));
+            .setMenu("Incomes", "Maintenance").setDisposalSide("BOTTOM",0.5f).setDefaultOpened(false).setDefaultFocused(false));
+    LayoutManager::ref().AddPane( //
+        LayoutPaneInfos(RulesPane::ref(), "Rules")
+            .setMenu("Rules", "Maintenance").setDisposalSide("BOTTOM",0.5f).setDefaultOpened(false).setDefaultFocused(false));
     
     // InitPanes is done in m_InitPanes, because a specific order is needed
 
